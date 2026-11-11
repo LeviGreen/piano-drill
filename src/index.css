@@ -8,6 +8,8 @@
   --accent: #5b3fd1;
   --accent-text: #ffffff;
   --focus: #5b3fd1;
+  --ok: #1a7f37; /* heard notes */
+  --bad: #cf222e; /* wrong notes */
 
   --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
   --space: 1rem;
@@ -30,6 +32,8 @@
     --accent: #a98bff;
     --accent-text: #15161c;
     --focus: #a98bff;
+    --ok: #3fb950;
+    --bad: #ff7b72;
     color-scheme: dark;
   }
 }
@@ -47,6 +51,8 @@
   --accent: #a98bff;
   --accent-text: #15161c;
   --focus: #a98bff;
+  --ok: #3fb950;
+  --bad: #ff7b72;
   color-scheme: dark;
 }
 
@@ -59,6 +65,8 @@
   --accent: #ffff00;
   --accent-text: #000000;
   --focus: #ffff00;
+  --ok: #00ff88;
+  --bad: #ff6666;
   color-scheme: dark;
 }
 
@@ -229,6 +237,111 @@ select {
 }
 
 /* Notation */
+.note-halo {
+  stroke-width: 2;
+}
+
+.note-halo.heard {
+  fill: var(--ok);
+  fill-opacity: 0.25;
+  stroke: var(--ok);
+}
+
+.note-halo.almost {
+  fill: none;
+  stroke: var(--ok);
+  stroke-dasharray: 3 2;
+}
+
+.note-check {
+  stroke: none;
+  fill: var(--ok);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.note-name {
+  stroke: none;
+  fill: currentColor;
+  font-size: 10px;
+  font-family: var(--sans);
+}
+
+.keyboard {
+  display: block;
+  width: 100%;
+  max-width: 44rem;
+  height: auto;
+  margin: 0.5rem 0;
+  color: var(--text);
+}
+
+.kb-key rect {
+  stroke-width: 0.75;
+}
+
+/* Keys look like keys on any theme: light white keys, dark black keys, each with an outline that shows on the page. */
+.kb-key.white rect {
+  fill: #f4f3f8;
+  stroke: #4a4955;
+}
+
+.kb-key.black rect {
+  fill: #1b1b22;
+  stroke: #9b9aa8;
+}
+
+:root[data-theme='high-contrast'] .kb-key.white:not(.target, .heard, .almost, .wrong) rect {
+  fill: #ffffff;
+  stroke: #000000;
+}
+
+:root[data-theme='high-contrast'] .kb-key.black:not(.target, .heard, .almost, .wrong) rect {
+  fill: #000000;
+  stroke: #ffffff;
+}
+
+.kb-key[role='button'] {
+  cursor: pointer;
+}
+
+.kb-key.target rect {
+  fill: var(--accent);
+}
+
+.kb-key.heard rect {
+  fill: var(--ok);
+}
+
+.kb-key.almost rect {
+  stroke: var(--ok);
+  stroke-width: 2;
+  stroke-dasharray: 3 2;
+}
+
+.kb-key.wrong rect {
+  fill: var(--bad);
+}
+
+.kb-mark {
+  font-size: 9px;
+  font-weight: 700;
+  fill: #ffffff;
+  stroke: #111;
+  stroke-width: 0.6;
+  paint-order: stroke;
+}
+
+.kb-key.almost .kb-mark {
+  fill: #111;
+  stroke: #fff;
+}
+
+.kb-name {
+  font-size: 5px;
+  fill: currentColor;
+}
+
 .staff {
   color: var(--text);
 }

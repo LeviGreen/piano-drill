@@ -27,14 +27,14 @@ Cross out a row (`~~text~~` in each cell) when its ticket is Done. Rows that are
 | ~~1 Music Theory Engine~~ | ~~PD-103~~ | ~~Diatonic chord & interval library~~ |
 | ~~1 Music Theory Engine~~ | ~~PD-104~~ | ~~Register, playability & readability constraints~~ |
 | ~~1 Music Theory Engine~~ | ~~PD-105~~ | ~~Target generator — single-hand content~~ |
-| 1 Music Theory Engine | PD-106 | Two-hand voicing templates & generator |
+| ~~1 Music Theory Engine~~ | ~~PD-106~~ | ~~Two-hand voicing templates & generator~~ |
 | 1 Music Theory Engine | PD-107 | "Either hand, one at a time" & cross-clef options |
 | 1 Music Theory Engine | PD-108 | Level & preset schema |
 | ~~2 Notation Rendering~~ | ~~PD-201~~ | ~~Single staff renderer (treble/bass) with key signature~~ |
 | ~~2 Notation Rendering~~ | ~~PD-202~~ | ~~Chords, intervals & accidentals~~ |
-| 2 Notation Rendering | PD-203 | Grand staff renderer |
+| ~~2 Notation Rendering~~ | ~~PD-203~~ | ~~Grand staff renderer~~ |
 | 2 Notation Rendering | PD-204 | Flash performance & timing hook |
-| 2 Notation Rendering | PD-205 | Overlays — note names & keyboard diagram |
+| ~~2 Notation Rendering~~ | ~~PD-205~~ | ~~Overlays — note names & keyboard diagram~~ |
 | 2 Notation Rendering | PD-206 | Large-print & accessibility options |
 | ~~3 Input & Verification~~ | ~~PD-301~~ | ~~`NoteInput` interface & `ScriptedInput`~~ |
 | 3 Input & Verification | PD-302 | On-screen keyboard input |
@@ -141,7 +141,7 @@ Publish the app as a GitHub Pages site. Set the Vite `base` for the repo subpath
 
 ## Epic 1 — Music Theory Engine
 
-Progress: 5/8 tickets done
+Progress: 6/8 tickets done
 
 ### PD-101: Core pitch & spelling primitives
 
@@ -204,12 +204,14 @@ Generates single notes, intervals, triads, sevenths with inversions for one hand
 
 **Size:** L  
 **Deps:** PD-105  
-**Status:** Todo
+**Status:** Done
 
 Data-driven voicing templates (bass + upper structure, shell, split, octave doubling); generator that picks one chord and splits it between hands per §4.3; no hand crossing; low-interval-limit rule; unique pitch class coverage check.
 
 **Acceptance:**
-- [ ] Every generated two-hand target is identifiable as a single diatonic chord; property tests pass; at least 4 templates implemented and selectable by level.
+- [x] Every generated two-hand target is identifiable as a single diatonic chord; property tests pass; at least 4 templates implemented and selectable by level.
+
+**Notes:** 7 data-driven templates (bass root, bass root + fifth, bass octave, shell triad, shell seventh, split, octave doubling); `TwoHandGenerator` keeps only playable results where all chord tones are present. Verified in the Generator preview (Both hands).
 
 ### PD-107: "Either hand, one at a time" & cross-clef options
 
@@ -235,7 +237,7 @@ JSON schema + validator for difficulty settings (§3); the 10 preset levels from
 
 ## Epic 2 — Notation Rendering
 
-Progress: 2/6 tickets done
+Progress: 4/6 tickets done
 
 ### PD-201: Single staff renderer (treble/bass) with key signature
 
@@ -267,12 +269,14 @@ Correct chord layout including seconds clusters, ledger lines, accidentals not i
 
 **Size:** M  
 **Deps:** PD-202  
-**Status:** Todo
+**Status:** Done
 
 Two-staff system with brace and aligned notes for two-hand targets; stable layout between reps (no layout jump).
 
 **Acceptance:**
-- [ ] Two-hand targets from the generator render correctly across all keys.
+- [x] Two-hand targets from the generator render correctly across all keys.
+
+**Notes:** grand staff with brace, one beat for both hands, fixed size. Verified by eye and by tests across all 30 keys. Always shown, even for one-hand targets (the unused staff stays empty).
 
 ### PD-204: Flash performance & timing hook
 
@@ -289,12 +293,14 @@ Pre-render next target off-screen; atomic swap; expose a `onPainted(timestamp)` 
 
 **Size:** M  
 **Deps:** PD-202  
-**Status:** Todo
+**Status:** Done
 
 Optional note-name labels on notes; piano keyboard component highlighting target keys (for reveal-on-miss and on-screen input). Support per-note highlight states (heard / missing) for the staff and keyboard, used by the drill screen's per-note feedback.
 
 **Acceptance:**
-- [ ] Reveal view shows correct names/highlights for any target.
+- [x] Reveal view shows correct names/highlights for any target.
+
+**Notes:** note names, three per-note states (heard = halo + check, almost = dashed ring, missing = none), a G2-F5 piano keyboard (marks by shape and color, names below the keys), click-to-cycle in the Generator preview. Names carry `stroke: none` because VexFlow's SVG root has a black stroke.
 
 ### PD-206: Large-print & accessibility options
 

@@ -1,7 +1,10 @@
 import { Link } from 'react-router'
+import { GrandStaff } from '../notation/GrandStaff'
 import { Staff } from '../notation/Staff'
 import { keyName, keySignature, type KeySignature } from '../theory/keys'
 import { parsePitch } from '../theory/pitch'
+import { DEFAULT_TWO_HAND_CONFIG, TwoHandGenerator } from '../theory/twoHand'
+import type { Target } from '../theory/target'
 import type { Clef } from '../theory/staff'
 
 /** Signatures from none to seven accidentals, flats before sharps at each count. */
@@ -36,6 +39,31 @@ const TRICKY: Tricky[] = [
   },
 ]
 
+/** A few two-hand targets in different keys, for looking at the grand staff. */
+function grandSamples(): Target[] {
+  const picks = [
+    keySignature(0, 'major'),
+    keySignature(-3, 'major'),
+    keySignature(0, 'minor'),
+    keySignature(6, 'major'),
+    keySignature(-5, 'major'),
+    keySignature(2, 'minor'),
+  ]
+  return picks.map((key, i) =>
+    new TwoHandGenerator(
+      {
+        ...DEFAULT_TWO_HAND_CONFIG,
+        keys: [key],
+        chordSizes: ['triad', 'seventh'],
+        minorForm: 'either',
+        maxSameKeyRun: 99,
+      },
+      10 + i,
+    ).next(),
+  )
+}
+const GRAND = grandSamples()
+
 const heading = (n: number) =>
   n === 0
     ? 'No sharps or flats'
@@ -67,6 +95,42 @@ export function NotationGalleryScreen() {
             </section>
           )
         })}
+      </div>
+
+      <h2>Grand staff (PD-203)</h2>
+      <div className="tricky">
+        {GRAND.map((t) => (
+          <section key={t.id + keyName(t.key)} className="gallery-item">
+            <h2>{keyName(t.key)}</h2>
+            <p className="gallery-keys">
+              {t.parts[0].label} · {t.content.voicing}
+            </p>
+            <GrandStaff
+              keySignature={t.key}
+              lh={t.parts[0].pitches}
+              rh={t.parts[1].pitches}
+              label={`${keyName(t.key)} two-hand chord`}
+            />
+          </section>
+        ))}
+        <section className="gallery-item">
+          <h2>Empty grand staff</h2>
+          <p className="gallery-keys">B♭ major, no notes</p>
+          <GrandStaff
+            keySignature={keySignature(-2, 'major')}
+            label="Empty grand staff in B-flat major"
+          />
+        </section>
+        <section className="gallery-item">
+          <h2>Middle C in both hands</h2>
+          <p className="gallery-keys">one ledger line, shared</p>
+          <GrandStaff
+            keySignature={keySignature(0, 'major')}
+            rh={[parsePitch('C4'), parsePitch('E4')]}
+            lh={[parsePitch('C3'), parsePitch('C4')]}
+            label="Middle C in both hands"
+          />
+        </section>
       </div>
 
       <h2>Tricky cases (PD-202)</h2>

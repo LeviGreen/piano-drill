@@ -48,10 +48,69 @@ describe('generator preview picture toggles', () => {
     expect(document.body.textContent).toMatch(/\[[A-G][♯♭]?\d\]/) // a single-note target such as [E3]
   })
 
-  it('shows both-hands and 5-notes as unavailable for now', () => {
+  it('always shows both staves, leaving the unused one empty', () => {
+    show() // right hand only
+    expect(document.querySelectorAll('.staff .vf-stave')).toHaveLength(2)
+    expect(document.querySelectorAll('.staff .vf-clef')).toHaveLength(2)
+  })
+
+  it('shows 5-notes as unavailable for now', () => {
     show()
-    expect((tile(/both hands/i) as HTMLButtonElement).disabled).toBe(true)
     expect((tile(/5 notes/i) as HTMLButtonElement).disabled).toBe(true)
+  })
+
+  it('both hands draws a grand staff with a bass-clef and a treble-clef part and a keyboard', async () => {
+    show()
+    await userEvent.click(tile(/both hands/i))
+    await userEvent.click(tile(/right hand only/i)) // leave only "both hands"
+    expect(tile(/both hands/i).getAttribute('aria-pressed')).toBe('true')
+    expect(document.body.textContent).toMatch(/LH \[.*\]\s+RH \[.*\]/)
+    expect(document.querySelectorAll('.staff .vf-stave')).toHaveLength(2)
+    expect(document.querySelector('svg.keyboard')).toBeTruthy()
+  })
+
+  it('shows note names when asked', async () => {
+    show()
+    expect(document.querySelectorAll('.note-name')).toHaveLength(0)
+    await userEvent.click(screen.getByLabelText(/show note names/i))
+    expect(document.querySelectorAll('.note-name').length).toBeGreaterThanOrEqual(3)
+  })
+
+  it('click a target key to cycle it: almost, heard, then clear; the staff and counter follow', async () => {
+    show()
+    const target = document.querySelector('.kb-key.target') as SVGElement
+    const midi = target.dataset.midi!
+    const key = () => document.querySelector(`.kb-key[data-midi="${midi}"]`) as SVGElement
+    expect(document.body.textContent).toMatch(/0 \/ 3 notes heard/)
+    await userEvent.click(key())
+    expect(key().classList.contains('almost')).toBe(true)
+    expect(document.querySelectorAll('.note-halo.almost')).toHaveLength(1)
+    await userEvent.click(key())
+    expect(key().classList.contains('heard')).toBe(true)
+    expect(document.querySelectorAll('.note-halo.heard')).toHaveLength(1)
+    expect(document.body.textContent).toMatch(/1 \/ 3 notes heard/)
+    await userEvent.click(key())
+    expect(key().classList.contains('target')).toBe(true)
+    expect(document.querySelectorAll('.note-halo')).toHaveLength(0)
+  })
+
+  it('a key that is not in the target can be marked as a wrong note, and unmarked', async () => {
+    show()
+    const plain = [...document.querySelectorAll('.kb-key.white')].find(
+      (k) => !k.classList.contains('target'),
+    ) as SVGElement
+    await userEvent.click(plain)
+    expect(plain.classList.contains('wrong')).toBe(true)
+    await userEvent.click(plain)
+    expect(plain.classList.contains('wrong')).toBe(false)
+  })
+
+  it('Next target clears the feedback marks', async () => {
+    show()
+    await userEvent.click(document.querySelector('.kb-key.target') as SVGElement)
+    expect(document.querySelectorAll('.note-halo').length).toBeGreaterThan(0)
+    await userEvent.click(screen.getByRole('button', { name: /next target/i }))
+    expect(document.querySelectorAll('.note-halo')).toHaveLength(0)
   })
 
   it('gives each picture an accessible description', () => {

@@ -25,5 +25,7 @@ export type Target = {
     inversion?: number
     /** Scale degree (1..7) the chord was built on, when it is a chord. */
     degree?: number
+    /** Id of the two-hand voicing template used, when both hands play. */
+    voicing?: string
   }
 }

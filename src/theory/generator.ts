@@ -1,6 +1,7 @@
 import { preferredSubset, diatonicChord, scalePitch, type MinorForm } from './chords'
 import { DEFAULT_CONSTRAINTS, validateTarget, type Constraints } from './constraints'
-import { ALL_KEYS, keyName, type KeySignature, type Mode } from './keys'
+import { ALL_KEYS, type KeySignature, type Mode } from './keys'
+import { KeyRotation } from './keyRotation'
 import {
   formatPitchAscii,
   intervalBetween,
@@ -94,8 +95,7 @@ export class TargetGenerator {
   private readonly rng: Rng
   private count = 0
   private lastSignature = ''
-  private lastKey = ''
-  private keyRun = 0
+  private readonly rotation: KeyRotation
   private hand: Hand = 'RH'
 
   constructor(config: SingleHandConfig, seed = 1) {
@@ -105,12 +105,13 @@ export class TargetGenerator {
       throw new RangeError('config.notesPerHand must not be empty')
     this.config = config
     this.rng = mulberry32(seed)
+    this.rotation = new KeyRotation(config.keys, config.maxSameKeyRun, this.rng)
   }
 
   next(): Target {
     const { config, rng } = this
     for (let attempt = 0; attempt < 500; attempt++) {
-      const key = this.chooseKey()
+      const key = this.rotation.choose()
       this.hand = pick(rng, config.hands)
       const kind = KIND_FOR_COUNT[pick(rng, config.notesPerHand)]
       const target = this.build(key, kind)
@@ -119,21 +120,12 @@ export class TargetGenerator {
       if (signature === this.lastSignature) continue
       this.lastSignature = signature
       target.id = `t${++this.count}`
-      const name = keyName(key)
-      this.keyRun = name === this.lastKey ? this.keyRun + 1 : 1
-      this.lastKey = name
+      this.rotation.commit(key)
       return target
     }
     throw new Error(
       'Could not generate a valid target; the settings may leave no playable notes in range',
     )
-  }
-
-  private chooseKey(): KeySignature {
-    const { config, rng } = this
-    const mustChange = config.keys.length > 1 && this.keyRun >= config.maxSameKeyRun
-    const pool = mustChange ? config.keys.filter((k) => keyName(k) !== this.lastKey) : config.keys
-    return pick(rng, pool)
   }
 
   private formFor(key: KeySignature): MinorForm {

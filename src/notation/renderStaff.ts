@@ -1,33 +1,34 @@
-import {
-  Accidental,
-  Formatter,
-  KeySignature as VexKeySignature,
-  Renderer,
-  Stave,
-  StaveNote,
-  Voice,
-} from 'vexflow/bravura'
+import { Accidental, Formatter, Renderer, Stave, Voice } from 'vexflow/bravura'
 import type { KeySignature } from '../theory/keys'
 import type { Pitch } from '../theory/pitch'
 import type { Clef } from '../theory/staff'
-import { vexKeySpec, vexNoteKey } from './vexKey'
+import { drawNoteOverlays, type NoteState } from './overlays'
+import {
+  fitSvg,
+  makeNote,
+  MIN_MARGIN,
+  signatureAccidentals,
+  STAFF_HEIGHT,
+  STAVE_PADDING_LINES,
+  WIDTH,
+} from './staffCommon'
+import { vexKeySpec } from './vexKey'
 
 export type StaffOptions = {
   clef: Clef
   key: KeySignature
   /** Pitches to show together as one note, interval or chord (optional). */
   notes?: Pitch[]
+  /** Write each note's name beside it. */
+  showNames?: boolean
+  /** Per-note feedback, lowest note first (see overlays.ts). */
+  states?: (NoteState | undefined)[]
   /**
    * How many ledger lines to leave room for above and below the staff (default 1, the MVP range).
    * The drawing height grows with it; keep it constant for a given screen so the layout never jumps.
    */
   ledgerRoom?: number
 }
-
-const WIDTH = 320
-const STAFF_HEIGHT = 40 // five lines, four spaces of 10
-const MIN_MARGIN = 25 // clef and accidentals poke out about this far
-const STAVE_PADDING_LINES = 2
 
 /**
  * Drawing size for a given ledger-line allowance: a fixed margin above and below the staff, so the
@@ -78,13 +79,7 @@ export function renderStaff(container: HTMLElement, opts: StaffOptions): StaffHa
   const noteAccidentals: string[] = []
   let displacedNoteheads = 0
   if (opts.notes && opts.notes.length > 0) {
-    const note = new StaveNote({
-      clef: opts.clef,
-      keys: opts.notes.map(vexNoteKey),
-      duration: 'w', // whole notes only: no stems, no stem-direction cases
-    })
-    // VexFlow's default ledger lines are dark gray and thin: follow the theme color and make them clearer.
-    note.setLedgerLineStyle({ strokeStyle: 'currentColor', lineWidth: 2 })
+    const { note, sorted } = makeNote(opts.clef, opts.notes)
     const voice = new Voice({ numBeats: 4, beatValue: 4 }).addTickables([note])
     Accidental.applyAccidentals([voice], spec) // shows only accidentals not implied by the key signature
     for (const m of note.getModifiers()) if (m instanceof Accidental) noteAccidentals.push(m.type)
@@ -93,27 +88,13 @@ export function renderStaff(container: HTMLElement, opts: StaffOptions): StaffHa
       .format([voice], stave.getNoteEndX() - stave.getNoteStartX() - 20)
     voice.draw(ctx, stave)
     displacedNoteheads = note.getKeyProps().filter((k) => k.displaced).length
+    drawNoteOverlays(container, note, sorted, { names: opts.showNames, states: opts.states })
   }
 
-  const svg = container.querySelector('svg')
-  if (svg) {
-    svg.setAttribute('viewBox', `0 0 ${width} ${height}`)
-    // VexFlow writes a fixed pixel size into the SVG's style; replace it so the staff fills its container.
-    svg.removeAttribute('width')
-    svg.removeAttribute('height')
-    svg.style.width = '100%'
-    svg.style.height = 'auto'
-    svg.style.display = 'block'
-    svg.style.maxWidth = `${width * 1.5}px`
-    svg.setAttribute('role', 'img')
-  }
+  fitSvg(container, width, height)
 
-  const sig = stave.getModifiers().find((m) => m instanceof VexKeySignature) as
-    (VexKeySignature & { accList?: { type: string; line: number }[] }) | undefined
   return {
-    signatureAccidentals: sig?.accList
-      ? sig.accList.map((a) => ({ type: a.type, line: a.line }))
-      : [],
+    signatureAccidentals: signatureAccidentals(stave),
     noteAccidentals,
     lineY: { top: stave.getYForLine(0), bottom: stave.getYForLine(4) },
     size: { width, height },
