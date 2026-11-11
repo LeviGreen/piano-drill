@@ -1,7 +1,7 @@
-# Piano Flash Drill — Design Doc & Implementation Tickets
+# Piano Drill — Design Doc & Implementation Tickets
 
 **Status:** Draft v1
-**Working title:** Piano Flash Drill (name TBD)
+**Name:** Piano Drill
 
 ---
 
@@ -9,7 +9,7 @@
 
 A practice app that trains **instant sight-reading of small musical units** (a single interval or chord) rather than whole pieces. A bit of notation is flashed on screen, the user finds and plays it on a real piano, and the app listens through the microphone, verifies the notes, and records how long it took.
 
-The core idea is the same as flashcards: short, repeated, timed reps on the exact skill that is weak (e.g. "bass clef, 4 flats, root-position triad"), with difficulty that can be tuned and an adaptive mode that targets weak spots.
+The core idea is the same as flashcards: short, repeated, timed reps on the exact skill that is weak (e.g. "bass clef, 4 flats, root-position triad"), with difficulty that can be tuned.
 
 A second, separate mode drills **key signature recognition** with no playing involved.
 
@@ -28,6 +28,7 @@ A second, separate mode drills **key signature recognition** with no playing inv
 - Reading whole phrases or pieces.
 - Dynamics/touch evaluation.
 - Telling *which hand* played a note (a mic cannot know; see §6.6).
+- Stats screens, charts, and adaptive (weak-spot) practice — cut from the MVP.
 - Accounts/cloud sync/social features (local-only storage in v1).
 - Teaching theory from scratch (some in-app hints, but not a curriculum).
 
@@ -62,11 +63,6 @@ Timeout (configurable, default 10 s): the target is revealed with note names + a
 - Pick a preset level, or open **Custom** to edit every dimension.
 - Save custom presets.
 - Test microphone / calibrate (see §6.7).
-
-### 2.4 Stats
-
-- Per-level history, per-dimension heatmaps (key × clef, chord type, note count), trend lines for median time and accuracy.
-- "Weak spots" list driving **Adaptive mode** (§8.3).
 
 ---
 
@@ -172,7 +168,6 @@ Randomly selects RH or LH per rep, then generates a one-part target in the match
 
 - Avoid repeating the exact same target back-to-back.
 - Avoid too many consecutive items from the same key.
-- In adaptive mode, weight selection by weakness (§8.3).
 
 ---
 
@@ -284,8 +279,6 @@ Results stored per input device.
 
 **Settings:** clef (treble/bass/random), accidental range, major only/minor only/both, answer format, timeout, enharmonic strictness (F♯ major vs G♭ major are different signatures but the same sound — the key signature determines the answer).
 
-**Stats:** per-key response time and error confusion matrix (e.g. user often mistakes 3♭ for 4♭), as the confusions in this mode are especially informative.
-
 ---
 
 ## 8. Session, Scoring & Progress
@@ -311,22 +304,11 @@ type RepResult = {
 - Secondary: accuracy (% first-try correct), error rate, timeout rate.
 - Optionally normalize time by note count (a 5-note chord should be allowed more time than a single note) so levels compare fairly: "time per note" or level-specific targets.
 
-### 8.3 Adaptive mode
+### 8.3 Session summary
 
-A mode that picks the next target using bucket weakness:
+Shown at the end of a session (see §2.1). Charts, heatmaps and cross-session analytics are out of scope for v1.
 
-`weight(bucket) ∝ (recent median time / goal time) + error penalty + staleness bonus`
-
-Sample dimension buckets (e.g. *Key = E♭ major × Bass clef × triad*) by weight with a floor so everything still gets some exposure. A lightweight spaced-repetition scheme for items the user failed.
-
-### 8.4 Stats views
-
-- Session summary (end of session).
-- History chart: median time per session at a level.
-- Heatmaps: key × clef; chord type × hand; per-note-count.
-- Weakest-10 list with a "drill these" button that launches an adaptive session.
-
-### 8.5 Storage
+### 8.4 Storage
 
 Local only for v1: IndexedDB (via Dexie or similar). Export/import JSON for backup. Data model designed to allow later sync.
 
@@ -356,9 +338,8 @@ Local only for v1: IndexedDB (via Dexie or similar). Export/import JSON for back
     /dsp         // FFT/CQT, onset detection, template matcher, noise floor
     /inputs      // NoteInput implementations: Mic, Midi, OnScreen, Scripted
     /calibration
-  /session       // drill state machine, timing, scoring, adaptive selection
+  /session       // drill state machine, timing, scoring
   /keyid         // key-identification mode logic + UI
-  /stats         // aggregation, charts
   /storage       // IndexedDB repositories
   /ui            // screens, components, theming, a11y
   /test-utils    // synthetic audio generator, fixtures, ScriptedInput
@@ -426,7 +407,7 @@ IDLE → READY → FLASHED → (WRONG_NOTE → FLASHED)* → SUCCESS | TIMEOUT |
 | **M0 — Feasibility** | Theory-engine skeleton, staff rendering demo, **mic verification spike** | Mic matcher correctly verifies single notes + triads on a real piano ≥ 90% in a quiet room |
 | **M1 — Playable MVP** | Single/interval/triad drills, one-hand, key sigs, timing, results, with Mic + MIDI + on-screen input | A user can run a full session at levels 1–6 |
 | **M2 — Two hands + Key ID** | Two-hand voicings, grand staff, key identification mode | Levels 7–10 and Key ID mode work end-to-end |
-| **M3 — Progress & Polish** | Stats, adaptive mode, calibration wizard, custom presets, PWA, a11y | Beta-ready |
+| **M3 — Polish** | Calibration wizard, custom presets, PWA, a11y | Beta-ready |
 
 ---
 
@@ -446,7 +427,7 @@ Set up Vite + React + TypeScript, linting, formatting, test runner (Vitest), CI 
 
 ### PD-002: App shell & routing
 **Size:** S · **Deps:** PD-001
-Home screen, routes for Play, Key ID, Stats, Settings; placeholder screens; responsive layout; theme tokens (light/dark/high-contrast).
+Home screen, routes for Play, Key ID, Settings; placeholder screens; responsive layout; theme tokens (light/dark/high-contrast).
 **Acceptance:**
 - Navigation works on mobile and desktop widths; theme toggle persists.
 
@@ -696,34 +677,6 @@ Presets (e.g. ≤2 accidentals → all keys; major → minor), custom options UI
 
 ---
 
-## Epic 6 — Stats & Adaptive Practice
-
-### PD-601: Aggregation layer
-**Size:** M · **Deps:** PD-403
-Compute per-bucket medians, accuracy, trends across dimensions (key, clef, hand, note count, content type) from stored reps.
-**Acceptance:**
-- Tested against fixture data; handles sparse buckets.
-
-### PD-602: Stats screens & charts
-**Size:** L · **Deps:** PD-601
-History line chart, key × clef heatmap, chord-type breakdown, key-ID confusion matrix, weakest-10 list.
-**Acceptance:**
-- Views render with realistic data volume (≥ 10k reps) without lag.
-
-### PD-603: Adaptive target selection
-**Size:** M · **Deps:** PD-601, PD-105, PD-106
-Weighted bucket selection per §8.3 with exposure floor and re-queue of failed items; "drill my weak spots" session type.
-**Acceptance:**
-- Simulation tests show weak buckets are sampled more but all buckets remain represented.
-
-### PD-604: Normalized goals & per-note-count targets
-**Size:** S · **Deps:** PD-601
-Define goal times by note count/hand configuration; use in level progression and adaptive weights.
-**Acceptance:**
-- Goals configurable in level data; used consistently.
-
----
-
 ## Epic 7 — Polish, Quality & Release
 
 ### PD-701: Onboarding & first-run flow
@@ -774,7 +727,7 @@ In-app help (mic placement, pedal advice, troubleshooting) and developer README 
 3. **M0 gate:** decide go/no-go on mic approach (fallback: ship MIDI/on-screen first, keep mic as beta).
 4. **M1:** PD-302, PD-303, PD-401 → PD-403, PD-308 → PD-309, PD-404 → PD-406
 5. **M2:** PD-106, PD-107, PD-203, then Epic 5
-6. **M3:** PD-310, PD-311, Epic 6, Epic 7
+6. **M3:** PD-310, PD-311, Epic 7
 
 ## Ticket Index
 
@@ -786,5 +739,4 @@ In-app help (mic placement, pedal advice, troubleshooting) and developer README 
 | 3 Input & Verification | PD-301 – PD-311 |
 | 4 Drill Session | PD-401 – PD-406 |
 | 5 Key ID Mode | PD-501 – PD-505 |
-| 6 Stats & Adaptive | PD-601 – PD-604 |
 | 7 Polish & Release | PD-701 – PD-706 |
