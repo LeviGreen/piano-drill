@@ -26,12 +26,12 @@ Cross out a row (`~~text~~` in each cell) when its ticket is Done. Rows that are
 | ~~1 Music Theory Engine~~ | ~~PD-102~~ | ~~Keys & key signatures~~ |
 | ~~1 Music Theory Engine~~ | ~~PD-103~~ | ~~Diatonic chord & interval library~~ |
 | ~~1 Music Theory Engine~~ | ~~PD-104~~ | ~~Register, playability & readability constraints~~ |
-| 1 Music Theory Engine | PD-105 | Target generator — single-hand content |
+| ~~1 Music Theory Engine~~ | ~~PD-105~~ | ~~Target generator — single-hand content~~ |
 | 1 Music Theory Engine | PD-106 | Two-hand voicing templates & generator |
 | 1 Music Theory Engine | PD-107 | "Either hand, one at a time" & cross-clef options |
 | 1 Music Theory Engine | PD-108 | Level & preset schema |
 | ~~2 Notation Rendering~~ | ~~PD-201~~ | ~~Single staff renderer (treble/bass) with key signature~~ |
-| 2 Notation Rendering | PD-202 | Chords, intervals & accidentals |
+| ~~2 Notation Rendering~~ | ~~PD-202~~ | ~~Chords, intervals & accidentals~~ |
 | 2 Notation Rendering | PD-203 | Grand staff renderer |
 | 2 Notation Rendering | PD-204 | Flash performance & timing hook |
 | 2 Notation Rendering | PD-205 | Overlays — note names & keyboard diagram |
@@ -141,7 +141,7 @@ Publish the app as a GitHub Pages site. Set the Vite `base` for the repo subpath
 
 ## Epic 1 — Music Theory Engine
 
-Progress: 4/8 tickets done
+Progress: 5/8 tickets done
 
 ### PD-101: Core pitch & spelling primitives
 
@@ -191,12 +191,14 @@ Clef staff ranges, ledger-line counting, hand-span check, max-notes-per-hand, lo
 
 **Size:** L  
 **Deps:** PD-103, PD-104  
-**Status:** Todo
+**Status:** Done
 
 Generates single notes, intervals, triads, sevenths with inversions for one hand, respecting difficulty settings (clef, key set, mode, ledger lines, accidentals). Includes anti-repeat logic.
 
 **Acceptance:**
-- [ ] Property tests: 10k generated targets per config all satisfy constraints; distribution sanity checks (keys/degrees roughly uniform).
+- [x] Property tests: 10k generated targets per config all satisfy constraints; distribution sanity checks (keys/degrees roughly uniform).
+
+**Notes:** `notesPerHand` (1 note, 2 interval, 3 triad, 4 seventh) and `hands` (one picked per target) are the config. Verified with the Generator preview (Settings). Inversions and occasional chromatic notes are always on in the preview.
 
 ### PD-106: Two-hand voicing templates & generator
 
@@ -215,7 +217,7 @@ Data-driven voicing templates (bass + upper structure, shell, split, octave doub
 **Deps:** PD-105  
 **Status:** Todo
 
-Per-rep random hand selection; optional cross-clef (e.g. RH in bass clef) setting.
+Per-rep random hand selection; optional cross-clef (e.g. RH in bass clef) setting. **Partly built in PD-105:** the generator takes a list of hands and picks one per target (own clef each); the cross-clef option remains.
 
 **Acceptance:**
 - [ ] Settings produce expected hand/clef distribution in tests.
@@ -233,7 +235,7 @@ JSON schema + validator for difficulty settings (§3); the 10 preset levels from
 
 ## Epic 2 — Notation Rendering
 
-Progress: 1/6 tickets done
+Progress: 2/6 tickets done
 
 ### PD-201: Single staff renderer (treble/bass) with key signature
 
@@ -252,12 +254,14 @@ VexFlow (or chosen lib) wrapper rendering a staff with clef, key signature, and 
 
 **Size:** M  
 **Deps:** PD-201  
-**Status:** Todo
+**Status:** Done
 
-Correct chord layout including seconds clusters, ledger lines, accidentals not in key signature, and whole-note default with quarter-note option.
+Correct chord layout including seconds clusters, ledger lines, accidentals not in key signature, and whole notes (no quarter notes in the MVP).
 
 **Acceptance:**
-- [ ] Snapshot test gallery for tricky cases (adjacent seconds, 3 ledger lines, double accidentals).
+- [x] Snapshot test gallery for tricky cases (adjacent seconds, 3 ledger lines, double accidentals).
+
+**Notes:** verified in the Notation gallery's "Tricky cases" (seconds clusters, up to 3 ledger lines, double accidentals, naturals). Ledger lines use the theme color (VexFlow's default dark gray was invisible in dark mode). Whole notes only.
 
 ### PD-203: Grand staff renderer
 
@@ -480,7 +484,7 @@ End-of-session stats: median/mean time, accuracy, slowest 5 targets, per-rep lis
 **Deps:** PD-108, PD-002  
 **Status:** Todo
 
-Level list with targets/locks, custom preset editor for all dimensions in §3, live preview of sample targets, save/load/delete presets, "free play" unlock toggle.
+Level list with targets/locks, custom preset editor for all dimensions in §3, live preview of sample targets, save/load/delete presets, "free play" unlock toggle. **Hand options are checkboxes:** "Left hand only", "Right hand only", "Both hands" (several checked = random per target). **Notes per hand** are checkboxes too: 1 (single note), 2 (interval), 3 and above (chords). The Generator preview screen shows this layout.
 
 **Acceptance:**
 - [ ] Any valid configuration can be created, previewed, saved, and launched.
@@ -598,7 +602,7 @@ Service worker, manifest, icons, offline operation for everything except nothing
 **Deps:** PD-003  
 **Status:** Todo
 
-Input device, timeout default, pre-flash delay, notation size, note head style, sound effects, data export/import/reset.
+Input device, timeout default, pre-flash delay, notation size, sound effects, data export/import/reset.
 
 **Acceptance:**
 - [ ] Settings persist and take effect without reload.

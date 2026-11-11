@@ -257,6 +257,122 @@ select {
   color: var(--text-muted);
 }
 
+/* Picture toggle buttons (hands, notes per hand) */
+.tiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.tile {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 0.25rem;
+  width: 9.5rem;
+  padding: 0.5rem 0.5rem 0.6rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  font: inherit;
+  cursor: pointer;
+}
+
+.tile[aria-pressed='true'] {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 2px var(--accent);
+  font-weight: 700;
+}
+
+.tile:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.tile-note {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.tile-check {
+  display: none;
+  position: absolute;
+  top: 0.3rem;
+  right: 0.3rem;
+  width: 1.4rem;
+  height: 1.4rem;
+  line-height: 1.4rem;
+  text-align: center;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-text);
+  font-size: 0.9rem;
+}
+
+.tile[aria-pressed='true'] .tile-check {
+  display: block;
+}
+
+.hand-picture {
+  width: 100%;
+  height: auto;
+}
+
+.hand-picture .key {
+  fill: var(--bg);
+  stroke: var(--text);
+  stroke-width: 1;
+}
+
+.hand-picture .key.down {
+  fill: var(--accent);
+}
+
+.hand-picture .key-dot {
+  fill: var(--accent-text);
+}
+
+.hand-picture .palm,
+.hand-picture .finger {
+  fill: var(--text);
+  fill-opacity: 0.6;
+  stroke: var(--bg);
+  stroke-width: 1.5;
+}
+
+.hand-picture .finger.down {
+  fill: var(--text);
+  fill-opacity: 0.9;
+}
+
+/* A checkbox and its label on one line (the default form label layout stacks them). */
+.recorder-form .check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+fieldset {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  display: grid;
+  gap: 0.25rem;
+}
+
+.recent {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.tricky {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+  gap: var(--space);
+  margin-top: var(--space);
+}
+
 /* Corpus recorder */
 .recorder-form {
   display: grid;

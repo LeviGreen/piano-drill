@@ -11,10 +11,15 @@ beforeAll(() => {
   vi.spyOn(console, 'error').mockImplementation(() => {})
 })
 
-const draw = (clef: Clef, key = keySignature(0, 'major'), notes?: string[]) => {
+const draw = (
+  clef: Clef,
+  key = keySignature(0, 'major'),
+  notes?: string[],
+  extra: { ledgerRoom?: number } = {},
+) => {
   const div = document.createElement('div')
   document.body.appendChild(div)
-  const handle = renderStaff(div, { clef, key, notes: notes?.map(parsePitch) })
+  const handle = renderStaff(div, { clef, key, notes: notes?.map(parsePitch), ...extra })
   return { div, handle }
 }
 
@@ -107,5 +112,67 @@ describe('notes on the staff', () => {
     expect(() => draw('treble', c, ['F##4', 'Bbb4'])).not.toThrow()
     expect(() => draw('treble', c, ['C4', 'E5'])).not.toThrow()
     expect(() => draw('bass', c, ['C4', 'G2'])).not.toThrow()
+  })
+})
+
+describe('chord layout (PD-202)', () => {
+  it('puts adjacent notes (seconds) on opposite sides of the stem line', () => {
+    expect(draw('treble', undefined, ['E4', 'F4', 'G4']).handle.displacedNoteheads).toBeGreaterThan(
+      0,
+    )
+    expect(draw('treble', undefined, ['C4', 'D4']).handle.displacedNoteheads).toBeGreaterThan(0)
+    expect(draw('bass', undefined, ['G2', 'A2']).handle.displacedNoteheads).toBeGreaterThan(0)
+  })
+
+  it('leaves spaced notes alone', () => {
+    expect(draw('treble', undefined, ['C4', 'E4', 'G4']).handle.displacedNoteheads).toBe(0)
+    expect(draw('treble', undefined, ['C4']).handle.displacedNoteheads).toBe(0)
+  })
+
+  it('draws whole notes, so there are no stems', () => {
+    expect(
+      draw('treble', undefined, ['C4', 'E4', 'G4']).div.querySelectorAll('.vf-stem'),
+    ).toHaveLength(0)
+  })
+
+  it('makes room for up to three ledger lines on request, keeping the margin the same above and below', () => {
+    for (const ledgerRoom of [0, 1, 2, 3]) {
+      const { handle } = draw('treble', undefined, ['A3'], { ledgerRoom })
+      expect(handle.lineY.bottom - handle.lineY.top).toBe(40)
+      expect(handle.lineY.top).toBe(25 + 10 * ledgerRoom)
+      expect(handle.size.height - handle.lineY.bottom).toBe(25 + 10 * ledgerRoom)
+    }
+    expect(draw('treble').handle.size).toEqual({ width: 320, height: 110 }) // default: MVP range, one ledger line
+  })
+
+  it("draws ledger lines in the theme color, not VexFlow's default dark gray (visible in dark mode)", () => {
+    const { div } = draw('treble', undefined, ['F3', 'A3', 'C4'], { ledgerRoom: 3 })
+    const ledger = [...div.querySelectorAll('.vf-stavenote path')].filter((p) =>
+      /^M[\d.]+ [\d.]+L[\d.]+ [\d.]+$/.test(p.getAttribute('d') ?? ''),
+    )
+    expect(ledger).toHaveLength(3)
+    for (const line of ledger) {
+      // No stroke of its own: it inherits currentColor from the note group.
+      expect(line.getAttribute('stroke')).toBeNull()
+      expect(Number(line.getAttribute('stroke-width'))).toBeGreaterThanOrEqual(2)
+      expect(line.parentElement?.getAttribute('stroke')).toBe('currentColor')
+    }
+    expect(div.innerHTML).not.toContain('#444')
+  })
+
+  it('draws chords with three ledger lines and double accidentals in every key without throwing', () => {
+    for (const key of ALL_KEYS) {
+      expect(() => draw('treble', key, ['F3', 'A3', 'C4'], { ledgerRoom: 3 })).not.toThrow()
+      expect(() => draw('treble', key, ['F##4', 'Bbb4', 'C6'], { ledgerRoom: 3 })).not.toThrow()
+      expect(() => draw('bass', key, ['C2', 'E2', 'G2'], { ledgerRoom: 3 })).not.toThrow()
+    }
+  })
+
+  it('shows accidentals correctly in a chord, per note, relative to the key', () => {
+    const shown = (key: ReturnType<typeof keySignature>, notes: string[]) =>
+      draw('treble', key, notes).handle.noteAccidentals
+    expect(shown(keySignature(2, 'major'), ['D4', 'F#4', 'A4'])).toEqual([]) // D major chord in D major
+    expect(shown(keySignature(0, 'major'), ['D4', 'F#4', 'A4'])).toEqual(['#'])
+    expect(shown(keySignature(0, 'major'), ['E4', 'G#4', 'B4'])).toEqual(['#'])
   })
 })

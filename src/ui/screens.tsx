@@ -48,6 +48,9 @@ export function SettingsScreen() {
       <p>
         <Link to="/settings/notation-gallery">Notation gallery</Link>
       </p>
+      <p>
+        <Link to="/settings/generator-preview">Generator preview</Link>
+      </p>
     </>
   )
 }

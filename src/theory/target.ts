@@ -19,5 +19,11 @@ export type Target = {
   id: string
   key: KeySignature
   parts: HandPart[]
-  content: { type: ContentType; quality?: string; inversion?: number }
+  content: {
+    type: ContentType
+    quality?: string
+    inversion?: number
+    /** Scale degree (1..7) the chord was built on, when it is a chord. */
+    degree?: number
+  }
 }

@@ -180,7 +180,7 @@ Requirements:
 
 - Render treble, bass, and grand staff (both clefs with a brace) with key signatures from 7♭ to 7♯.
 - Correct accidental display (courtesy accidentals not required; accidentals only when not implied by key signature).
-- Notes: whole notes or quarter notes (stemless whole notes are simplest and avoid stem-direction complexity; configurable).
+- Notes: whole notes only (stemless, which avoids stem-direction complexity).
 - Chords: correct handling of seconds (note-heads offset on either side of the stem/line) and ledger lines.
 - Crisp on mobile/retina screens, scalable, with a **large-print** option.
 - **Fast paint:** the render must be completed in a single frame so the timer start is honest. Pre-render the next target off-screen / cache SVG, then swap in.
@@ -404,7 +404,7 @@ IDLE → READY → FLASHED → (WRONG_NOTE → FLASHED)* → SUCCESS | TIMEOUT |
 | **What counts as "correct" when extra notes ring?** | Proposed: any unexpected strong note = error unless it's a rolled-chord overlap/sympathetic resonance below threshold. Tunable. |
 | **Pedal / sustain** | Recommend no pedal; app waits for silence. |
 | **Strict octave vs any octave** | Default strict; setting to relax. |
-| **Whole vs quarter notes** | Default whole notes (simplest, cleanest). |
+| **Whole vs quarter notes** | Decided: whole notes only. |
 | **Name / brand** | TBD. |
 
 ---
@@ -510,7 +510,7 @@ VexFlow (or chosen lib) wrapper rendering a staff with clef, key signature, and 
 
 ### PD-202: Chords, intervals & accidentals
 **Size:** M · **Deps:** PD-201
-Correct chord layout including seconds clusters, ledger lines, accidentals not in key signature, and whole-note default with quarter-note option.
+Correct chord layout including seconds clusters, ledger lines, accidentals not in key signature, and whole notes (no quarter notes in the MVP).
 **Acceptance:**
 - Snapshot test gallery for tricky cases (adjacent seconds, 3 ledger lines, double accidentals).
 
@@ -696,7 +696,7 @@ Service worker, manifest, icons, offline operation for everything except nothing
 
 ### PD-703: Settings screen
 **Size:** S · **Deps:** PD-003
-Input device, timeout default, pre-flash delay, notation size, note head style, sound effects, data export/import/reset.
+Input device, timeout default, pre-flash delay, notation size, sound effects, data export/import/reset.
 **Acceptance:**
 - Settings persist and take effect without reload.
 
