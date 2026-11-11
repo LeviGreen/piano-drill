@@ -24,13 +24,13 @@ Cross out a row (`~~text~~` in each cell) when its ticket is Done. Rows that are
 | 0 Project Foundations | PD-004 | GitHub Pages deploy & routing |
 | ~~1 Music Theory Engine~~ | ~~PD-101~~ | ~~Core pitch & spelling primitives~~ |
 | ~~1 Music Theory Engine~~ | ~~PD-102~~ | ~~Keys & key signatures~~ |
-| 1 Music Theory Engine | PD-103 | Diatonic chord & interval library |
+| ~~1 Music Theory Engine~~ | ~~PD-103~~ | ~~Diatonic chord & interval library~~ |
 | ~~1 Music Theory Engine~~ | ~~PD-104~~ | ~~Register, playability & readability constraints~~ |
 | 1 Music Theory Engine | PD-105 | Target generator — single-hand content |
 | 1 Music Theory Engine | PD-106 | Two-hand voicing templates & generator |
 | 1 Music Theory Engine | PD-107 | "Either hand, one at a time" & cross-clef options |
 | 1 Music Theory Engine | PD-108 | Level & preset schema |
-| 2 Notation Rendering | PD-201 | Single staff renderer (treble/bass) with key signature |
+| ~~2 Notation Rendering~~ | ~~PD-201~~ | ~~Single staff renderer (treble/bass) with key signature~~ |
 | 2 Notation Rendering | PD-202 | Chords, intervals & accidentals |
 | 2 Notation Rendering | PD-203 | Grand staff renderer |
 | 2 Notation Rendering | PD-204 | Flash performance & timing hook |
@@ -141,7 +141,7 @@ Publish the app as a GitHub Pages site. Set the Vite `base` for the repo subpath
 
 ## Epic 1 — Music Theory Engine
 
-Progress: 3/8 tickets done
+Progress: 4/8 tickets done
 
 ### PD-101: Core pitch & spelling primitives
 
@@ -169,12 +169,12 @@ All 15 major and 15 minor key signatures (including enharmonic pairs), accidenta
 
 **Size:** M  
 **Deps:** PD-102  
-**Status:** Todo
+**Status:** Done
 
 Interval qualities/sizes; triads and seventh chords built diatonically per key (major, natural/harmonic minor); inversions; chord naming (for labels/debug); partial-chord subset logic (§4.2).
 
 **Acceptance:**
-- [ ] Given a key + degree + quality + inversion, produces correct spelled pitches; test table covering all degrees in several keys.
+- [x] Given a key + degree + quality + inversion, produces correct spelled pitches; test table covering all degrees in several keys.
 
 ### PD-104: Register, playability & readability constraints
 
@@ -233,18 +233,20 @@ JSON schema + validator for difficulty settings (§3); the 10 preset levels from
 
 ## Epic 2 — Notation Rendering
 
-Progress: 0/6 tickets done
+Progress: 1/6 tickets done
 
 ### PD-201: Single staff renderer (treble/bass) with key signature
 
 **Size:** M  
 **Deps:** PD-102  
-**Status:** Todo
+**Status:** Done
 
 VexFlow (or chosen lib) wrapper rendering a staff with clef, key signature, and notes. Responsive scaling, high-DPI.
 
 **Acceptance:**
-- [ ] Renders all 30 key signatures in both clefs correctly (visual snapshot tests).
+- [x] Renders all 30 key signatures in both clefs correctly (visual snapshot tests).
+
+**Notes:** verified by eye in the Notation gallery (Settings > Notation gallery) and by tests that compare VexFlow's accidental placement with our own table for all 30 keys on both clefs. Uses VexFlow's Bravura-only entry; the main bundle is ~1.0 MB (see PD-705).
 
 ### PD-202: Chords, intervals & accidentals
 
@@ -285,7 +287,7 @@ Pre-render next target off-screen; atomic swap; expose a `onPainted(timestamp)` 
 **Deps:** PD-202  
 **Status:** Todo
 
-Optional note-name labels on notes; piano keyboard component highlighting target keys (for reveal-on-miss and on-screen input).
+Optional note-name labels on notes; piano keyboard component highlighting target keys (for reveal-on-miss and on-screen input). Support per-note highlight states (heard / missing) for the staff and keyboard, used by the drill screen's per-note feedback.
 
 **Acceptance:**
 - [ ] Reveal view shows correct names/highlights for any target.
@@ -373,7 +375,7 @@ Record and label a corpus (acoustic piano, various phones/positions/rooms, plus 
 **Deps:** PD-305, PD-306  
 **Status:** Todo
 
-Implement the verifier of §6.2: expected-note presence scoring with harmonic templates, explaining-away residual for unexpected notes, temporal consistency (K frames), octave disambiguation, inharmonicity tolerance. Compare against alternatives (chromagram, Basic Pitch) on the corpus; write up a decision.
+Implement the verifier of §6.2: expected-note presence scoring with harmonic templates, explaining-away residual for unexpected notes, temporal consistency (K frames), octave disambiguation, inharmonicity tolerance. Compare against alternatives (chromagram, Basic Pitch) on the corpus; write up a decision. **Verification is per-note and cumulative (design §6.2):** each expected pitch is latched once heard (with an onset after t₀) and stays heard for the attempt; the target is satisfied when all are latched, not when all sound together. The "≥ 90% correct" criterion is measured at the attempt level on the corpus.
 
 **Acceptance:**
 - [ ] Meets the M0 exit criterion (≥ 90% correct verification on single notes + triads in a quiet room), < 100 ms detection latency, false-accept rate on wrong-note cases < 5%. Written findings and recommended thresholds.
@@ -384,7 +386,7 @@ Implement the verifier of §6.2: expected-note presence scoring with harmonic te
 **Deps:** PD-307  
 **Status:** Todo
 
-Wrap capture + verifier as a `NoteInput`; support "expected set" being supplied to the verifier; emit satisfied/unexpected-note events with onset timestamps; "wait for silence" signal.
+Wrap capture + verifier as a `NoteInput`; support "expected set" being supplied to the verifier; emit satisfied/unexpected-note events with onset timestamps; "wait for silence" signal. Emit per-note events (a note became heard; an unexpected note was detected), not only an all-satisfied event, so the UI can show which notes are still missing.
 
 **Acceptance:**
 - [ ] End-to-end: playing a target on a piano triggers success events with correct onset timing.
@@ -395,7 +397,7 @@ Wrap capture + verifier as a `NoteInput`; support "expected set" being supplied 
 **Deps:** PD-308  
 **Status:** Todo
 
-Compute reaction and completion times from onset estimates (not verifier fire time); subtract calibrated device latency; handle rolled chords and re-struck notes.
+Compute reaction and completion times from onset estimates (not verifier fire time); subtract calibrated device latency; handle rolled chords and re-struck notes. Completion time is the onset of the note that completed the set (the last expected note heard).
 
 **Acceptance:**
 - [ ] Timing error vs. ground truth (MIDI-synced recordings) within ±50 ms on corpus.
@@ -445,7 +447,7 @@ Progress: 0/6 tickets done
 **Deps:** PD-301, PD-204  
 **Status:** Todo
 
-Implement states from §9.3 with a fake-clock-friendly design; start/pause/end; timeout; skip; wrong-note logging; "wait for silence" gating; t₀ capture.
+Implement states from §9.3 with a fake-clock-friendly design; start/pause/end; timeout; skip; wrong-note logging; "wait for silence" gating; t₀ capture. Track the set of expected notes heard so far; the attempt succeeds when all have been heard, in any order and not necessarily together.
 
 **Acceptance:**
 - [ ] Deterministic tests cover success, wrong-then-right, timeout, skip, and pause paths.
@@ -456,7 +458,7 @@ Implement states from §9.3 with a fake-clock-friendly design; start/pause/end; 
 **Deps:** PD-401, PD-203  
 **Status:** Todo
 
-Main play screen: big staff, minimal chrome, optional timer visibility, success/miss feedback, reveal on miss (using PD-205), shortcuts, input source selector.
+Main play screen: big staff, minimal chrome, optional timer visibility, success/miss feedback, reveal on miss (using PD-205), shortcuts, input source selector. **Per-note feedback (design §10):** three states per expected note (heard = green halo + check mark, almost = dashed outline, missing = none), a keyboard strip showing what the mic actually detected, escalating hints for a stuck note, and a "3 / 5 notes" counter. The timer stops on the last note.
 
 **Acceptance:**
 - [ ] Full rep loop works with on-screen keyboard input at levels 1–10.

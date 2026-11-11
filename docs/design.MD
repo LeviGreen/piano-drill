@@ -47,7 +47,7 @@ An intermediate learner or returning pianist who can read slowly and wants to ge
 2. **Ready state:** a blank staff area with a short "get your hands on the keys" pause (user-configurable, or tap/spacebar to flash).
 3. **Flash:** the target notation appears. The timer starts on the frame in which it is first painted.
 4. User plays the notes.
-5. App detects the correct note set → timer stops → brief positive feedback with the time (e.g. "1.42 s"). Auto-advances after a short delay.
+5. As each expected note is detected it gets a green shadow on the staff (**per-note feedback**). When every expected note has been heard → timer stops → brief positive feedback with the time (e.g. "1.42 s"). Auto-advances after a short delay. Notes do not have to sound together (see §6.2).
 6. If the user plays wrong notes, they are logged as errors; the timer keeps running until the correct set is played or the user skips/times out.
 7. After N reps (e.g. 20) or when the user ends the session, show a summary: median time, accuracy, slowest items, comparison to previous sessions at the same level.
 
@@ -217,7 +217,9 @@ General polyphonic transcription from a mic is hard. But we have a big advantage
 
 - For each expected pitch, compute a **presence score** from spectral energy at its fundamental and first several harmonics (using the expected spectral envelope of a piano), compared to the local noise/neighbor-bin energy.
 - Compute an **extra-note score**: after "explaining away" energy from the expected notes (and their harmonics), is there significant remaining energy at other pitch-class bins consistent with a different note?
-- A target is **satisfied** when all expected pitches have presence above threshold **and** no strong unexpected notes exist, for ≥ K consecutive analysis frames (to reject transients).
+- An expected pitch is **heard** once its presence is above threshold for ≥ K consecutive analysis frames (to reject transients), with an onset after t₀. A heard note stays heard for the rest of the attempt.
+- A target is **satisfied** when every expected pitch has been heard. **The goal is to get all the notes, not a perfectly synchronized chord:** a user whose mic misses a note can replay that note louder or on its own and it still counts. Unexpected strong notes are logged as errors but do not undo notes already heard.
+- The UI shows per-note progress so the user can see exactly which note the mic still needs (see **Per-note feedback** in §10).
 
 This is far more robust than blind transcription, particularly for chords where harmonics overlap (e.g. C and G share harmonics; octave doublings fully overlap).
 
@@ -233,14 +235,14 @@ This is far more robust than blind transcription, particularly for chords where 
 | **Sympathetic resonance / sustained previous notes** | Detect *onsets* (spectral flux) after flash; only notes whose onset is after t0 count. Ask user to release/dampen before the next flash (auto-wait until silence detected). |
 | **Sustain pedal** | Same as above; recommend no pedal; "wait for quiet" before next flash. |
 | **Extra notes / wrong notes** | Logged as errors; they do **not** pass verification; timer continues. Brief wrong-note tolerance: a wrong note followed by correction still counts as an error rep. |
-| **Chord not struck simultaneously (rolled)** | Notes within a configurable window (e.g. 300 ms) are treated as one attempt; or simply require all notes to be present simultaneously at some frame. |
+| **Chord not struck simultaneously (rolled), or a note the mic misses** | Accepted by design: each expected note is latched when heard (§6.2), so notes can be played together, rolled, or re-played individually. |
 | **Digital piano through speakers** | Works; headphone-out into the device is not supported via mic (a MIDI connection would, but MIDI input is not supported). |
 
 ### 6.4 Timing
 
 - **t₀** = timestamp of the frame where the target is first painted: record `performance.now()` inside `requestAnimationFrame` after the DOM/SVG swap, and map to the audio clock via `AudioContext.getOutputTimestamp()` / `currentTime` correlation.
 - **t_first** = estimated onset of the first note of the attempt ("reaction time").
-- **t_complete** = estimated onset of the last required note such that the full set is then satisfied ("completion time"). The **headline number** is `t_complete − t₀`.
+- **t_complete** = estimated onset of the note that completed the set, i.e. the last expected note to be heard ("completion time"). The **headline number** is `t_complete − t₀`.
 - **Latency compensation:** subtract analysis-window delay (and calibrated input latency) so reported time reflects when the keys were struck, not when the algorithm became confident. Onset times are estimated from spectral flux peaks rather than from the moment the verifier fired.
 - Show both *reaction* and *completion* in the detailed result; the session summary uses completion time.
 - Verification itself must have low latency (target: < ~100 ms from keystroke to feedback) so the app feels responsive. Use short hops (e.g. 512–1024 samples) with overlapping, multi-resolution windows.
@@ -369,6 +371,11 @@ IDLE → READY → FLASHED → (WRONG_NOTE → FLASHED)* → SUCCESS | TIMEOUT |
 - Primary screen is nearly just a **big staff**, a timer (optionally hidden to avoid anxiety; show result after), and minimal chrome.
 - Keyboard/touch shortcuts: Space = skip/next, Esc = end session; big touch targets for mid-session controls.
 - Optional pre-flash cue (e.g. 3-2-1 or a single beat) vs. "wait for silence then flash after random 0.5–1.5 s".
+- **Per-note feedback** (the point is to tell the user *which* note to fix, and how):
+  - Each expected note is in one of three states: **heard** (solid green halo plus a check mark), **almost** (dashed outline, shown when the mic has a weak signal for it), or **missing** (no marking). Never color alone.
+  - A small keyboard strip beside the staff lights the keys the mic actually detected, including wrong ones, so "I'm hearing F♯4, not G4" is visible.
+  - Help escalates: if one note stays missing it gently pulses with a short hint ("G4: try playing it louder, or on its own"); if several low notes keep failing it suggests moving the mic closer. No pulsing when reduced motion is on.
+  - A "3 / 5 notes" counter; the timer stops on the last note.
 - Reveal on miss: show note names + a piano keyboard diagram highlighting target keys.
 - Accessibility: high-contrast theme, large staff option, color-blind-safe feedback (don't rely on red/green only), reduced motion option.
 - Sound effects optional (off by default since the mic is open — avoid feedback loops; and no audio playback during listening).

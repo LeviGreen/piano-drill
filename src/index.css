@@ -228,6 +228,35 @@ select {
   }
 }
 
+/* Notation */
+.staff {
+  color: var(--text);
+}
+
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+  gap: var(--space);
+}
+
+.gallery-item {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 0.5rem 0.75rem;
+}
+
+.gallery-item h2 {
+  font-size: 1rem;
+  margin: 0;
+}
+
+.gallery-keys {
+  margin: 0 0 0.25rem;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
 /* Corpus recorder */
 .recorder-form {
   display: grid;

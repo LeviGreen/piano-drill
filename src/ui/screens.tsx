@@ -45,6 +45,9 @@ export function SettingsScreen() {
       <p>
         <Link to="/settings/corpus-recorder">Corpus recorder</Link>
       </p>
+      <p>
+        <Link to="/settings/notation-gallery">Notation gallery</Link>
+      </p>
     </>
   )
 }

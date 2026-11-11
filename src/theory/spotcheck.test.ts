@@ -7,6 +7,13 @@ import {
   scale,
   signaturePlacement,
 } from './keys'
+import {
+  describePitches,
+  diatonicChord,
+  diatonicChords,
+  diatonicInterval,
+  preferredSubset,
+} from './chords'
 import { validateTarget } from './constraints'
 import { formatPitch as f, parsePitch } from './pitch'
 import type { Hand, Target } from './target'
@@ -53,4 +60,26 @@ it.skipIf(!SPOT)('prints constraint examples for eyeballing', () => {
     check('6 notes in one hand', part('RH', 'treble', 'C4', 'D4', 'E4', 'F4', 'G4', 'A4')),
   ]
   console.log('\nSPOT2\n' + lines.join('\n') + '\nENDSPOT2')
+})
+
+it.skipIf(!SPOT)('prints chord examples for eyeballing', () => {
+  const c = k(0, 'major')
+  const lines = [
+    diatonicChords(c)
+      .map((x) => x.label)
+      .join(' '),
+    diatonicChords(c, 'seventh')
+      .map((x) => x.label)
+      .join(' '),
+    diatonicChords(k(0, 'minor'), 'triad', { form: 'harmonic' })
+      .map((x) => x.label)
+      .join(' '),
+    [0, 1, 2, 3]
+      .map((i) => describePitches(diatonicChord(c, 5, 'seventh', { inversion: i }).pitches))
+      .join(' | '),
+    describePitches(diatonicChord(k(6, 'major'), 7).pitches),
+    describePitches(preferredSubset(diatonicChord(c, 5, 'seventh'), 3).map((x) => x.pitch)),
+    `${diatonicInterval(k(2, 'major'), 3, 3).name} ${describePitches([diatonicInterval(k(2, 'major'), 3, 3).lower, diatonicInterval(k(2, 'major'), 3, 3).upper])}`,
+  ]
+  console.log('\nSPOT3\n' + lines.join('\n') + '\nENDSPOT3')
 })
