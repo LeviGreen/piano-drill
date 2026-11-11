@@ -226,7 +226,7 @@ This is far more robust than blind transcription, particularly for chords where 
 | **Octave errors** (a C4 vs C5 look similar due to harmonics) | Weight lower harmonics' relative energy pattern; use expected-envelope template match; compare energy of octave-below candidate. Strict octave required by default; setting for "any octave" fallback. |
 | **Low bass notes** (poor frequency resolution) | Larger FFT/CQT window for the bass band (multi-resolution analysis), parabolic interpolation, sub-bin phase info; accept slightly longer settle time for low notes. |
 | **Piano inharmonicity** | Allow slightly stretched harmonic positions (partial frequencies drift sharp for high partials). |
-| **Detuned piano** | Estimate user's tuning offset (e.g. A=438–445) during calibration and shift bins. |
+| **Detuned piano** | Estimate user's tuning offset (e.g. A=438–445) during calibration and shift bins. Real pianos are also out of tune note-by-note, so a calibration mode builds a per-note tuning profile (see PD-312) that the verifier uses to shift expected bins. |
 | **Room noise / other sounds** | Noise-floor estimate; calibrating gate; ignore frames below energy threshold. |
 | **Sympathetic resonance / sustained previous notes** | Detect *onsets* (spectral flux) after flash; only notes whose onset is after t0 count. Ask user to release/dampen before the next flash (auto-wait until silence detected). |
 | **Sustain pedal** | Same as above; recommend no pedal; "wait for quiet" before next flash. |

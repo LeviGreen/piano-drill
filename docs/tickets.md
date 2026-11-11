@@ -21,7 +21,8 @@ Cross out a row (`~~text~~` in each cell) when its ticket is Done. Rows that are
 | ~~0 Project Foundations~~ | ~~PD-001~~ | ~~Project scaffolding~~ |
 | ~~0 Project Foundations~~ | ~~PD-002~~ | ~~App shell & routing~~ |
 | 0 Project Foundations | PD-003 | Local storage layer (deferred) |
-| 1 Music Theory Engine | PD-101 | Core pitch & spelling primitives |
+| 0 Project Foundations | PD-004 | GitHub Pages deploy & routing |
+| ~~1 Music Theory Engine~~ | ~~PD-101~~ | ~~Core pitch & spelling primitives~~ |
 | 1 Music Theory Engine | PD-102 | Keys & key signatures |
 | 1 Music Theory Engine | PD-103 | Diatonic chord & interval library |
 | 1 Music Theory Engine | PD-104 | Register, playability & readability constraints |
@@ -35,7 +36,7 @@ Cross out a row (`~~text~~` in each cell) when its ticket is Done. Rows that are
 | 2 Notation Rendering | PD-204 | Flash performance & timing hook |
 | 2 Notation Rendering | PD-205 | Overlays — note names & keyboard diagram |
 | 2 Notation Rendering | PD-206 | Large-print & accessibility options |
-| 3 Input & Verification | PD-301 | `NoteInput` interface & `ScriptedInput` |
+| ~~3 Input & Verification~~ | ~~PD-301~~ | ~~`NoteInput` interface & `ScriptedInput`~~ |
 | 3 Input & Verification | PD-302 | On-screen keyboard input |
 | 3 Input & Verification | PD-303 | Web MIDI input |
 | 3 Input & Verification | PD-304 | Mic capture pipeline |
@@ -46,6 +47,7 @@ Cross out a row (`~~text~~` in each cell) when its ticket is Done. Rows that are
 | 3 Input & Verification | PD-309 | Onset-based timing & latency compensation |
 | 3 Input & Verification | PD-310 | Low-register & octave robustness |
 | 3 Input & Verification | PD-311 | Calibration wizard |
+| 3 Input & Verification | PD-312 | Per-note tuning profile (out-of-tune piano) |
 | 4 Drill Session (Play Mode) | PD-401 | Session state machine & timing core |
 | 4 Drill Session (Play Mode) | PD-402 | Drill screen UI |
 | 4 Drill Session (Play Mode) | PD-403 | Session summary screen |
@@ -74,16 +76,16 @@ Cross out a row (`~~text~~` in each cell) when its ticket is Done. Rows that are
 3. **M0 gate:** decide go/no-go on mic approach (fallback: ship MIDI/on-screen first, keep mic as beta).
 4. **M1:** PD-302, PD-303, PD-401 → PD-403, PD-308 → PD-309, PD-404 → PD-406
 5. **M2:** PD-106, PD-107, PD-203, then Epic 5
-6. **M3:** PD-310, PD-311, Epic 7
+6. **M3:** PD-310, PD-311, PD-312, Epic 7
 
 ## Ticket Index
 
 | Epic | Tickets |
 |---|---|
-| 0 Foundations | PD-001 – PD-003 |
+| 0 Foundations | PD-001 – PD-004 |
 | 1 Theory Engine | PD-101 – PD-108 |
 | 2 Notation | PD-201 – PD-206 |
-| 3 Input & Verification | PD-301 – PD-311 |
+| 3 Input & Verification | PD-301 – PD-312 |
 | 4 Drill Session | PD-401 – PD-406 |
 | 5 Key ID Mode | PD-501 – PD-505 |
 | 7 Polish & Release | PD-701 – PD-706 |
@@ -92,7 +94,7 @@ Cross out a row (`~~text~~` in each cell) when its ticket is Done. Rows that are
 
 ## Epic 0 — Project Foundations
 
-Progress: 2/3 tickets done (1 deferred)
+Progress: 2/4 tickets done (1 deferred)
 
 ### PD-001: Project scaffolding
 
@@ -127,20 +129,31 @@ IndexedDB wrapper (Dexie or similar) with repositories for settings, custom pres
 **Acceptance:**
 - [ ] CRUD tests pass; export → wipe → import restores data.
 
+### PD-004: GitHub Pages deploy & routing
+
+**Size:** S  
+**Deps:** PD-002  
+**Status:** Todo
+
+Publish the app as a GitHub Pages site. Set the Vite `base` for the repo subpath, make direct URLs and reloads work (e.g. `HashRouter` or a `404.html` fallback), and add a Pages deploy job to CI. Planned for later, near release (alongside PD-702).
+
+**Acceptance:**
+- [ ] The app loads at its GitHub Pages URL, and reloading or deep-linking (e.g. `/key-id`) works.
+
 ## Epic 1 — Music Theory Engine
 
-Progress: 0/8 tickets done
+Progress: 1/8 tickets done
 
 ### PD-101: Core pitch & spelling primitives
 
 **Size:** M  
 **Deps:** PD-001  
-**Status:** Todo
+**Status:** Done
 
 Types and utilities: letter/accidental/octave pitch spelling, MIDI conversion, transposition by interval, enharmonic handling, pitch-class sets, comparison/sorting.
 
 **Acceptance:**
-- [ ] Unit tests for spelling round-trips (including double sharps/flats), interval arithmetic, MIDI ↔ spelling.
+- [x] Unit tests for spelling round-trips (including double sharps/flats), interval arithmetic, MIDI ↔ spelling.
 
 ### PD-102: Keys & key signatures
 
@@ -291,7 +304,7 @@ Staff size setting, high-contrast mode, non-color-only feedback styles.
 
 ## Epic 3 — Input & Verification
 
-Progress: 0/11 tickets done
+Progress: 1/12 tickets done
 
 > **Risk-first epic.** PD-301–PD-304 should start early; PD-307 is the make-or-break spike.
 
@@ -299,12 +312,12 @@ Progress: 0/11 tickets done
 
 **Size:** S  
 **Deps:** PD-001  
-**Status:** Todo
+**Status:** Done
 
 Define the interface from §6.1 and a scripted/fake implementation with controllable timestamps for tests.
 
 **Acceptance:**
-- [ ] Session tests can drive notes deterministically.
+- [x] Session tests can drive notes deterministically.
 
 ### PD-302: On-screen keyboard input
 
@@ -415,6 +428,19 @@ Flow from §6.7: permission, level, noise floor, tuning offset, range check, opt
 
 **Acceptance:**
 - [ ] A new user finishes calibration in < 90 s; results measurably reduce false rejects on a detuned test piano.
+
+### PD-312: Per-note tuning profile (out-of-tune piano)
+
+**Size:** L  
+**Deps:** PD-311, PD-307  
+**Status:** Todo
+
+A calibration mode so the app works with an acoustic piano that is not perfectly in tune. Beyond the single global offset in PD-311, the user plays a guided set of notes across the range and the app measures each note's actual pitch deviation from equal temperament (including stretch in the extremes), building a per-note tuning profile. The verifier uses the profile to shift its expected fundamental and harmonic bins. Notes between sampled ones are interpolated; the user can re-run calibration for part of the range, and a quick "global offset only" mode remains available.
+
+**Acceptance:**
+- [ ] Tuning profile is saved per device/piano and applied automatically by the verifier.
+- [ ] On a test piano detuned by ≥ 30 cents on some notes, the false-reject rate is measurably lower than with the global offset alone.
+- [ ] A full-range calibration completes in a reasonable time (target to be set after the PD-307 spike).
 
 ## Epic 4 — Drill Session (Play Mode)
 
