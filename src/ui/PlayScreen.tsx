@@ -128,7 +128,12 @@ export function PlayScreen({ reps = DEFAULT_REPS, timing }: PlayScreenProps) {
       setResults([...s.results])
       // Each note heard so far gets a green halo on the staff.
       const t = snapshot.target
-      if (t && snapshot.state === 'FLASHED' && snapshot.heard.length > 0 && stage.current) {
+      // That includes the moment the last note completes the target, when the session has already moved on to SUCCESS.
+      const showing =
+        snapshot.state === 'FLASHED' ||
+        snapshot.state === 'SUCCESS' ||
+        (snapshot.state === 'INTERSTITIAL' && snapshot.lastOutcome?.startsWith('correct'))
+      if (t && showing && snapshot.heard.length > 0 && stage.current) {
         const { lh, rh } = hands(t)
         const states = (pitches?: { midi: number }[]) =>
           pitches?.map((p) => (snapshot.heard.includes(p.midi) ? ('heard' as const) : undefined))

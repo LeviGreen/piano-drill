@@ -211,6 +211,22 @@ describe('the rep loop with the on-screen piano', () => {
     fireEvent.pointerUp(window, { pointerId: 1 })
   })
 
+  it('the last note that completes a chord is circled and checked green too, and stays so until the next target', async () => {
+    saveLevel(5) // triads: three notes in one hand
+    const [t] = upcoming(5, 1)
+    const midis = midisOf(t)
+    show({ timing: { ...FAST, feedbackMs: 5000 }, reps: 1 })
+    await userEvent.click(button('Start'))
+    await waitForTarget()
+    playChord(midis)
+    await waitFor(() =>
+      expect(document.querySelectorAll('.staff .note-halo.heard')).toHaveLength(midis.length),
+    )
+    expect(document.querySelectorAll('.staff .note-check')).toHaveLength(midis.length)
+    for (const m of midis) expect(keyEl(m).classList.contains('heard')).toBe(true)
+    await userEvent.click(button('End'))
+  })
+
   it('a wrong note is marked on the keyboard and does not undo notes already heard', async () => {
     const [t] = upcoming(1, 1)
     const [right] = midisOf(t)
