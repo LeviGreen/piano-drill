@@ -5,7 +5,7 @@ This file is the **only** task tracker for the project (no GitHub Issues, Jira, 
 ## How to use
 
 - When you finish a ticket's work, set its **Status** line to `Done` and tick every acceptance checkbox that is met (`- [x]`).
-- Status is one of: `Todo`, `In progress`, `Blocked`, `Done`. Update it as work starts or stalls, not just at the end.
+- Status is one of: `Todo`, `In progress`, `Blocked`, `Deferred`, `Done`. Update it as work starts or stalls, not just at the end.
 - Cross out the ticket's row in the **Status at a glance** table below when it is Done.
 - Update the epic's **Progress** line (`Progress: X/N tickets done`) whenever a ticket's Status changes to or from `Done`.
 - If scope changes, edit the ticket here in the same change as the code. Don't let this file drift from reality.
@@ -14,13 +14,13 @@ This file is the **only** task tracker for the project (no GitHub Issues, Jira, 
 
 ## Status at a glance
 
-Cross out a row (`~~text~~` in each cell) when its ticket is Done. Rows that are not crossed out are still open; add `(in progress)` or `(blocked)` to the description while a ticket is in one of those states.
+Cross out a row (`~~text~~` in each cell) when its ticket is Done. Rows that are not crossed out are still open; add `(in progress)`, `(blocked)` or `(deferred)` to the description while a ticket is in one of those states.
 
 | Epic | Ticket | Short description |
 |---|---|---|
 | ~~0 Project Foundations~~ | ~~PD-001~~ | ~~Project scaffolding~~ |
 | ~~0 Project Foundations~~ | ~~PD-002~~ | ~~App shell & routing~~ |
-| 0 Project Foundations | PD-003 | Local storage layer |
+| 0 Project Foundations | PD-003 | Local storage layer (deferred) |
 | 1 Music Theory Engine | PD-101 | Core pitch & spelling primitives |
 | 1 Music Theory Engine | PD-102 | Keys & key signatures |
 | 1 Music Theory Engine | PD-103 | Diatonic chord & interval library |
@@ -92,7 +92,7 @@ Cross out a row (`~~text~~` in each cell) when its ticket is Done. Rows that are
 
 ## Epic 0 — Project Foundations
 
-Progress: 2/3 tickets done
+Progress: 2/3 tickets done (1 deferred)
 
 ### PD-001: Project scaffolding
 
@@ -120,7 +120,7 @@ Home screen, routes for Play, Key ID, Settings; placeholder screens; responsive 
 
 **Size:** M  
 **Deps:** PD-001  
-**Status:** Todo
+**Status:** Deferred (post-MVP; MVP keeps settings in localStorage. PD-403, PD-405 and PD-703 list this as a dependency, so revisit them when this returns.)
 
 IndexedDB wrapper (Dexie or similar) with repositories for settings, custom presets, sessions, and rep results; schema versioning/migrations; JSON export/import.
 
