@@ -20,7 +20,7 @@ Cross out a row (`~~text~~` in each cell) when its ticket is Done. Rows that are
 |---|---|---|
 | ~~0 Project Foundations~~ | ~~PD-001~~ | ~~Project scaffolding~~ |
 | ~~0 Project Foundations~~ | ~~PD-002~~ | ~~App shell & routing~~ |
-| 0 Project Foundations | PD-003 | Local storage layer (deferred) |
+| ~~0 Project Foundations~~ | ~~PD-003~~ | ~~Local storage layer~~ |
 | 0 Project Foundations | PD-004 | GitHub Pages deploy & routing |
 | ~~1 Music Theory Engine~~ | ~~PD-101~~ | ~~Core pitch & spelling primitives~~ |
 | ~~1 Music Theory Engine~~ | ~~PD-102~~ | ~~Keys & key signatures~~ |
@@ -37,7 +37,7 @@ Cross out a row (`~~text~~` in each cell) when its ticket is Done. Rows that are
 | ~~2 Notation Rendering~~ | ~~PD-205~~ | ~~Overlays — note names & keyboard diagram~~ |
 | 2 Notation Rendering | PD-206 | Large-print & accessibility options |
 | ~~3 Input & Verification~~ | ~~PD-301~~ | ~~`NoteInput` interface & `ScriptedInput`~~ |
-| 3 Input & Verification | PD-302 | On-screen keyboard input |
+| ~~3 Input & Verification~~ | ~~PD-302~~ | ~~On-screen keyboard input~~ |
 | ~~3 Input & Verification~~ | ~~PD-304~~ | ~~Mic capture pipeline~~ |
 | ~~3 Input & Verification~~ | ~~PD-305~~ | ~~Spectral analysis core~~ |
 | ~~3 Input & Verification~~ | ~~PD-306~~ | ~~Test corpus & benchmark harness~~ |
@@ -48,7 +48,7 @@ Cross out a row (`~~text~~` in each cell) when its ticket is Done. Rows that are
 | 3 Input & Verification | PD-311 | Calibration wizard |
 | 3 Input & Verification | PD-312 | Per-note tuning profile (out-of-tune piano) |
 | ~~4 Drill Session (Play Mode)~~ | ~~PD-401~~ | ~~Session state machine & timing core~~ |
-| 4 Drill Session (Play Mode) | PD-402 | Drill screen UI |
+| ~~4 Drill Session (Play Mode)~~ | ~~PD-402~~ | ~~Drill screen UI~~ |
 | 4 Drill Session (Play Mode) | PD-403 | Session summary screen |
 | 4 Drill Session (Play Mode) | PD-404 | Level select & custom settings UI |
 | 4 Drill Session (Play Mode) | PD-405 | Level progression & unlocking |
@@ -93,7 +93,7 @@ Cross out a row (`~~text~~` in each cell) when its ticket is Done. Rows that are
 
 ## Epic 0 — Project Foundations
 
-Progress: 2/4 tickets done (1 deferred)
+Progress: 3/4 tickets done
 
 ### PD-001: Project scaffolding
 
@@ -121,12 +121,14 @@ Home screen, routes for Play, Key ID, Settings; placeholder screens; responsive 
 
 **Size:** M  
 **Deps:** PD-001  
-**Status:** Deferred (post-MVP; MVP keeps settings in localStorage. PD-403, PD-405 and PD-703 list this as a dependency, so revisit them when this returns.)
+**Status:** Done
 
 IndexedDB wrapper (Dexie or similar) with repositories for settings, custom presets, sessions, and rep results; schema versioning/migrations; JSON export/import.
 
 **Acceptance:**
-- [ ] CRUD tests pass; export → wipe → import restores data.
+- [x] CRUD tests pass; export → wipe → import restores data.
+
+**Notes:** `src/storage/`: `PianoDrillDB` (Dexie, schema version 1; later changes go in as a new `version(n)` with an upgrade step), a `Storage` object with sessions (saved together with their reps), custom presets and remembered settings, and `exportBackup` / `parseBackup` / `importBackup` (replace or merge; a checked, versioned JSON file). `getStorage()` gives the app's shared instance. The tests use `fake-indexeddb` (a dev dependency). Nothing in the screens uses it yet: the Play and Key ID settings still live in localStorage until PD-403/404/703 move them over, and finished sessions are not saved until PD-403.
 
 ### PD-004: GitHub Pages deploy & routing
 
@@ -319,7 +321,7 @@ Staff size setting, high-contrast mode, non-color-only feedback styles.
 
 ## Epic 3 — Input & Verification
 
-Progress: 4/11 tickets done
+Progress: 5/11 tickets done
 
 > **Risk-first epic.** PD-301–PD-304 should start early; PD-307 is the make-or-break spike.
 
@@ -338,12 +340,12 @@ Define the interface from §6.1 and a scripted/fake implementation with controll
 
 **Size:** S  
 **Deps:** PD-301, PD-205  
-**Status:** In progress (built and tested; awaiting verification in the browser)
+**Status:** Done
 
 Tap/click keyboard implementing `NoteInput` (multi-touch for chords). Also acts as demo mode.
 
 **Acceptance:**
-- [ ] Multi-touch chord produces the combined active note set.
+- [x] Multi-touch chord produces the combined active note set.
 
 **Notes:** `OnScreenKeyboardInput` (`src/audio/inputs/`) and the press/release props on `PianoKeyboard` (pointer events, one per finger; also Enter/Space). Used by the Play screen.
 
@@ -455,7 +457,7 @@ A calibration mode so the app works with an acoustic piano that is not perfectly
 
 ## Epic 4 — Drill Session (Play Mode)
 
-Progress: 1/6 tickets done
+Progress: 2/6 tickets done
 
 ### PD-401: Session state machine & timing core
 
@@ -474,14 +476,14 @@ Implement states from §9.3 with a fake-clock-friendly design; start/pause/end; 
 
 **Size:** M  
 **Deps:** PD-401, PD-203  
-**Status:** In progress (built with the on-screen piano and tested; awaiting verification in the browser)
+**Status:** Done
 
 Main play screen: big staff, minimal chrome, optional timer visibility, success/miss feedback, reveal on miss (using PD-205), shortcuts, input source selector. **Per-note feedback (design §10):** three states per expected note (heard = green halo + check mark, almost = dashed outline, missing = none), a keyboard strip showing what the mic actually detected, escalating hints for a stuck note, and a "3 / 5 notes" counter. The timer stops on the last note. **A 4, 3, 2, 1 countdown** shows over the empty staff during the first get-ready of a session (and after a resume), not between targets. **The grand staff is always on screen** (empty, with both clefs, when idle, while getting ready and between targets); notes appear on it and clear back to it, so nothing pops in or shifts.
 
 **Acceptance:**
-- [ ] Full rep loop works with on-screen keyboard input at levels 1–10.
+- [x] Full rep loop works with on-screen keyboard input at levels 1–10.
 
-**Notes:** `src/ui/PlayScreen.tsx`, laid out like the Key ID screen (centred column, settings in a drawer, fixed-height status/clock/notes lines so nothing shifts, 4 s countdown over the always-present empty grand staff, results modal at the end). A session is 20 targets. The drawer has the level plus the four options pulled forward from PD-404 (hands, notes per hand, sharps/flats, keys; shared `DifficultyFields` component, also used by the Generator preview). Picking a level fills them in; changing one makes it Custom, and it is remembered. Per-note green halos on the staff and keys, wrong notes marked ✕, "N / M notes" counter, reveal with note names on a timeout or skip. Not built yet, because they need the microphone or a decision: the "almost" state and the detected-notes strip, escalating hints for a stuck note, the input source selector (PD-406), optional timer visibility, and keyboard shortcuts.
+**Notes:** `src/ui/PlayScreen.tsx`, laid out like the Key ID screen (centred column, settings in a drawer, fixed-height status/clock/notes lines so nothing shifts, 4 s countdown over the always-present empty grand staff, results modal at the end). A session is 20 targets. The drawer has the level plus the four options pulled forward from PD-404 (hands, notes per hand, sharps/flats, keys; shared `DifficultyFields` component, also used by the Generator preview). Picking a level fills them in; changing one makes it Custom, and it is remembered. Per-note green halos on the staff and keys, wrong notes marked ✕, "N / M notes" counter, reveal with note names on a timeout or skip. Not built: the "almost" state and the detected-notes strip, escalating hints for a stuck note and the input source selector (all need the microphone; moved to PD-406), and optional timer visibility and keyboard shortcuts (cut to keep the screen simple).
 
 ### PD-403: Session summary screen
 
@@ -529,6 +531,7 @@ Wire `MicInput` into drill loop; handle permission-denied, mic loss, noisy envir
 
 **Acceptance:**
 - [ ] Complete a 20-rep session on a real piano using only the mic.
+- [ ] The Play screen shows the "almost" state and a detected-notes strip, gives escalating hints for a stuck note, and has an input source selector (moved from PD-402).
 - [ ] Key ID's Play view (answer by playing the tonic) works with the mic (moved from PD-504).
 
 ## Epic 5 — Key Identification Mode
