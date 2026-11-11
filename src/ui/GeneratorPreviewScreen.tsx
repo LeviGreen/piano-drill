@@ -2,34 +2,15 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import { createLevelGenerator } from '../levels/levelGenerator'
 import { PRESET_LEVELS } from '../levels/presets'
-import {
-  mergeSettings,
-  parseSettings,
-  type DifficultySettings,
-  type HandMode,
-} from '../levels/settings'
+import { mergeSettings, parseSettings, type DifficultySettings } from '../levels/settings'
 import { GrandStaff } from '../notation/GrandStaff'
 import { PianoKeyboard, type KeyMark } from '../notation/PianoKeyboard'
-import { keyName, type Mode } from '../theory/keys'
+import { keyName } from '../theory/keys'
 import { formatPitch } from '../theory/pitch'
 import type { Target } from '../theory/target'
-import { HandsPicture, NotesPicture } from './HandPictures'
-import { ToggleTile } from './ToggleTile'
+import { DifficultyFields } from './DifficultyFields'
 
 type Mark = 'almost' | 'heard' | 'wrong'
-
-const NOTE_COUNTS = [
-  { value: 1, label: '1 note', note: 'single note' },
-  { value: 2, label: '2 notes', note: 'interval' },
-  { value: 3, label: '3 notes', note: 'triad' },
-  { value: 4, label: '4 notes', note: 'seventh chord' },
-] as const
-
-/** Toggle a value in a list, but never remove the last one. */
-function toggle<T>(list: T[], value: T): T[] {
-  if (!list.includes(value)) return [...list, value]
-  return list.length > 1 ? list.filter((x) => x !== value) : list
-}
 
 const ORDINAL = ['root position', '1st inversion', '2nd inversion', '3rd inversion']
 const names = (pitches: Target['parts'][number]['pitches']) => pitches.map(formatPitch).join(' ')
@@ -172,15 +153,6 @@ export function GeneratorPreviewScreen() {
     }
   }
 
-  const handTile = (mode: HandMode, label: string, pic: 'left' | 'right' | 'both') => (
-    <ToggleTile
-      label={label}
-      pressed={settings.hands.includes(mode)}
-      onToggle={() => edit({ hands: toggle(settings.hands, mode) })}
-    >
-      <HandsPicture hands={pic} />
-    </ToggleTile>
-  )
   const level = PRESET_LEVELS.find((l) => l.id === levelId)
 
   return (
@@ -208,70 +180,7 @@ export function GeneratorPreviewScreen() {
         </label>
         {level && <small className="placeholder">{level.description}</small>}
 
-        <fieldset>
-          <legend>Hands</legend>
-          <div className="tiles">
-            {handTile('LH', 'Left hand only', 'left')}
-            {handTile('RH', 'Right hand only', 'right')}
-            {handTile('both', 'Both hands', 'both')}
-          </div>
-          <small className="placeholder">Pick several to mix them at random.</small>
-        </fieldset>
-
-        <fieldset>
-          <legend>Notes per hand</legend>
-          <div className="tiles">
-            {NOTE_COUNTS.map((n) => (
-              <ToggleTile
-                key={n.value}
-                label={n.label}
-                note={n.note}
-                pressed={settings.notesPerHand.includes(n.value)}
-                onToggle={() => edit({ notesPerHand: toggle(settings.notesPerHand, n.value) })}
-              >
-                <NotesPicture count={n.value} />
-              </ToggleTile>
-            ))}
-            <ToggleTile
-              label="5 notes"
-              note="extended chords, later"
-              pressed={false}
-              onToggle={() => {}}
-              disabled
-            >
-              <NotesPicture count={5} />
-            </ToggleTile>
-          </div>
-          <small className="placeholder">
-            The same choices for one hand or both. With both hands, each hand gets one of these
-            counts and together they make one chord.
-          </small>
-        </fieldset>
-
-        <label>
-          Up to this many sharps/flats
-          <select
-            value={settings.keys.maxAccidentals}
-            onChange={(e) =>
-              edit({ keys: { maxAccidentals: Number(e.target.value), explicit: undefined } })
-            }
-          >
-            {[0, 1, 2, 3, 4, 5, 6, 7].map((n) => (
-              <option key={n}>{n}</option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Keys
-          <select
-            value={settings.keys.modes}
-            onChange={(e) => edit({ keys: { modes: e.target.value as 'both' | Mode } })}
-          >
-            <option value="both">Major and minor</option>
-            <option value="major">Major only</option>
-            <option value="minor">Minor only</option>
-          </select>
-        </label>
+        <DifficultyFields settings={settings} onEdit={edit} />
         <label className="check">
           <input
             type="checkbox"

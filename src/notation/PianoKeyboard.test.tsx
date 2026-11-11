@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { isBlackKey, keyboardLayout, WHITE_H, WHITE_W } from './keyboardLayout'
 import { PianoKeyboard, type KeyMark } from './PianoKeyboard'
@@ -112,5 +112,52 @@ describe('PianoKeyboard', () => {
   it('draws the whole MVP range by default', () => {
     const { container } = render(<PianoKeyboard />)
     expect(container.querySelectorAll('.kb-key')).toHaveLength(35)
+  })
+})
+
+describe('playing the keys (press and release)', () => {
+  const key = (midi: number) => document.querySelector(`[data-midi="${midi}"]`)!
+
+  it('several fingers press several keys at once, and each lifts on its own', () => {
+    const press = vi.fn()
+    const release = vi.fn()
+    render(<PianoKeyboard onKeyPress={press} onKeyRelease={release} />)
+    fireEvent.pointerDown(key(60), { pointerId: 1 })
+    fireEvent.pointerDown(key(64), { pointerId: 2 })
+    fireEvent.pointerDown(key(67), { pointerId: 3 })
+    expect(press.mock.calls.map((c) => c[0])).toEqual([60, 64, 67])
+    expect(release).not.toHaveBeenCalled()
+    fireEvent.pointerUp(window, { pointerId: 2 })
+    expect(release.mock.calls.map((c) => c[0])).toEqual([64])
+    fireEvent.pointerUp(window, { pointerId: 1 })
+    fireEvent.pointerCancel(window, { pointerId: 3 })
+    expect(release.mock.calls.map((c) => c[0])).toEqual([64, 60, 67])
+  })
+
+  it('releases wherever the finger lets go, and not twice', () => {
+    const release = vi.fn()
+    render(<PianoKeyboard onKeyPress={vi.fn()} onKeyRelease={release} />)
+    fireEvent.pointerDown(key(60), { pointerId: 1 })
+    fireEvent.pointerUp(document.body, { pointerId: 1 })
+    fireEvent.pointerUp(window, { pointerId: 1 })
+    expect(release).toHaveBeenCalledTimes(1)
+  })
+
+  it('lets go of held keys if the keyboard goes away', () => {
+    const release = vi.fn()
+    const { unmount } = render(<PianoKeyboard onKeyPress={vi.fn()} onKeyRelease={release} />)
+    fireEvent.pointerDown(key(60), { pointerId: 1 })
+    unmount()
+    expect(release).toHaveBeenCalledWith(60)
+  })
+
+  it('works from the keyboard too: Enter presses, and lifting the key releases', async () => {
+    const press = vi.fn()
+    const release = vi.fn()
+    render(<PianoKeyboard onKeyPress={press} onKeyRelease={release} />)
+    ;(key(60) as SVGElement & HTMLElement).focus()
+    await userEvent.keyboard('{Enter}')
+    expect(press).toHaveBeenCalledWith(60)
+    expect(release).toHaveBeenCalledWith(60)
   })
 })

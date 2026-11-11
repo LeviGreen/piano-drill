@@ -1,18 +1,24 @@
 import { useEffect, useRef, type ReactNode } from 'react'
 
 /**
- * A panel that slides in from the right, over the page, so settings stay out of the way of the game. Closes with the
- * Close button, the backdrop or Escape; focus moves into it when it opens and back to where it was when it closes.
+ * A panel over the page, so settings stay out of the way of the game: a drawer from the right, or (with `centered`) a
+ * wide centred modal for screens with many options. Closes with the Close button, the backdrop or Escape; focus moves into it when it opens and back to where it was when it closes.
  */
 export function SettingsDrawer({
   open,
   onClose,
   title,
+  centered = false,
+  narrow = false,
   children,
 }: {
   open: boolean
   onClose: () => void
   title: string
+  /** A wide modal in the middle of the screen instead of a drawer at the side. */
+  centered?: boolean
+  /** With `centered`: a narrower modal, for a few simple options. */
+  narrow?: boolean
   children: ReactNode
 }) {
   const panel = useRef<HTMLElement>(null)
@@ -37,7 +43,7 @@ export function SettingsDrawer({
       <div className="drawer-backdrop" onClick={onClose} aria-hidden="true" />
       <aside
         ref={panel}
-        className="drawer"
+        className={centered ? `modal settings-modal${narrow ? ' narrow' : ''}` : 'drawer'}
         role="dialog"
         aria-modal="true"
         aria-label={title}

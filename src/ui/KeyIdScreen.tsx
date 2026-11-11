@@ -18,7 +18,9 @@ import type { Presenter, RepResult } from '../session/types'
 import { keySignature } from '../theory/keys'
 import { KeyAnswerInput, type AnswerFeedback, type AnswerView } from './KeyAnswerInput'
 import { SettingsDrawer } from './SettingsDrawer'
+import { ResultsModal } from './ResultsModal'
 import { useCountdown } from './useCountdown'
+import { useRemainingSeconds } from './useRemainingSeconds'
 
 /** A session is always this many questions. */
 const DEFAULT_QUESTIONS = 20
@@ -36,12 +38,6 @@ function loadSettings(): { settings: KeyIdSettings; levelId: number | 'custom' }
     // Storage unavailable or corrupt: fall back to the first level.
   }
   return { settings: KEY_ID_LEVELS[0].settings, levelId: KEY_ID_LEVELS[0].id }
-}
-
-/** 95 s becomes "1:35". */
-const formatTotal = (ms: number) => {
-  const sec = Math.round(ms / 1000)
-  return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`
 }
 
 const drawEmptyStaff = (el: HTMLElement | null) => {
@@ -78,7 +74,6 @@ export function KeyIdScreen({
   const input = useRef<ScriptedInput | null>(null)
   const [snap, setSnap] = useState<KeyIdSnapshot | null>(null)
   const [results, setResults] = useState<RepResult[]>([])
-  const [elapsed, setElapsed] = useState(0)
   const count = useCountdown(snap?.ready ?? null)
 
   useEffect(() => {
@@ -89,18 +84,11 @@ export function KeyIdScreen({
   const state = snap?.state ?? 'IDLE'
   const running = state !== 'IDLE' && state !== 'ENDED'
 
-  // A running timer for the question that is on screen.
-  useEffect(() => {
-    if (state !== 'FLASHED' || snap?.t0 == null) return
-    const t0 = snap.t0
-    const tick = () => setElapsed(Math.max(0, performance.now() - t0))
-    const first = setTimeout(tick, 0) // so a new question never shows the last one's time
-    const id = setInterval(tick, 100)
-    return () => {
-      clearTimeout(first)
-      clearInterval(id)
-    }
-  }, [state, snap?.t0])
+  const remaining = useRemainingSeconds(
+    state === 'FLASHED',
+    snap?.t0 ?? null,
+    settings.timeoutSeconds,
+  )
 
   const start = async () => {
     session.current?.end()
@@ -258,11 +246,7 @@ export function KeyIdScreen({
         )}
       </p>
 
-      <p className="keyid-clock">
-        {state === 'FLASHED' && settings.timeoutSeconds !== null
-          ? Math.max(0, Math.ceil((settings.timeoutSeconds * 1000 - elapsed) / 1000))
-          : ''}
-      </p>
+      <p className="keyid-clock">{remaining ?? ''}</p>
 
       <div className="stage">
         <div ref={stage} className="staff" />
@@ -287,51 +271,35 @@ export function KeyIdScreen({
       </div>
 
       {summary && !dismissed && (
-        <div className="drawer-layer">
-          <div className="drawer-backdrop" onClick={() => setDismissed(true)} aria-hidden="true" />
-          <section className="modal" role="dialog" aria-modal="true" aria-label="Session summary">
-            <h2>Session complete</h2>
-            <p className="modal-score">
-              <strong>
-                {summary.correct} of {summary.reps} correct ({Math.round(summary.accuracy * 100)}%)
-              </strong>
-            </p>
-            <p>Total time: {formatTotal(totalMs)}</p>
-            {mistakes.length > 0 && (
-              <>
-                <h3>Mix-ups</h3>
-                <ul>
-                  {mistakes.map((m) => (
-                    <li key={`${m.correct}-${m.given}`}>
-                      {m.correct}: you said {m.given}
-                      {m.count > 1 && ` (${m.count}×)`}
-                    </li>
-                  ))}
-                </ul>
-              </>
-            )}
-            <div className="modal-actions">
-              <button type="button" onClick={() => setDismissed(true)}>
-                Close
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setDismissed(true)
-                  void start()
-                }}
-              >
-                Go again
-              </button>
-            </div>
-          </section>
-        </div>
+        <ResultsModal
+          correct={summary.correct}
+          reps={summary.reps}
+          totalMs={totalMs}
+          onClose={() => setDismissed(true)}
+          onAgain={() => void start()}
+        >
+          {mistakes.length > 0 && (
+            <>
+              <h3>Mix-ups</h3>
+              <ul>
+                {mistakes.map((m) => (
+                  <li key={`${m.correct}-${m.given}`}>
+                    {m.correct}: you said {m.given}
+                    {m.count > 1 && ` (${m.count}×)`}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </ResultsModal>
       )}
 
       <SettingsDrawer
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         title="Key ID settings"
+        centered
+        narrow
       >
         <label>
           Level

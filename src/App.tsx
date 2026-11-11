@@ -5,9 +5,9 @@ import { MicTestScreen } from './ui/MicTestScreen'
 import { FlashTestScreen } from './ui/FlashTestScreen'
 import { GeneratorPreviewScreen } from './ui/GeneratorPreviewScreen'
 import { KeyIdScreen } from './ui/KeyIdScreen'
-import { SessionDemoScreen } from './ui/SessionDemoScreen'
+import { PlayScreen } from './ui/PlayScreen'
 import { NotationGalleryScreen } from './ui/NotationGalleryScreen'
-import { HomeScreen, NotFoundScreen, PlayScreen, SettingsScreen } from './ui/screens'
+import { HomeScreen, NotFoundScreen, SettingsScreen } from './ui/screens'
 
 export default function App() {
   return (
@@ -22,7 +22,6 @@ export default function App() {
         <Route path="settings/notation-gallery" element={<NotationGalleryScreen />} />
         <Route path="settings/generator-preview" element={<GeneratorPreviewScreen />} />
         <Route path="settings/flash-test" element={<FlashTestScreen />} />
-        <Route path="settings/session-demo" element={<SessionDemoScreen />} />
         <Route path="*" element={<NotFoundScreen />} />
       </Route>
     </Routes>

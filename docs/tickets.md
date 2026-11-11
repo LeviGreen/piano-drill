@@ -338,12 +338,14 @@ Define the interface from §6.1 and a scripted/fake implementation with controll
 
 **Size:** S  
 **Deps:** PD-301, PD-205  
-**Status:** Todo
+**Status:** In progress (built and tested; awaiting verification in the browser)
 
 Tap/click keyboard implementing `NoteInput` (multi-touch for chords). Also acts as demo mode.
 
 **Acceptance:**
 - [ ] Multi-touch chord produces the combined active note set.
+
+**Notes:** `OnScreenKeyboardInput` (`src/audio/inputs/`) and the press/release props on `PianoKeyboard` (pointer events, one per finger; also Enter/Space). Used by the Play screen.
 
 ### PD-304: Mic capture pipeline
 
@@ -466,18 +468,20 @@ Implement states from §9.3 with a fake-clock-friendly design; start/pause/end; 
 **Acceptance:**
 - [x] Deterministic tests cover success, wrong-then-right, timeout, skip, and pause paths.
 
-**Notes:** `DrillSession` in `src/session/`: per-note cumulative verification (a note stays heard; wrong notes are logged but never undo), outcomes correct / correct with errors / timeout / skipped, quiet-wait before each flash (marks a rep that started in a noisy room), pause voids the rep on screen. Runs on an injectable clock (31 deterministic tests). Verified by playing 5 reps in Settings > Session demo. The get-ready wait is fixed (not a setting): 4 seconds at the start of a session and after a resume, 1 second between targets; "Get ready" must be readable for the 4 seconds.
+**Notes:** `DrillSession` in `src/session/`: per-note cumulative verification (a note stays heard; wrong notes are logged but never undo), outcomes correct / correct with errors / timeout / skipped, quiet-wait before each flash (marks a rep that started in a noisy room), pause voids the rep on screen. Runs on an injectable clock (31 deterministic tests). Verified by playing reps on the Play screen. The get-ready wait is fixed (not a setting): 4 seconds at the start of a session and after a resume, 1 second between targets; "Get ready" must be readable for the 4 seconds.
 
 ### PD-402: Drill screen UI
 
 **Size:** M  
 **Deps:** PD-401, PD-203  
-**Status:** Todo
+**Status:** In progress (built with the on-screen piano and tested; awaiting verification in the browser)
 
 Main play screen: big staff, minimal chrome, optional timer visibility, success/miss feedback, reveal on miss (using PD-205), shortcuts, input source selector. **Per-note feedback (design §10):** three states per expected note (heard = green halo + check mark, almost = dashed outline, missing = none), a keyboard strip showing what the mic actually detected, escalating hints for a stuck note, and a "3 / 5 notes" counter. The timer stops on the last note. **A 4, 3, 2, 1 countdown** shows over the empty staff during the first get-ready of a session (and after a resume), not between targets. **The grand staff is always on screen** (empty, with both clefs, when idle, while getting ready and between targets); notes appear on it and clear back to it, so nothing pops in or shifts.
 
 **Acceptance:**
 - [ ] Full rep loop works with on-screen keyboard input at levels 1–10.
+
+**Notes:** `src/ui/PlayScreen.tsx`, laid out like the Key ID screen (centred column, settings in a drawer, fixed-height status/clock/notes lines so nothing shifts, 4 s countdown over the always-present empty grand staff, results modal at the end). A session is 20 targets. The drawer has the level plus the four options pulled forward from PD-404 (hands, notes per hand, sharps/flats, keys; shared `DifficultyFields` component, also used by the Generator preview). Picking a level fills them in; changing one makes it Custom, and it is remembered. Per-note green halos on the staff and keys, wrong notes marked ✕, "N / M notes" counter, reveal with note names on a timeout or skip. Not built yet, because they need the microphone or a decision: the "almost" state and the detected-notes strip, escalating hints for a stuck note, the input source selector (PD-406), optional timer visibility, and keyboard shortcuts.
 
 ### PD-403: Session summary screen
 
@@ -500,6 +504,8 @@ Level list with targets/locks, custom preset editor for all dimensions in §3, l
 
 **Acceptance:**
 - [ ] Any valid configuration can be created, previewed, saved, and launched.
+
+**Notes:** the Play drawer already has the level picker plus hands, notes per hand, sharps/flats and keys (done under PD-402). Still to do here: the full level list with targets/locks, the editor for the remaining dimensions, live preview of samples, save/load/delete presets, and the free-play toggle.
 - [ ] Key-ID levels are selectable from the level screen too (moved from PD-505).
 
 ### PD-405: Level progression & unlocking

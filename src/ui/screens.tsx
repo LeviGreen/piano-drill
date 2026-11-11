@@ -33,7 +33,6 @@ function Placeholder({ title, ticket }: { title: string; ticket: string }) {
   )
 }
 
-export const PlayScreen = () => <Placeholder title="Play" ticket="PD-402" />
 export function SettingsScreen() {
   return (
     <>
@@ -52,9 +51,6 @@ export function SettingsScreen() {
       </p>
       <p>
         <Link to="/settings/flash-test">Flash test</Link>
-      </p>
-      <p>
-        <Link to="/settings/session-demo">Session demo</Link>
       </p>
     </>
   )
