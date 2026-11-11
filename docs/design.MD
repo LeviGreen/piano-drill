@@ -29,6 +29,7 @@ A second, separate mode drills **key signature recognition** with no playing inv
 - Dynamics/touch evaluation.
 - Telling *which hand* played a note (a mic cannot know; see §6.6).
 - Stats screens, charts, and adaptive (weak-spot) practice — cut from the MVP.
+- MIDI / digital-piano input (acoustic piano via microphone only) — cut from the MVP.
 - Accounts/cloud sync/social features (local-only storage in v1).
 - Teaching theory from scratch (some in-app hints, but not a curriculum).
 
@@ -205,9 +206,8 @@ interface NoteInput {
 Implementations:
 
 1. **`MicInput`** — Web Audio + DSP (primary, per the product requirement).
-2. **`MidiInput`** — Web MIDI (exact, zero-latency; optional for users with digital pianos; hugely useful for development and test automation).
-3. **`OnScreenKeyboardInput`** — tap keys on screen (fallback/dev/demo; also lets people try the app without a piano).
-4. **`ScriptedInput`** — test harness that feeds recorded/synthetic note events.
+2. **`OnScreenKeyboardInput`** — tap keys on screen (fallback/dev/demo; also lets people try the app without a piano).
+3. **`ScriptedInput`** — test harness that feeds recorded/synthetic note events.
 
 ### 6.2 Verification, not transcription
 
@@ -232,7 +232,7 @@ This is far more robust than blind transcription, particularly for chords where 
 | **Sustain pedal** | Same as above; recommend no pedal; "wait for quiet" before next flash. |
 | **Extra notes / wrong notes** | Logged as errors; they do **not** pass verification; timer continues. Brief wrong-note tolerance: a wrong note followed by correction still counts as an error rep. |
 | **Chord not struck simultaneously (rolled)** | Notes within a configurable window (e.g. 300 ms) are treated as one attempt; or simply require all notes to be present simultaneously at some frame. |
-| **Digital piano through speakers** | Works; headphone-out into the device is not supported via mic (but MIDI would be). |
+| **Digital piano through speakers** | Works; headphone-out into the device is not supported via mic (a MIDI connection would, but MIDI input is not supported). |
 
 ### 6.4 Timing
 
@@ -253,7 +253,7 @@ This is far more robust than blind transcription, particularly for chords where 
 
 ### 6.6 Hand identification
 
-The mic can only report pitches, not which hand played them. The app therefore verifies *pitches* and trusts that the user used the right hands. For two-hand targets, it checks the union of both parts. (With `MidiInput`, hand split could be inferred only heuristically too; not planned.)
+The mic can only report pitches, not which hand played them. The app therefore verifies *pitches* and trusts that the user used the right hands. For two-hand targets, it checks the union of both parts.
 
 ### 6.7 Calibration & onboarding
 
@@ -321,7 +321,7 @@ Local only for v1: IndexedDB (via Dexie or similar). Export/import JSON for back
 **Progressive Web App** (TypeScript + React/Vite):
 
 - Runs on phones/tablets/laptops (the device sits on the piano music stand).
-- `getUserMedia`, `AudioWorklet`, Web MIDI (Chrome/Edge/Android; limited on iOS Safari — MIDI input is optional so this is acceptable), IndexedDB, installable, offline-capable.
+- `getUserMedia`, `AudioWorklet`, IndexedDB, installable, offline-capable.
 - No app store friction; fastest iteration on the DSP using browser tooling.
 
 *Alternative:* native iOS/Android (Swift/Kotlin) for better audio latency control and Apple's `AVAudioEngine`/Accelerate; revisit if mobile web latency or Safari audio quirks are a blocker. The core logic (theory engine, scoring) is platform-independent TypeScript, which could be reused via React Native or ported.
@@ -336,7 +336,7 @@ Local only for v1: IndexedDB (via Dexie or similar). Export/import JSON for back
   /audio
     /capture     // getUserMedia, AudioWorklet, ring buffer
     /dsp         // FFT/CQT, onset detection, template matcher, noise floor
-    /inputs      // NoteInput implementations: Mic, Midi, OnScreen, Scripted
+    /inputs      // NoteInput implementations: Mic, OnScreen, Scripted
     /calibration
   /session       // drill state machine, timing, scoring
   /keyid         // key-identification mode logic + UI
@@ -387,7 +387,7 @@ IDLE → READY → FLASHED → (WRONG_NOTE → FLASHED)* → SUCCESS | TIMEOUT |
 
 | Risk / Question | Notes / Plan |
 |---|---|
-| **Polyphonic detection accuracy on phones** | Biggest risk. Front-load with a spike (Epic 3) before building the rest on top. MIDI/on-screen inputs keep the product developable regardless. |
+| **Polyphonic detection accuracy on phones** | Biggest risk. Front-load with a spike (Epic 3) before building the rest on top. On-screen input keeps the product developable regardless. |
 | **Low-register detection** | Bass notes below ~C2 may be unreliable; cap default range, flag as known limitation. |
 | **iOS Safari audio quirks** (AudioWorklet, autoplay/permissions, background throttling) | Test early; consider native wrapper if blocking. |
 | **Timing honesty** (display latency, mic latency) | Calibrate; be explicit that absolute times are approximate and consistent per device. |
@@ -405,7 +405,7 @@ IDLE → READY → FLASHED → (WRONG_NOTE → FLASHED)* → SUCCESS | TIMEOUT |
 | Milestone | Contents | Exit criterion |
 |---|---|---|
 | **M0 — Feasibility** | Theory-engine skeleton, staff rendering demo, **mic verification spike** | Mic matcher correctly verifies single notes + triads on a real piano ≥ 90% in a quiet room |
-| **M1 — Playable MVP** | Single/interval/triad drills, one-hand, key sigs, timing, results, with Mic + MIDI + on-screen input | A user can run a full session at levels 1–6 |
+| **M1 — Playable MVP** | Single/interval/triad drills, one-hand, key sigs, timing, results, with Mic + on-screen input | A user can run a full session at levels 1–6 |
 | **M2 — Two hands + Key ID** | Two-hand voicings, grand staff, key identification mode | Levels 7–10 and Key ID mode work end-to-end |
 | **M3 — Polish** | Calibration wizard, custom presets, PWA, a11y | Beta-ready |
 
@@ -547,12 +547,6 @@ Tap/click keyboard implementing `NoteInput` (multi-touch for chords). Also acts 
 **Acceptance:**
 - Multi-touch chord produces the combined active note set.
 
-### PD-303: Web MIDI input
-**Size:** M · **Deps:** PD-301
-Device selection, note on/off tracking with timestamps, graceful degrade when unsupported, hot-plug handling.
-**Acceptance:**
-- Works with a USB/BT MIDI keyboard in Chrome; unsupported browsers show a clear message.
-
 ### PD-304: Mic capture pipeline
 **Size:** L · **Deps:** PD-301
 `getUserMedia` with processing disabled, `AudioWorklet` capture into a ring buffer, device selection, permission/error states, audio clock ↔ `performance.now()` mapping.
@@ -665,9 +659,9 @@ Flash → answer → timed result; reuse session machine/summary; record confusi
 
 ### PD-504: Play-the-tonic answer option
 **Size:** S · **Deps:** PD-503, PD-308
-Alternative answer method: play the tonic note on the piano and verify via mic/MIDI.
+Alternative answer method: play the tonic note on the piano and verify via the mic.
 **Acceptance:**
-- Works with at least mic and MIDI inputs; settings toggle between tap and play.
+- Works with the mic input; settings toggle between tap and play.
 
 ### PD-505: Key-ID settings & levels
 **Size:** S · **Deps:** PD-503, PD-404
@@ -724,8 +718,8 @@ In-app help (mic placement, pedal advice, troubleshooting) and developer README 
    - **Theory:** PD-101 → PD-105 → PD-108
    - **Notation:** PD-201 → PD-202 → PD-204
    - **Mic risk spike:** PD-301 → PD-304 → PD-305 → PD-306 → **PD-307**
-3. **M0 gate:** decide go/no-go on mic approach (fallback: ship MIDI/on-screen first, keep mic as beta).
-4. **M1:** PD-302, PD-303, PD-401 → PD-403, PD-308 → PD-309, PD-404 → PD-406
+3. **M0 gate:** decide go/no-go on mic approach (fallback: ship on-screen first, keep mic as beta).
+4. **M1:** PD-302, PD-401 → PD-403, PD-308 → PD-309, PD-404 → PD-406
 5. **M2:** PD-106, PD-107, PD-203, then Epic 5
 6. **M3:** PD-310, PD-311, Epic 7
 
@@ -736,7 +730,7 @@ In-app help (mic placement, pedal advice, troubleshooting) and developer README 
 | 0 Foundations | PD-001 – PD-003 |
 | 1 Theory Engine | PD-101 – PD-108 |
 | 2 Notation | PD-201 – PD-206 |
-| 3 Input & Verification | PD-301 – PD-311 |
+| 3 Input & Verification | PD-301 – PD-312 (PD-303 cut) |
 | 4 Drill Session | PD-401 – PD-406 |
 | 5 Key ID Mode | PD-501 – PD-505 |
 | 7 Polish & Release | PD-701 – PD-706 |

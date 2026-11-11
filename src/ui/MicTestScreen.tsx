@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { listInputDevices, MicCapture } from '../audio/capture/MicCapture'
+import { AnalysisClient } from '../audio/dsp/AnalysisClient'
 
 const FLOOR_DB = -60
 const toDb = (x: number) => (x > 0 ? Math.max(FLOOR_DB, 20 * Math.log10(x)) : FLOOR_DB)
 const pct = (db: number) => `${((db - FLOOR_DB) / -FLOOR_DB) * 100}%`
 
-/** Diagnostic screen for PD-304: start the mic, watch the level meter, inspect the clock mapping. */
+/** Diagnostic screen for PD-304/305: start the mic, watch the meter, clock mapping and onset detection. */
 export function MicTestScreen() {
   const [m] = useState(() => new MicCapture())
   const [, bump] = useState(0)
@@ -17,9 +18,57 @@ export function MicTestScreen() {
   const dbText = useRef<HTMLSpanElement>(null)
   const clockText = useRef<HTMLPreElement>(null)
   const level = useRef({ peak: 0, rms: 0, peakHold: FLOOR_DB, holdAt: 0 })
+  const onsetBadge = useRef<HTMLDivElement>(null)
+  const onsetText = useRef<HTMLPreElement>(null)
+  const analysis = useRef<{
+    client: AnalysisClient | null
+    stop: (() => void) | null
+    count: number
+    lastAt: number
+    lastPerf: number | null
+    log: string[]
+  }>({ client: null, stop: null, count: 0, lastAt: 0, lastPerf: null, log: [] })
 
   useEffect(() => {
+    const a = analysis.current
+    const stopAnalysis = () => {
+      a.stop?.()
+      a.client?.terminate()
+      a.client = null
+      a.stop = null
+    }
+    const startAnalysis = () => {
+      stopAnalysis()
+      a.count = 0
+      a.lastPerf = null
+      a.log = []
+      const client = new AnalysisClient(m.sampleRate)
+      const offSamples = m.onSamples((startFrame, samples) => client.push(startFrame, samples))
+      const offOnset = client.onOnset((o) => {
+        const perf = m.frameToPerformanceMs(o.sample)
+        const now = performance.now()
+        a.count++
+        a.lastAt = now
+        const gap =
+          perf !== null && a.lastPerf !== null
+            ? `${(perf - a.lastPerf).toFixed(0)} ms after previous`
+            : 'first'
+        const delay = perf !== null ? `, seen ~${(now - perf).toFixed(0)} ms after it happened` : ''
+        if (perf !== null) a.lastPerf = perf
+        a.log = [`#${a.count}: ${gap}, strength ${o.strength.toFixed(0)}${delay}`, ...a.log].slice(
+          0,
+          8,
+        )
+      })
+      a.client = client
+      a.stop = () => {
+        offSamples()
+        offOnset()
+      }
+    }
     const offState = m.onStateChange(() => {
+      if (m.state === 'running') startAnalysis()
+      else stopAnalysis()
       bump((n) => n + 1)
       // Device labels only appear after permission is granted, so refresh the list.
       if (m.state === 'running') void listInputDevices().then(setDevices)
@@ -50,6 +99,13 @@ export function MicTestScreen() {
             ? 'No clock samples yet.'
             : `samples: ${s.count}\noffset (perf - audio): ${s.offsetMs!.toFixed(2)} ms\njitter (std dev): ${s.stdDevMs.toFixed(3)} ms\nworst deviation: ${s.maxDeviationMs.toFixed(3)} ms`
       }
+      if (onsetBadge.current) onsetBadge.current.dataset.on = String(now - a.lastAt < 250)
+      if (onsetText.current) {
+        const s = a.client?.stats
+        onsetText.current.textContent = a.client
+          ? `onsets: ${a.count}\nanalysis cost: ${s!.avgMsPerFrame.toFixed(2)} ms/frame avg, ${s!.maxMsPerFrame.toFixed(2)} ms max (budget 5 ms)\n\n${a.log.join('\n') || 'Play a note...'}`
+          : 'Start the microphone to run onset detection.'
+      }
       raf = requestAnimationFrame(tick)
     }
     raf = requestAnimationFrame(tick)
@@ -57,6 +113,7 @@ export function MicTestScreen() {
       cancelAnimationFrame(raf)
       offState()
       offLevel()
+      stopAnalysis()
       m.stop()
     }
   }, [m])
@@ -114,6 +171,12 @@ export function MicTestScreen() {
         <div className="meter-peak" ref={peakMark} />
       </div>
       <span ref={dbText} aria-live="off" />
+
+      <h2>Onset detection</h2>
+      <div className="onset-badge" ref={onsetBadge} data-on="false" aria-live="off">
+        Note onset
+      </div>
+      <pre className="mic-readout" ref={onsetText} />
 
       <h2>Clock mapping</h2>
       <pre className="mic-readout" ref={clockText} />

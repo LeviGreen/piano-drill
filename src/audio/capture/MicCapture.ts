@@ -42,10 +42,17 @@ export class MicCapture {
   private clockTimer: ReturnType<typeof setInterval> | null = null
   private levelListeners = new Set<(l: LevelReading) => void>()
   private stateListeners = new Set<() => void>()
+  private sampleListeners = new Set<(startFrame: number, samples: Float32Array) => void>()
 
   onLevel(cb: (l: LevelReading) => void): () => void {
     this.levelListeners.add(cb)
     return () => this.levelListeners.delete(cb)
+  }
+
+  /** Raw sample batches with the absolute frame index of the first sample (valid only during the call). */
+  onSamples(cb: (startFrame: number, samples: Float32Array) => void): () => void {
+    this.sampleListeners.add(cb)
+    return () => this.sampleListeners.delete(cb)
   }
 
   onStateChange(cb: () => void): () => void {
@@ -95,12 +102,14 @@ export class MicCapture {
         channelCount: 1,
       })
       node.port.onmessage = (e: MessageEvent) => {
-        const { samples, peak, rms } = e.data as {
+        const { startFrame, samples, peak, rms } = e.data as {
+          startFrame: number
           samples: Float32Array
           peak: number
           rms: number
         }
         this.ring?.write(samples)
+        for (const cb of this.sampleListeners) cb(startFrame, samples)
         for (const cb of this.levelListeners) cb({ peak, rms })
       }
       // Route through a muted gain so the browser keeps pulling audio without playing the mic back.

@@ -23,9 +23,9 @@ Cross out a row (`~~text~~` in each cell) when its ticket is Done. Rows that are
 | 0 Project Foundations | PD-003 | Local storage layer (deferred) |
 | 0 Project Foundations | PD-004 | GitHub Pages deploy & routing |
 | ~~1 Music Theory Engine~~ | ~~PD-101~~ | ~~Core pitch & spelling primitives~~ |
-| 1 Music Theory Engine | PD-102 | Keys & key signatures |
+| ~~1 Music Theory Engine~~ | ~~PD-102~~ | ~~Keys & key signatures~~ |
 | 1 Music Theory Engine | PD-103 | Diatonic chord & interval library |
-| 1 Music Theory Engine | PD-104 | Register, playability & readability constraints |
+| ~~1 Music Theory Engine~~ | ~~PD-104~~ | ~~Register, playability & readability constraints~~ |
 | 1 Music Theory Engine | PD-105 | Target generator — single-hand content |
 | 1 Music Theory Engine | PD-106 | Two-hand voicing templates & generator |
 | 1 Music Theory Engine | PD-107 | "Either hand, one at a time" & cross-clef options |
@@ -38,9 +38,8 @@ Cross out a row (`~~text~~` in each cell) when its ticket is Done. Rows that are
 | 2 Notation Rendering | PD-206 | Large-print & accessibility options |
 | ~~3 Input & Verification~~ | ~~PD-301~~ | ~~`NoteInput` interface & `ScriptedInput`~~ |
 | 3 Input & Verification | PD-302 | On-screen keyboard input |
-| 3 Input & Verification | PD-303 | Web MIDI input |
 | ~~3 Input & Verification~~ | ~~PD-304~~ | ~~Mic capture pipeline~~ |
-| 3 Input & Verification | PD-305 | Spectral analysis core |
+| ~~3 Input & Verification~~ | ~~PD-305~~ | ~~Spectral analysis core~~ |
 | 3 Input & Verification | PD-306 | Test corpus & benchmark harness |
 | 3 Input & Verification | PD-307 | SPIKE — Target-aware note verifier |
 | 3 Input & Verification | PD-308 | Mic input implementation (`MicInput`) |
@@ -73,8 +72,8 @@ Cross out a row (`~~text~~` in each cell) when its ticket is Done. Rows that are
    - **Theory:** PD-101 → PD-105 → PD-108
    - **Notation:** PD-201 → PD-202 → PD-204
    - **Mic risk spike:** PD-301 → PD-304 → PD-305 → PD-306 → **PD-307**
-3. **M0 gate:** decide go/no-go on mic approach (fallback: ship MIDI/on-screen first, keep mic as beta).
-4. **M1:** PD-302, PD-303, PD-401 → PD-403, PD-308 → PD-309, PD-404 → PD-406
+3. **M0 gate:** decide go/no-go on mic approach (fallback: ship on-screen first, keep mic as beta).
+4. **M1:** PD-302, PD-401 → PD-403, PD-308 → PD-309, PD-404 → PD-406
 5. **M2:** PD-106, PD-107, PD-203, then Epic 5
 6. **M3:** PD-310, PD-311, PD-312, Epic 7
 
@@ -85,7 +84,7 @@ Cross out a row (`~~text~~` in each cell) when its ticket is Done. Rows that are
 | 0 Foundations | PD-001 – PD-004 |
 | 1 Theory Engine | PD-101 – PD-108 |
 | 2 Notation | PD-201 – PD-206 |
-| 3 Input & Verification | PD-301 – PD-312 |
+| 3 Input & Verification | PD-301 – PD-312 (PD-303 cut) |
 | 4 Drill Session | PD-401 – PD-406 |
 | 5 Key ID Mode | PD-501 – PD-505 |
 | 7 Polish & Release | PD-701 – PD-706 |
@@ -135,14 +134,14 @@ IndexedDB wrapper (Dexie or similar) with repositories for settings, custom pres
 **Deps:** PD-002  
 **Status:** Todo
 
-Publish the app as a GitHub Pages site. Set the Vite `base` for the repo subpath, make direct URLs and reloads work (e.g. `HashRouter` or a `404.html` fallback), and add a Pages deploy job to CI. Planned for later, near release (alongside PD-702).
+Publish the app as a GitHub Pages site. Set the Vite `base` for the repo subpath, make direct URLs and reloads work (e.g. `HashRouter` or a `404.html` fallback), and add a Pages deploy job to CI. **Do this last, at the very end of the project (per Levi).** Not to be started earlier, even to unlock phone testing.
 
 **Acceptance:**
 - [ ] The app loads at its GitHub Pages URL, and reloading or deep-linking (e.g. `/key-id`) works.
 
 ## Epic 1 — Music Theory Engine
 
-Progress: 1/8 tickets done
+Progress: 3/8 tickets done
 
 ### PD-101: Core pitch & spelling primitives
 
@@ -159,12 +158,12 @@ Types and utilities: letter/accidental/octave pitch spelling, MIDI conversion, t
 
 **Size:** M  
 **Deps:** PD-101  
-**Status:** Todo
+**Status:** Done
 
 All 15 major and 15 minor key signatures (including enharmonic pairs), accidentals-per-staff-position tables for treble & bass (correct sharp/flat order and octave placement), scale generation, relative major/minor mapping, circle-of-fifths ordering.
 
 **Acceptance:**
-- [ ] Tests verify all keys' scale spellings and signature accidental placement per clef.
+- [x] Tests verify all keys' scale spellings and signature accidental placement per clef.
 
 ### PD-103: Diatonic chord & interval library
 
@@ -181,12 +180,12 @@ Interval qualities/sizes; triads and seventh chords built diatonically per key (
 
 **Size:** M  
 **Deps:** PD-101  
-**Status:** Todo
+**Status:** Done
 
 Clef staff ranges, ledger-line counting, hand-span check, max-notes-per-hand, low-interval-limit rule, LH/RH crossing check, comfortable range defaults.
 
 **Acceptance:**
-- [ ] Validation functions with unit tests; given a candidate target returns pass/fail + reasons.
+- [x] Validation functions with unit tests; given a candidate target returns pass/fail + reasons.
 
 ### PD-105: Target generator — single-hand content
 
@@ -304,7 +303,7 @@ Staff size setting, high-contrast mode, non-color-only feedback styles.
 
 ## Epic 3 — Input & Verification
 
-Progress: 2/12 tickets done
+Progress: 3/11 tickets done
 
 > **Risk-first epic.** PD-301–PD-304 should start early; PD-307 is the make-or-break spike.
 
@@ -330,17 +329,6 @@ Tap/click keyboard implementing `NoteInput` (multi-touch for chords). Also acts 
 **Acceptance:**
 - [ ] Multi-touch chord produces the combined active note set.
 
-### PD-303: Web MIDI input
-
-**Size:** M  
-**Deps:** PD-301  
-**Status:** Todo
-
-Device selection, note on/off tracking with timestamps, graceful degrade when unsupported, hot-plug handling.
-
-**Acceptance:**
-- [ ] Works with a USB/BT MIDI keyboard in Chrome; unsupported browsers show a clear message.
-
 ### PD-304: Mic capture pipeline
 
 **Size:** L  
@@ -356,12 +344,17 @@ Device selection, note on/off tracking with timestamps, graceful degrade when un
 
 **Size:** L  
 **Deps:** PD-304  
-**Status:** Todo
+**Status:** Done
 
 Multi-resolution FFT (or CQT) pipeline, windowing, parabolic interpolation, noise floor estimation, spectral flux onset detector. Runs off the main thread (worker/WASM as needed).
 
 **Acceptance:**
-- [ ] On synthetic piano audio, onset times within ±30 ms; pipeline runs < 5 ms/frame on target device.
+- [x] On synthetic piano audio, onset times within ±30 ms; pipeline runs < 5 ms/frame on target device.
+
+**Notes (limits found while verifying):**
+- Onsets are rejected unless they leave clearly pitched peaks (tuned so finger taps, brushes and clicks on a laptop are ignored). The cost: the very softest notes are missed, and onsets are reported ~30 ms (bass up to ~140 ms) after they happen; the reported onset *time* is unaffected.
+- On synthetic piano, onsets are found from A1 (55 Hz) up; C1 to F♯1 are missed (PD-310).
+- Measured on a MacBook Pro, Chrome: analysis ~0.7 ms/frame avg, ~1.6 ms max (budget 5 ms). Synthetic onset error ~3 ms before the bias correction; ±30 ms in tests.
 
 ### PD-306: Test corpus & benchmark harness
 
@@ -555,10 +548,10 @@ Flash → answer → timed result; reuse session machine/summary; record confusi
 **Deps:** PD-503, PD-308  
 **Status:** Todo
 
-Alternative answer method: play the tonic note on the piano and verify via mic/MIDI.
+Alternative answer method: play the tonic note on the piano and verify via the mic.
 
 **Acceptance:**
-- [ ] Works with at least mic and MIDI inputs; settings toggle between tap and play.
+- [ ] Works with the mic input; settings toggle between tap and play.
 
 ### PD-505: Key-ID settings & levels
 
