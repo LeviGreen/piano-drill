@@ -18,7 +18,7 @@ Cross out a row (`~~text~~` in each cell) when its ticket is Done. Rows that are
 
 | Epic | Ticket | Short description |
 |---|---|---|
-| 0 Project Foundations | PD-001 | Project scaffolding (in progress) |
+| ~~0 Project Foundations~~ | ~~PD-001~~ | ~~Project scaffolding~~ |
 | ~~0 Project Foundations~~ | ~~PD-002~~ | ~~App shell & routing~~ |
 | 0 Project Foundations | PD-003 | Local storage layer |
 | 1 Music Theory Engine | PD-101 | Core pitch & spelling primitives |
@@ -92,18 +92,18 @@ Cross out a row (`~~text~~` in each cell) when its ticket is Done. Rows that are
 
 ## Epic 0 — Project Foundations
 
-Progress: 1/3 tickets done
+Progress: 2/3 tickets done
 
 ### PD-001: Project scaffolding
 
 **Size:** S  
 **Deps:** None  
-**Status:** In progress (CI workflow fixed (Node 20 -> 24; vitest/vite/jsdom need >=22) but not yet pushed, so CI is unconfirmed)
+**Status:** Done
 
 Set up Vite + React + TypeScript, linting, formatting, test runner (Vitest), CI to run lint/test/build, basic folder structure from §9.2.
 
 **Acceptance:**
-- [ ] `npm run dev/test/build` work; CI green on an empty test.
+- [x] `npm run dev/test/build` work; CI green on an empty test.
 
 ### PD-002: App shell & routing
 
