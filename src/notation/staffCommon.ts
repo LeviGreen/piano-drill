@@ -18,6 +18,7 @@ export function fitSvg(container: HTMLElement, width: number, height: number): v
   svg.style.width = '100%'
   svg.style.height = 'auto'
   svg.style.display = 'block'
+  svg.style.margin = '0 auto' // centred in whatever holds it
   svg.style.maxWidth = `${width * 1.5}px`
   svg.setAttribute('role', 'img')
 }

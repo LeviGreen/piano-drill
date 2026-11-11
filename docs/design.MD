@@ -273,7 +273,7 @@ Results stored per input device.
 
 - **Signature only** — answer by choosing how many sharps/flats (or the major key name).
 - **Major/minor** — the signature is ambiguous between a major key and its relative minor. Options: (a) accept either as correct and ask the user to name the **major** key by default; (b) include a **tonic hint** (e.g. a single note, a cadence tone, or a dominant-tonic bass note) so the answer is unique; (c) ask for both "major / relative minor" names.
-- **Answer method:** tap-based UI (circle-of-fifths wheel or 12-button grid with sharp/flat enharmonic handling, e.g. F♯/G♭ for 6 accidentals), or optionally *play the tonic* via the mic.
+- **Answer method:** tap-based UI (circle-of-fifths wheel or 15-button grid with sharp/flat enharmonic handling, e.g. F♯/G♭ for 6 accidentals), **typing** (a text box with no visual cue: a wheel or grid lets you count around it, so typing is the harder, more direct test), or optionally *play the tonic* via the mic.
 
 **Settings:** clef (treble/bass/random), accidental range, major only/minor only/both, answer format, timeout, enharmonic strictness (F♯ major vs G♭ major are different signatures but the same sound — the key signature determines the answer).
 
@@ -364,7 +364,7 @@ IDLE → READY → FLASHED → (WRONG_NOTE → FLASHED)* → SUCCESS | TIMEOUT |
 
 - Primary screen is nearly just a **big staff**, a timer (optionally hidden to avoid anxiety; show result after), and minimal chrome.
 - Keyboard/touch shortcuts: Space = skip/next, Esc = end session; big touch targets for mid-session controls.
-- Optional pre-flash cue (e.g. 3-2-1 or a single beat) vs. "wait for silence then flash after random 0.5–1.5 s".
+- A fixed **"Get ready"**: 4 seconds at the start of a session (and after a resume), then 1 second between targets, with the room quiet each time. Not a setting.
 - **Per-note feedback** (the point is to tell the user *which* note to fix, and how):
   - Each expected note is in one of three states: **heard** (solid green halo plus a check mark), **almost** (dashed outline, shown when the mic has a weak signal for it), or **missing** (no marking). Never color alone.
   - A small keyboard strip beside the staff lights the keys the mic actually detected, including wrong ones, so "I'm hearing F♯4, not G4" is visible.
@@ -690,7 +690,7 @@ Service worker, manifest, icons, offline operation for everything except nothing
 
 ### PD-703: Settings screen
 **Size:** S · **Deps:** PD-003
-Input device, timeout default, pre-flash delay, notation size, sound effects, data export/import/reset.
+Input device, timeout default, notation size, sound effects, data export/import/reset.
 **Acceptance:**
 - Settings persist and take effect without reload.
 

@@ -46,6 +46,7 @@ describe('single staff renderer', () => {
     const svg = div.querySelector('svg')!
     expect(svg).toBeTruthy()
     expect(svg.getAttribute('viewBox')).toBe('0 0 320 110')
+    expect(svg.style.margin).toBe('0px auto') // centred, so anything laid over it (a countdown) lines up
     expect(svg.style.width).toBe('100%') // fills its container, whatever pixel size VexFlow wrote
     expect(div.querySelectorAll('.vf-stavenote').length).toBe(0)
   })

@@ -47,14 +47,14 @@ Cross out a row (`~~text~~` in each cell) when its ticket is Done. Rows that are
 | 3 Input & Verification | PD-310 | Low-register & octave robustness |
 | 3 Input & Verification | PD-311 | Calibration wizard |
 | 3 Input & Verification | PD-312 | Per-note tuning profile (out-of-tune piano) |
-| 4 Drill Session (Play Mode) | PD-401 | Session state machine & timing core |
+| ~~4 Drill Session (Play Mode)~~ | ~~PD-401~~ | ~~Session state machine & timing core~~ |
 | 4 Drill Session (Play Mode) | PD-402 | Drill screen UI |
 | 4 Drill Session (Play Mode) | PD-403 | Session summary screen |
 | 4 Drill Session (Play Mode) | PD-404 | Level select & custom settings UI |
 | 4 Drill Session (Play Mode) | PD-405 | Level progression & unlocking |
 | 4 Drill Session (Play Mode) | PD-406 | Mic-driven play end-to-end integration |
-| 5 Key Identification Mode | PD-501 | Key-ID question generator |
-| 5 Key Identification Mode | PD-502 | Answer UI (circle-of-fifths / button grid) |
+| ~~5 Key Identification Mode~~ | ~~PD-501~~ | ~~Key-ID question generator~~ |
+| ~~5 Key Identification Mode~~ | ~~PD-502~~ | ~~Answer UI (circle-of-fifths / button grid)~~ |
 | 5 Key Identification Mode | PD-503 | Key-ID session screen & scoring |
 | 5 Key Identification Mode | PD-504 | Play-the-tonic answer option |
 | 5 Key Identification Mode | PD-505 | Key-ID settings & levels |
@@ -453,18 +453,20 @@ A calibration mode so the app works with an acoustic piano that is not perfectly
 
 ## Epic 4 — Drill Session (Play Mode)
 
-Progress: 0/6 tickets done
+Progress: 1/6 tickets done
 
 ### PD-401: Session state machine & timing core
 
 **Size:** M  
 **Deps:** PD-301, PD-204  
-**Status:** Todo
+**Status:** Done
 
 Implement states from §9.3 with a fake-clock-friendly design; start/pause/end; timeout; skip; wrong-note logging; "wait for silence" gating; t₀ capture. Track the set of expected notes heard so far; the attempt succeeds when all have been heard, in any order and not necessarily together.
 
 **Acceptance:**
-- [ ] Deterministic tests cover success, wrong-then-right, timeout, skip, and pause paths.
+- [x] Deterministic tests cover success, wrong-then-right, timeout, skip, and pause paths.
+
+**Notes:** `DrillSession` in `src/session/`: per-note cumulative verification (a note stays heard; wrong notes are logged but never undo), outcomes correct / correct with errors / timeout / skipped, quiet-wait before each flash (marks a rep that started in a noisy room), pause voids the rep on screen. Runs on an injectable clock (31 deterministic tests). Verified by playing 5 reps in Settings > Session demo. The get-ready wait is fixed (not a setting): 4 seconds at the start of a session and after a resume, 1 second between targets; "Get ready" must be readable for the 4 seconds.
 
 ### PD-402: Drill screen UI
 
@@ -472,7 +474,7 @@ Implement states from §9.3 with a fake-clock-friendly design; start/pause/end; 
 **Deps:** PD-401, PD-203  
 **Status:** Todo
 
-Main play screen: big staff, minimal chrome, optional timer visibility, success/miss feedback, reveal on miss (using PD-205), shortcuts, input source selector. **Per-note feedback (design §10):** three states per expected note (heard = green halo + check mark, almost = dashed outline, missing = none), a keyboard strip showing what the mic actually detected, escalating hints for a stuck note, and a "3 / 5 notes" counter. The timer stops on the last note.
+Main play screen: big staff, minimal chrome, optional timer visibility, success/miss feedback, reveal on miss (using PD-205), shortcuts, input source selector. **Per-note feedback (design §10):** three states per expected note (heard = green halo + check mark, almost = dashed outline, missing = none), a keyboard strip showing what the mic actually detected, escalating hints for a stuck note, and a "3 / 5 notes" counter. The timer stops on the last note. **A 4, 3, 2, 1 countdown** shows over the empty staff during the first get-ready of a session (and after a resume), not between targets. **The grand staff is always on screen** (empty, with both clefs, when idle, while getting ready and between targets); notes appear on it and clear back to it, so nothing pops in or shifts.
 
 **Acceptance:**
 - [ ] Full rep loop works with on-screen keyboard input at levels 1–10.
@@ -523,29 +525,33 @@ Wire `MicInput` into drill loop; handle permission-denied, mic loss, noisy envir
 
 ## Epic 5 — Key Identification Mode
 
-Progress: 0/5 tickets done
+Progress: 2/5 tickets done
 
 ### PD-501: Key-ID question generator
 
 **Size:** S  
 **Deps:** PD-102  
-**Status:** Todo
+**Status:** Done
 
 Generate key-signature questions respecting settings (clef, accidental range, major/minor/both, tonic hint, enharmonic rules); anti-repeat.
 
 **Acceptance:**
-- [ ] Tests verify each generated question has an unambiguous correct answer under the selected answer format.
+- [x] Tests verify each generated question has an unambiguous correct answer under the selected answer format.
+
+**Notes:** four answer formats (count the sharps/flats, name the major key, name the key with the tonic shown, major/relative-minor pair), each proven to have exactly one right answer; strict or lenient enharmonic checking; no repeated signature back to back. See `src/keyid/questions.ts`.
 
 ### PD-502: Answer UI (circle-of-fifths / button grid)
 
 **Size:** M  
 **Deps:** PD-002  
-**Status:** Todo
+**Status:** Done
 
-Touch-friendly answer input with proper enharmonic labelling; major/minor toggle where applicable; keyboard shortcuts.
+Touch-friendly answer input with proper enharmonic labelling; major/minor toggle where applicable; keyboard shortcuts. Three ways to answer: the circle-of-fifths **Wheel**, a button **Grid**, and **Type** (a text box with no visual cue, since a wheel or grid lets you count around it). Layout must not shift when an answer arrives.
 
 **Acceptance:**
-- [ ] All 30 keys can be selected correctly on mobile and desktop.
+- [x] All 30 keys can be selected correctly on desktop, by wheel, grid and typing (phone check moved to PD-704).
+
+**Notes:** three ways to answer: circle-of-fifths wheel (majors outside, relative minors inside, the three enharmonic positions split), button grid with a Major/Minor switch, and Type (no visual cue; works with a phone keyboard). Marks right and wrong by shape and color. The input marks right/wrong only; the screen around it says what the answer was. Verified on desktop in Settings > Key ID preview.
 
 ### PD-503: Key-ID session screen & scoring
 
@@ -612,7 +618,7 @@ Service worker, manifest, icons, offline operation for everything except nothing
 **Deps:** PD-003  
 **Status:** Todo
 
-Input device, timeout default, pre-flash delay, notation size, sound effects, data export/import/reset.
+Input device, timeout default, notation size, sound effects, data export/import/reset.
 
 **Acceptance:**
 - [ ] Settings persist and take effect without reload.
@@ -629,6 +635,7 @@ Test matrix per §11; fix iOS Safari audio, permission, throttling, and layout b
 - [ ] Checklist passes on the device matrix; issues triaged.
 - [ ] Mic test screen level meter works on iOS Safari and Android Chrome (moved from PD-304); fill in the mobile rows in docs/audio-clock.md.
 - [ ] Flash test screen on a mid-range phone: swap within one frame, t0 callback once per flash (moved from PD-204); record the numbers.
+- [ ] Key-ID answer wheel, grid and Type mode work on a phone: every key tappable, soft keyboard works in Type mode (moved from PD-502).
 
 ### PD-705: Performance & battery pass
 

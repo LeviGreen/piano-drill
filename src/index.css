@@ -272,7 +272,7 @@ select {
   width: 100%;
   max-width: 44rem;
   height: auto;
-  margin: 0.5rem 0;
+  margin: 0.5rem auto;
   color: var(--text);
 }
 
@@ -484,6 +484,268 @@ fieldset {
   grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
   gap: var(--space);
   margin-top: var(--space);
+}
+
+/* The countdown number sits over the empty staff, so nothing on the page moves when it appears. */
+.stage {
+  position: relative;
+}
+
+.countdown {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 4rem;
+  font-weight: 800;
+  color: var(--accent);
+  pointer-events: none;
+}
+
+/* Session demo results */
+.results {
+  border-collapse: collapse;
+  width: 100%;
+  max-width: 40rem;
+}
+
+.results th,
+.results td {
+  text-align: left;
+  padding: 0.35rem 0.6rem;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Key-ID answer input */
+.answer-input {
+  max-width: 30rem;
+}
+
+.answer-views {
+  display: flex;
+  gap: 0.25rem;
+  margin: 0.5rem 0;
+}
+
+.seg {
+  color: var(--text);
+  background: var(--surface);
+  border: 2px solid var(--border);
+  padding: 0.35rem 0.9rem;
+}
+
+.seg[aria-pressed='true'] {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+  font-weight: 700;
+}
+
+.wheel {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 28rem;
+  margin: 0.5rem auto;
+  color: var(--text);
+}
+
+.wheel-key {
+  cursor: pointer;
+}
+
+.wheel-key path {
+  fill: var(--surface);
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.wheel-key.minor path {
+  fill: var(--bg);
+}
+
+.wheel-key:hover path,
+.wheel-key:focus-visible path {
+  fill: color-mix(in srgb, var(--accent) 30%, var(--surface));
+}
+
+.wheel-key:focus-visible {
+  outline: none;
+}
+
+.wheel-key:focus-visible path {
+  stroke: var(--focus);
+  stroke-width: 2.5;
+}
+
+.wheel-key.pending path {
+  stroke: var(--accent);
+  stroke-width: 2.5;
+}
+
+.wheel-key.correct path {
+  fill: color-mix(in srgb, var(--ok) 45%, var(--surface));
+  stroke: var(--ok);
+  stroke-width: 2.5;
+}
+
+.wheel-key.wrong path {
+  fill: color-mix(in srgb, var(--bad) 40%, var(--surface));
+  stroke: var(--bad);
+  stroke-width: 2.5;
+  stroke-dasharray: 3 2;
+}
+
+.wheel-key.off {
+  cursor: default;
+  opacity: 0.35;
+}
+
+.wheel-key.off:hover path {
+  fill: var(--surface);
+}
+
+.wheel-label,
+.wheel-mark {
+  fill: currentColor;
+  stroke: none;
+  text-anchor: middle;
+  dominant-baseline: middle;
+  pointer-events: none;
+  font-family: var(--sans);
+}
+
+.wheel-key.major .wheel-label {
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.wheel-key.minor .wheel-label {
+  font-size: 7px;
+}
+
+.wheel-key.split .wheel-label {
+  font-size: 6.5px;
+}
+
+.wheel-mark {
+  font-size: 7px;
+  font-weight: 700;
+}
+
+.type-answer {
+  position: relative;
+  width: 100%;
+  max-width: 18rem;
+  margin: 1rem 0;
+}
+
+.type-box {
+  display: block;
+  width: 100%;
+  height: 4.25rem;
+  padding: 0 3rem 0 1rem;
+  font-size: 1.6rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--text);
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.type-box::placeholder {
+  font-size: 0.95rem;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.type-box:focus {
+  border-color: var(--accent);
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.type-box.correct {
+  border-color: var(--ok);
+  background: color-mix(in srgb, var(--ok) 25%, var(--surface));
+}
+
+.type-box.wrong {
+  border-color: var(--bad);
+  border-style: dashed;
+  background: color-mix(in srgb, var(--bad) 22%, var(--surface));
+}
+
+.type-box:disabled {
+  opacity: 1;
+  -webkit-text-fill-color: var(--text);
+}
+
+.type-mark {
+  position: absolute;
+  top: 50%;
+  right: 1rem;
+  transform: translateY(-50%);
+  font-size: 1.5rem;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.answer-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(3.6rem, 1fr));
+  gap: 0.4rem;
+}
+
+.answer-btn {
+  position: relative;
+  min-height: 3rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 2px solid var(--border);
+  padding: 0.25rem;
+}
+
+.answer-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.answer-btn.pending {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+.answer-btn.correct {
+  border-color: var(--ok);
+  box-shadow: inset 0 0 0 2px var(--ok);
+  font-weight: 700;
+}
+
+.answer-btn.wrong {
+  border-color: var(--bad);
+  border-style: dashed;
+}
+
+.answer-pending {
+  min-height: 3.2rem; /* two lines, always reserved, so the page does not move as text appears */
+  margin: 0.25rem 0;
+  color: var(--text-muted);
+}
+
+.result-slot {
+  min-height: 3.2rem;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.answer-mark {
+  position: absolute;
+  top: 1px;
+  right: 4px;
+  font-size: 0.8rem;
 }
 
 /* Corpus recorder */

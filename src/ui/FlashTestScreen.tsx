@@ -4,6 +4,7 @@ import { createLevelGenerator, type LevelGenerator } from '../levels/levelGenera
 import { levelById } from '../levels/presets'
 import { FlashController, type FlashTiming } from '../notation/flash'
 import { renderGrandStaff } from '../notation/renderGrandStaff'
+import { keySignature } from '../theory/keys'
 import type { Target } from '../theory/target'
 
 const ms = (x: number) => `${x.toFixed(2)} ms`
@@ -25,6 +26,7 @@ export function FlashTestScreen() {
 
   useEffect(() => {
     if (!stage.current) return
+    renderGrandStaff(stage.current, { key: keySignature(0, 'major') }) // an empty staff until the first flash
     generator.current = createLevelGenerator(levelById(8).settings, 7)
     const c = new FlashController<Target>({
       container: stage.current,

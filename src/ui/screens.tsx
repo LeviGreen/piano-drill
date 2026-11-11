@@ -54,6 +54,12 @@ export function SettingsScreen() {
       <p>
         <Link to="/settings/flash-test">Flash test</Link>
       </p>
+      <p>
+        <Link to="/settings/key-id-preview">Key ID preview</Link>
+      </p>
+      <p>
+        <Link to="/settings/session-demo">Session demo</Link>
+      </p>
     </>
   )
 }
