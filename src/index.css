@@ -227,3 +227,60 @@ select {
     transition: border-color 0.15s;
   }
 }
+
+/* Mic test screen */
+.meter {
+  position: relative;
+  height: 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  overflow: hidden;
+  margin-bottom: 0.25rem;
+}
+
+.meter-rms {
+  height: 100%;
+  width: 0;
+  background: var(--accent);
+}
+
+.meter-peak {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  left: 0;
+  background: var(--text);
+}
+
+.mic-readout {
+  margin: 0 0 var(--space);
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  font-size: 0.875rem;
+  overflow-x: auto;
+}
+
+.mic-error {
+  padding: 0.75rem;
+  border: 2px solid var(--text);
+  border-radius: var(--radius);
+}
+
+button {
+  font: inherit;
+  color: var(--accent-text);
+  background: var(--accent);
+  border: 0;
+  border-radius: var(--radius);
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}

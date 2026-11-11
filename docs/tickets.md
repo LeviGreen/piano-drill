@@ -39,7 +39,7 @@ Cross out a row (`~~text~~` in each cell) when its ticket is Done. Rows that are
 | ~~3 Input & Verification~~ | ~~PD-301~~ | ~~`NoteInput` interface & `ScriptedInput`~~ |
 | 3 Input & Verification | PD-302 | On-screen keyboard input |
 | 3 Input & Verification | PD-303 | Web MIDI input |
-| 3 Input & Verification | PD-304 | Mic capture pipeline |
+| ~~3 Input & Verification~~ | ~~PD-304~~ | ~~Mic capture pipeline~~ |
 | 3 Input & Verification | PD-305 | Spectral analysis core |
 | 3 Input & Verification | PD-306 | Test corpus & benchmark harness |
 | 3 Input & Verification | PD-307 | SPIKE — Target-aware note verifier |
@@ -304,7 +304,7 @@ Staff size setting, high-contrast mode, non-color-only feedback styles.
 
 ## Epic 3 — Input & Verification
 
-Progress: 1/12 tickets done
+Progress: 2/12 tickets done
 
 > **Risk-first epic.** PD-301–PD-304 should start early; PD-307 is the make-or-break spike.
 
@@ -345,12 +345,12 @@ Device selection, note on/off tracking with timestamps, graceful degrade when un
 
 **Size:** L  
 **Deps:** PD-301  
-**Status:** Todo
+**Status:** Done
 
 `getUserMedia` with processing disabled, `AudioWorklet` capture into a ring buffer, device selection, permission/error states, audio clock ↔ `performance.now()` mapping.
 
 **Acceptance:**
-- [ ] Level meter works on desktop and mobile; clock mapping error measured and documented.
+- [x] Level meter works on desktop (mobile check moved to PD-704); clock mapping error measured and documented (docs/audio-clock.md).
 
 ### PD-305: Spectral analysis core
 
@@ -618,6 +618,7 @@ Test matrix per §11; fix iOS Safari audio, permission, throttling, and layout b
 
 **Acceptance:**
 - [ ] Checklist passes on the device matrix; issues triaged.
+- [ ] Mic test screen level meter works on iOS Safari and Android Chrome (moved from PD-304); fill in the mobile rows in docs/audio-clock.md.
 
 ### PD-705: Performance & battery pass
 

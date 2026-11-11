@@ -35,7 +35,16 @@ function Placeholder({ title, ticket }: { title: string; ticket: string }) {
 
 export const PlayScreen = () => <Placeholder title="Play" ticket="PD-402" />
 export const KeyIdScreen = () => <Placeholder title="Key ID" ticket="PD-503" />
-export const SettingsScreen = () => <Placeholder title="Settings" ticket="PD-703" />
+export function SettingsScreen() {
+  return (
+    <>
+      <Placeholder title="Settings" ticket="PD-703" />
+      <p>
+        <Link to="/settings/mic-test">Mic test</Link>
+      </p>
+    </>
+  )
+}
 
 export function NotFoundScreen() {
   return (
