@@ -150,18 +150,12 @@ type Target = {
 
 ### 4.3 Two-hand coherence ("make a chord")
 
-When both hands play together, the content must form a single harmony rather than two unrelated clusters. Strategy:
+When both hands play together, the content must form a single harmony rather than two unrelated clusters. The settings for both hands are the **same as for one hand**: "notes per hand" (1, 2, 3 or 4), and each hand gets a count from the chosen list. There are no voicing options for the user or the level data; the generator chooses a sensible arrangement itself. Strategy:
 
-1. Choose **one chord** (root + quality, diatonic to the key) for the whole target.
-2. Distribute chord tones between the hands using **voicing templates**:
-   - *Bass + upper structure:* LH = root (or root + 5th, or root + octave); RH = triad/7th in any inversion.
-   - *Shell voicing:* LH = root + 7th/3rd; RH = remaining tones.
-   - *Split chord:* chord tones divided by register around middle C.
-   - *Octave doubling:* LH doubles a RH note an octave (or two) below; occasionally allowed at low difficulty.
-3. Enforce: LH below RH (no crossing) by default; LH range in bass clef zone, RH in treble zone (with ledger-line allowance per settings); avoid very low muddy intervals (e.g. thirds below C3) — use a "low interval limit" rule.
-4. Doubled pitch classes are allowed (e.g. root in both hands) but total unique pitch classes should still identify the chord.
-
-The templates are data-driven so new voicings can be added later.
+1. Choose **one chord** (root + quality, diatonic to the key) for the whole target: a triad, or a seventh chord when a hand has 4 notes.
+2. The **left hand plays the root as its lowest note**, plus chord tones above it (a fifth, the root an octave up, and so on). The **right hand plays chord tones** above that. With "inversions" off, the right hand is in root position; with it on, any inversion and octave doublings are allowed.
+3. Enforce: LH below RH (no crossing); LH in the bass-clef zone, RH in the treble-clef zone (with the ledger-line allowance per settings); each hand within a comfortable span; avoid very low muddy intervals (e.g. thirds below C3) via the "low interval limit" rule.
+4. Together the hands always include the root and third, and every chord tone whenever there are enough notes to do so. Doubled pitch classes are allowed (e.g. root in both hands) but the unique pitch classes still identify the chord.
 
 ### 4.4 "Either hand, one at a time" 
 

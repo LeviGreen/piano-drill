@@ -1,0 +1,224 @@
+[
+  {
+    "id": 1,
+    "name": "Level 1: First notes",
+    "description": "Single notes on the treble staff, C major only.",
+    "settings": {
+      "hands": ["RH"],
+      "notesPerHand": [1],
+      "keys": {
+        "maxAccidentals": 0,
+        "modes": "major"
+      },
+      "ledgerLines": 0,
+      "inversions": false,
+      "chromaticNotes": "off",
+      "name": "Level 1: First notes",
+      "goal": {
+        "medianSeconds": 2.0,
+        "accuracy": 0.9,
+        "reps": 20
+      }
+    }
+  },
+  {
+    "id": 2,
+    "name": "Level 2: Either hand",
+    "description": "Single notes, right or left hand, up to 1 sharp or flat.",
+    "settings": {
+      "hands": ["RH", "LH"],
+      "notesPerHand": [1],
+      "keys": {
+        "maxAccidentals": 1,
+        "modes": "both"
+      },
+      "ledgerLines": 0,
+      "inversions": false,
+      "chromaticNotes": "off",
+      "name": "Level 2: Either hand",
+      "goal": {
+        "medianSeconds": 2.0,
+        "accuracy": 0.9,
+        "reps": 20
+      }
+    }
+  },
+  {
+    "id": 3,
+    "name": "Level 3: Small intervals",
+    "description": "Notes and seconds to fifths, up to 2 sharps or flats.",
+    "settings": {
+      "hands": ["RH", "LH"],
+      "notesPerHand": [1, 2],
+      "intervalSizes": [2, 3, 4, 5],
+      "keys": {
+        "maxAccidentals": 2,
+        "modes": "both"
+      },
+      "ledgerLines": 1,
+      "inversions": false,
+      "chromaticNotes": "off",
+      "name": "Level 3: Small intervals",
+      "goal": {
+        "medianSeconds": 2.5,
+        "accuracy": 0.9,
+        "reps": 20
+      }
+    }
+  },
+  {
+    "id": 4,
+    "name": "Level 4: All intervals",
+    "description": "Every interval up to the octave, up to 3 sharps or flats.",
+    "settings": {
+      "hands": ["RH", "LH"],
+      "notesPerHand": [2],
+      "intervalSizes": [2, 3, 4, 5, 6, 7, 8],
+      "keys": {
+        "maxAccidentals": 3,
+        "modes": "both"
+      },
+      "ledgerLines": 1,
+      "inversions": false,
+      "chromaticNotes": "off",
+      "name": "Level 4: All intervals",
+      "goal": {
+        "medianSeconds": 3.0,
+        "accuracy": 0.9,
+        "reps": 20
+      }
+    }
+  },
+  {
+    "id": 5,
+    "name": "Level 5: Triads",
+    "description": "Root-position triads, up to 3 sharps or flats.",
+    "settings": {
+      "hands": ["RH", "LH"],
+      "notesPerHand": [3],
+      "keys": {
+        "maxAccidentals": 3,
+        "modes": "both"
+      },
+      "ledgerLines": 1,
+      "inversions": false,
+      "chromaticNotes": "off",
+      "name": "Level 5: Triads",
+      "goal": {
+        "medianSeconds": 3.5,
+        "accuracy": 0.9,
+        "reps": 20
+      }
+    }
+  },
+  {
+    "id": 6,
+    "name": "Level 6: Inversions",
+    "description": "Triads in any inversion, up to 4 sharps or flats.",
+    "settings": {
+      "hands": ["RH", "LH"],
+      "notesPerHand": [3],
+      "keys": {
+        "maxAccidentals": 4,
+        "modes": "both"
+      },
+      "ledgerLines": 1,
+      "inversions": true,
+      "chromaticNotes": "occasional",
+      "name": "Level 6: Inversions",
+      "goal": {
+        "medianSeconds": 4.0,
+        "accuracy": 0.9,
+        "reps": 20
+      }
+    }
+  },
+  {
+    "id": 7,
+    "name": "Level 7: Two hands",
+    "description": "Both hands together, one or two notes in each hand, up to 2 sharps or flats.",
+    "settings": {
+      "hands": ["both"],
+      "notesPerHand": [1, 2],
+      "keys": {
+        "maxAccidentals": 2,
+        "modes": "both"
+      },
+      "ledgerLines": 1,
+      "inversions": false,
+      "chromaticNotes": "off",
+      "name": "Level 7: Two hands",
+      "goal": {
+        "medianSeconds": 4.5,
+        "accuracy": 0.9,
+        "reps": 20
+      }
+    }
+  },
+  {
+    "id": 8,
+    "name": "Level 8: Two hands, more notes",
+    "description": "Both hands, one to three notes in each, chords in any inversion, up to 4 sharps or flats.",
+    "settings": {
+      "hands": ["both"],
+      "notesPerHand": [1, 2, 3],
+      "keys": {
+        "maxAccidentals": 4,
+        "modes": "both"
+      },
+      "ledgerLines": 1,
+      "inversions": true,
+      "chromaticNotes": "off",
+      "name": "Level 8: Two hands, more notes",
+      "goal": {
+        "medianSeconds": 5.0,
+        "accuracy": 0.9,
+        "reps": 20
+      }
+    }
+  },
+  {
+    "id": 9,
+    "name": "Level 9: Two hands, sevenths",
+    "description": "Both hands, up to four notes in each, including seventh chords, up to 5 sharps or flats.",
+    "settings": {
+      "hands": ["both"],
+      "notesPerHand": [1, 2, 3, 4],
+      "keys": {
+        "maxAccidentals": 5,
+        "modes": "both"
+      },
+      "ledgerLines": 1,
+      "inversions": true,
+      "chromaticNotes": "off",
+      "name": "Level 9: Two hands, sevenths",
+      "goal": {
+        "medianSeconds": 6.0,
+        "accuracy": 0.9,
+        "reps": 20
+      }
+    }
+  },
+  {
+    "id": 10,
+    "name": "Level 10: Everything",
+    "description": "All keys, one hand or both, one to four notes in each hand.",
+    "settings": {
+      "hands": ["LH", "RH", "both"],
+      "notesPerHand": [1, 2, 3, 4],
+      "keys": {
+        "maxAccidentals": 7,
+        "modes": "both"
+      },
+      "ledgerLines": 1,
+      "inversions": true,
+      "chromaticNotes": "occasional",
+      "name": "Level 10: Everything",
+      "goal": {
+        "medianSeconds": 7.0,
+        "accuracy": 0.9,
+        "reps": 20
+      }
+    }
+  }
+]

@@ -29,11 +29,11 @@ Cross out a row (`~~text~~` in each cell) when its ticket is Done. Rows that are
 | ~~1 Music Theory Engine~~ | ~~PD-105~~ | ~~Target generator — single-hand content~~ |
 | ~~1 Music Theory Engine~~ | ~~PD-106~~ | ~~Two-hand voicing templates & generator~~ |
 | 1 Music Theory Engine | PD-107 | "Either hand, one at a time" & cross-clef options |
-| 1 Music Theory Engine | PD-108 | Level & preset schema |
+| ~~1 Music Theory Engine~~ | ~~PD-108~~ | ~~Level & preset schema~~ |
 | ~~2 Notation Rendering~~ | ~~PD-201~~ | ~~Single staff renderer (treble/bass) with key signature~~ |
 | ~~2 Notation Rendering~~ | ~~PD-202~~ | ~~Chords, intervals & accidentals~~ |
 | ~~2 Notation Rendering~~ | ~~PD-203~~ | ~~Grand staff renderer~~ |
-| 2 Notation Rendering | PD-204 | Flash performance & timing hook |
+| ~~2 Notation Rendering~~ | ~~PD-204~~ | ~~Flash performance & timing hook~~ |
 | ~~2 Notation Rendering~~ | ~~PD-205~~ | ~~Overlays — note names & keyboard diagram~~ |
 | 2 Notation Rendering | PD-206 | Large-print & accessibility options |
 | ~~3 Input & Verification~~ | ~~PD-301~~ | ~~`NoteInput` interface & `ScriptedInput`~~ |
@@ -141,7 +141,7 @@ Publish the app as a GitHub Pages site. Set the Vite `base` for the repo subpath
 
 ## Epic 1 — Music Theory Engine
 
-Progress: 6/8 tickets done
+Progress: 7/8 tickets done
 
 ### PD-101: Core pitch & spelling primitives
 
@@ -206,12 +206,12 @@ Generates single notes, intervals, triads, sevenths with inversions for one hand
 **Deps:** PD-105  
 **Status:** Done
 
-Data-driven voicing templates (bass + upper structure, shell, split, octave doubling); generator that picks one chord and splits it between hands per §4.3; no hand crossing; low-interval-limit rule; unique pitch class coverage check.
+Generator that picks one chord and splits it between the hands per §4.3 (left hand rooted, right hand above); no hand crossing; low-interval-limit rule; coverage check so the chord stays identifiable. Uses the same notes-per-hand settings as one hand; no voicing options (the generator chooses the arrangement).
 
 **Acceptance:**
-- [x] Every generated two-hand target is identifiable as a single diatonic chord; property tests pass; at least 4 templates implemented and selectable by level.
+- [x] Every generated two-hand target is identifiable as a single diatonic chord; property tests pass. (Changed from "4 selectable voicing templates": the user found voicing options too granular, so two hands use the same notes-per-hand settings as one hand.)
 
-**Notes:** 7 data-driven templates (bass root, bass root + fifth, bass octave, shell triad, shell seventh, split, octave doubling); `TwoHandGenerator` keeps only playable results where all chord tones are present. Verified in the Generator preview (Both hands).
+**Notes:** `TwoHandGenerator`: each hand gets a count from `notesPerHand`; the left hand plays the chord root (lowest) plus chord tones, the right hand chord tones above; only playable results are kept. Reworked after verification to drop named voicings (too granular). Verified in the Generator preview (Both hands).
 
 ### PD-107: "Either hand, one at a time" & cross-clef options
 
@@ -228,16 +228,18 @@ Per-rep random hand selection; optional cross-clef (e.g. RH in bass clef) settin
 
 **Size:** M  
 **Deps:** PD-105, PD-106  
-**Status:** Todo
+**Status:** Done
 
-JSON schema + validator for difficulty settings (§3); the 10 preset levels from §3.1; custom preset merge/override; defaults; migration-safe versioning. **MVP range note:** all content must fit G2–F5; levels 9 and 10 (which rely on extra ledger lines and the full range) need rethinking.
+JSON schema + validator for difficulty settings (§3); the 10 preset levels from §3.1; custom preset merge/override; defaults; migration-safe versioning. Both hands use the same settings as one hand (notes per hand), with no voicing options. **MVP range note:** all content must fit G2–F5; levels 9 and 10 (which rely on extra ledger lines and the full range) need rethinking.
 
 **Acceptance:**
-- [ ] All presets validate; invalid configs produce readable errors; generator can consume any valid config.
+- [x] All presets validate; invalid configs produce readable errors; generator can consume any valid config.
 
 ## Epic 2 — Notation Rendering
 
-Progress: 4/6 tickets done
+Progress: 5/6 tickets done
+
+**Notes:** `src/levels/`: `settings.ts` (types, defaults, validation with field-named errors, merge, migration; version 2), `levels.json` (the 10 levels, data not code, adapted to the MVP range and with no voicing options), `levelGenerator.ts` (`createLevelGenerator(settings)`). Both hands use the same notes-per-hand settings as one hand. Verified in the Generator preview via the Level picker.
 
 ### PD-201: Single staff renderer (treble/bass) with key signature
 
@@ -282,12 +284,14 @@ Two-staff system with brace and aligned notes for two-hand targets; stable layou
 
 **Size:** M  
 **Deps:** PD-201  
-**Status:** Todo
+**Status:** Done
 
 Pre-render next target off-screen; atomic swap; expose a `onPainted(timestamp)` callback using `requestAnimationFrame` for accurate t₀. Benchmark paint time.
 
 **Acceptance:**
-- [ ] Swap completes within a single frame on a mid-range phone; the t₀ callback fires once per flash.
+- [x] Swap completes within a single frame on desktop (phone check moved to PD-704); the t₀ callback fires once per flash.
+
+**Notes:** `FlashController` in `src/notation/flash.ts` (prepare off-screen, one DOM swap, `onPainted` once per flash with `paintedAt` as t0). Desktop (MacBook, Chrome): swap median 0.10 ms, worst 0.30 ms, 0 of 50 over a 60 Hz frame; prerender median 1.5 ms; swap to painted median 3.5 ms; human reaction test 168 to 196 ms, so t0 is not early. Try it at Settings > Flash test.
 
 ### PD-205: Overlays — note names & keyboard diagram
 
@@ -624,6 +628,7 @@ Test matrix per §11; fix iOS Safari audio, permission, throttling, and layout b
 **Acceptance:**
 - [ ] Checklist passes on the device matrix; issues triaged.
 - [ ] Mic test screen level meter works on iOS Safari and Android Chrome (moved from PD-304); fill in the mobile rows in docs/audio-clock.md.
+- [ ] Flash test screen on a mid-range phone: swap within one frame, t0 callback once per flash (moved from PD-204); record the numbers.
 
 ### PD-705: Performance & battery pass
 

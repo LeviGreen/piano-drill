@@ -51,6 +51,9 @@ export function SettingsScreen() {
       <p>
         <Link to="/settings/generator-preview">Generator preview</Link>
       </p>
+      <p>
+        <Link to="/settings/flash-test">Flash test</Link>
+      </p>
     </>
   )
 }

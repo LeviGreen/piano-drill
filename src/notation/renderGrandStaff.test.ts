@@ -103,7 +103,7 @@ describe('grand staff renderer', () => {
         {
           ...DEFAULT_TWO_HAND_CONFIG,
           keys: [key],
-          chordSizes: ['triad', 'seventh'],
+          notesPerHand: [1, 2, 3, 4],
           minorForm: 'either',
           maxSameKeyRun: 99,
         },

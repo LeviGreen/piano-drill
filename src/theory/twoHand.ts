@@ -1,42 +1,64 @@
-import { diatonicChord, type ChordSize, type MinorForm } from './chords'
+import { diatonicChord, type ChordRole, type MinorForm } from './chords'
 import { DEFAULT_CONSTRAINTS, validateTarget, type Constraints } from './constraints'
-import { targetSignature } from './generator'
+import { targetSignature, type NotesPerHand } from './generator'
 import { KeyRotation } from './keyRotation'
 import type { KeySignature } from './keys'
+import { pitch, type Pitch } from './pitch'
 import { mulberry32, pick, randInt, shuffled, type Rng } from './random'
 import type { HandPart, Target } from './target'
-import { buildVoicing, VOICING_TEMPLATES, type VoicingTemplate } from './voicing'
 
-/** Settings for targets played with both hands at once (design §4.3). */
+/**
+ * Settings for targets played with both hands at once. They mirror the one-hand settings: `notesPerHand`
+ * is the same list (1 note, 2, 3 or 4), and each hand gets a count drawn from it.
+ */
 export type TwoHandConfig = {
   keys: KeySignature[]
-  /** Voicings this level allows; one is picked per target. */
-  templates: VoicingTemplate[]
-  chordSizes: ChordSize[]
+  notesPerHand: NotesPerHand[]
+  /** When false, the right hand is always in root position (its tones stack upward in chord order). */
   inversions: boolean
   minorForm: MinorForm | 'either'
-  /** Allowed number of notes in each hand. */
-  lhNotes: number[]
-  rhNotes: number[]
   maxSameKeyRun: number
   constraints: Constraints
 }
 
 export const DEFAULT_TWO_HAND_CONFIG: Omit<TwoHandConfig, 'keys'> = {
-  templates: VOICING_TEMPLATES,
-  chordSizes: ['triad'],
+  notesPerHand: [1, 2, 3],
   inversions: true,
   minorForm: 'natural',
-  lhNotes: [1, 2],
-  rhNotes: [1, 2, 3, 4],
   maxSameKeyRun: 2,
   constraints: DEFAULT_CONSTRAINTS,
 }
 
+const ROLE_ORDER: ChordRole[] = ['root', 'third', 'fifth', 'seventh']
+// Where each hand's notes may sit (MIDI): the left hand up to D4, the right hand down to B3. The staves and
+// ledger-line rules in `constraints` do the precise checking; this just keeps the search small.
+const LH_TOP = 62
+const RH_BOTTOM = 59
+
+type Tone = { role: ChordRole; pitch: Pitch }
+
+/** Every octave of a chord tone that falls in [low, high]. */
+function octavesOf(
+  role: ChordRole,
+  spelling: Pitch['spelling'],
+  low: number,
+  high: number,
+): Tone[] {
+  const out: Tone[] = []
+  for (let octave = 0; octave <= 8; octave++) {
+    const p = pitch(spelling.letter, spelling.accidental, octave)
+    if (p.midi >= low && p.midi <= high) out.push({ role, pitch: p })
+  }
+  return out
+}
+
+const byPitch = (a: Tone, b: Tone): number => a.pitch.midi - b.pitch.midi
+
 /**
- * Generates two-hand targets that read as ONE diatonic chord: it picks a chord, splits all of its tones
- * between the hands with a voicing template, and keeps only results that are playable (left hand below
- * the right, within each hand's reach and staff, no muddy low intervals).
+ * Generates two-hand targets that read as ONE diatonic chord. The left hand always plays the root as its lowest
+ * note; the right hand plays chord tones above it. Each hand gets a note count from `notesPerHand`. Only
+ * playable results are kept (left hand below right, within reach and staff, no muddy low intervals), and the
+ * hands together always include the root and third, and every chord tone when there are enough notes.
  */
 export class TwoHandGenerator {
   readonly config: TwoHandConfig
@@ -47,8 +69,8 @@ export class TwoHandGenerator {
 
   constructor(config: TwoHandConfig, seed = 1) {
     if (config.keys.length === 0) throw new RangeError('config.keys must not be empty')
-    if (config.templates.length === 0) throw new RangeError('config.templates must not be empty')
-    if (config.chordSizes.length === 0) throw new RangeError('config.chordSizes must not be empty')
+    if (config.notesPerHand.length === 0)
+      throw new RangeError('config.notesPerHand must not be empty')
     this.config = config
     this.rng = mulberry32(seed)
     this.rotation = new KeyRotation(config.keys, config.maxSameKeyRun, this.rng)
@@ -67,47 +89,69 @@ export class TwoHandGenerator {
       return target
     }
     throw new Error(
-      'Could not generate a valid two-hand target; the settings may leave no playable voicings in range',
+      'Could not generate a valid two-hand target; the settings may leave no playable chords in range',
     )
   }
 
   private build(key: KeySignature): Target | null {
     const { config, rng } = this
-    const size = pick(rng, config.chordSizes)
-    const templates = config.templates.filter((t) => t.sizes.includes(size))
-    if (templates.length === 0) return null
-    const template = pick(rng, templates)
+    const lhN = pick(rng, config.notesPerHand)
+    const rhN = pick(rng, config.notesPerHand)
+    const size = Math.max(lhN, rhN) >= 4 ? 'seventh' : 'triad'
     const degree = 1 + randInt(rng, 7)
-    const inversion = config.inversions ? randInt(rng, size === 'triad' ? 3 : 4) : 0
     const form: MinorForm =
       key.mode === 'major'
         ? 'natural'
         : config.minorForm === 'either'
           ? pick(rng, ['natural', 'harmonic'] as const)
           : config.minorForm
+    const chord = diatonicChord(key, degree, size, { octave: 4, form })
+    const roles = ROLE_ORDER.slice(0, size === 'triad' ? 3 : 4)
+    // With enough notes every chord tone is played; with very few, at least the root and third.
+    const required = lhN + rhN >= roles.length ? roles : roles.slice(0, 2)
 
-    for (const octave of shuffled(rng, [2, 3, 4, 5])) {
-      for (let tries = 0; tries < 4; tries++) {
-        const chord = diatonicChord(key, degree, size, { inversion, octave, form })
-        const voicing = buildVoicing(template, chord, rng)
-        if (!voicing) continue
-        if (
-          !config.lhNotes.includes(voicing.lh.length) ||
-          !config.rhNotes.includes(voicing.rh.length)
-        )
-          continue
-        const parts: HandPart[] = [
-          { hand: 'LH', clef: 'bass', pitches: voicing.lh, label: chord.label },
-          { hand: 'RH', clef: 'treble', pitches: voicing.rh, label: chord.label },
-        ]
-        const target: Target = {
-          id: '',
-          key,
-          parts,
-          content: { type: size, quality: chord.quality, inversion, degree, voicing: template.id },
-        }
-        if (validateTarget(target, config.constraints).ok) return target
+    const { lowestMidi, highestMidi } = config.constraints
+    const lhPool = chord.tones.flatMap((t) =>
+      octavesOf(t.role, t.pitch.spelling, lowestMidi, LH_TOP),
+    )
+    const rhPool = chord.tones.flatMap((t) =>
+      octavesOf(t.role, t.pitch.spelling, RH_BOTTOM, highestMidi),
+    )
+    const lhRoots = lhPool.filter((t) => t.role === 'root')
+    if (lhRoots.length === 0 || rhPool.length < rhN) return null
+
+    for (let tries = 0; tries < 40; tries++) {
+      const root = pick(rng, lhRoots)
+      const above = shuffled(
+        rng,
+        lhPool.filter((t) => t.pitch.midi > root.pitch.midi),
+      ).slice(0, lhN - 1)
+      if (above.length < lhN - 1) continue
+      const lh = [root, ...above].sort(byPitch)
+      const rh = shuffled(rng, rhPool).slice(0, rhN).sort(byPitch)
+
+      if (new Set(rh.map((t) => t.pitch.midi)).size !== rh.length) continue
+      const heard = new Set([...lh, ...rh].map((t) => t.role))
+      if (!required.every((r) => heard.has(r))) continue
+      // Root position for the right hand: its tones climb in chord order, never repeating a role.
+      if (!config.inversions) {
+        const idx = rh.map((t) => ROLE_ORDER.indexOf(t.role))
+        if (idx.some((v, i) => i > 0 && v <= idx[i - 1])) continue
       }
+
+      const label = chord.label
+      const parts: HandPart[] = [
+        { hand: 'LH', clef: 'bass', pitches: lh.map((t) => t.pitch), label },
+        { hand: 'RH', clef: 'treble', pitches: rh.map((t) => t.pitch), label },
+      ]
+      const rhInversion = rhN >= 3 ? ROLE_ORDER.indexOf(rh[0].role) : 0
+      const target: Target = {
+        id: '',
+        key,
+        parts,
+        content: { type: size, quality: chord.quality, inversion: rhInversion, degree },
+      }
+      if (validateTarget(target, config.constraints).ok) return target
     }
     return null
   }

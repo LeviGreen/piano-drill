@@ -54,6 +54,44 @@ describe('generator preview picture toggles', () => {
     expect(document.querySelectorAll('.staff .vf-clef')).toHaveLength(2)
   })
 
+  it('loads a preset level: its hands and notes show up, and the picker returns to Custom on an edit', async () => {
+    show()
+    await userEvent.selectOptions(screen.getByLabelText('Level'), '7')
+    expect(screen.getByText(/one or two notes in each hand/i)).toBeTruthy() // the level's description
+    expect(tile(/both hands/i).getAttribute('aria-pressed')).toBe('true')
+    expect(tile(/right hand only/i).getAttribute('aria-pressed')).toBe('false')
+    // Notes per hand is the same control for both hands: level 7 is 1 and 2 notes.
+    expect(tile(/1 note/i).getAttribute('aria-pressed')).toBe('true')
+    expect(tile(/2 notes/i).getAttribute('aria-pressed')).toBe('true')
+    expect(tile(/3 notes/i).getAttribute('aria-pressed')).toBe('false')
+    expect(document.body.textContent).toMatch(/LH \[.*\]\s+RH \[/)
+    await userEvent.click(tile(/3 notes/i))
+    expect((screen.getByLabelText('Level') as HTMLSelectElement).value).toBe('custom')
+  })
+
+  it('there are no voicing controls: both hands uses the same settings as one hand', async () => {
+    show()
+    await userEvent.click(tile(/both hands/i))
+    expect(screen.queryByText(/voicing/i)).toBeNull()
+    expect(screen.queryByLabelText(/bass root/i)).toBeNull()
+    for (const name of [/1 note/i, /2 notes/i, /3 notes/i, /4 notes/i])
+      expect(tile(name)).toBeTruthy() // the same notes-per-hand tiles
+  })
+
+  it('level 1 is right-hand single notes in C major', async () => {
+    show()
+    await userEvent.selectOptions(screen.getByLabelText('Level'), '1')
+    expect(tile(/right hand only/i).getAttribute('aria-pressed')).toBe('true')
+    expect(tile(/1 note/i).getAttribute('aria-pressed')).toBe('true')
+    expect(document.body.textContent).toMatch(/C major: note/)
+  })
+
+  it('shows the current settings as JSON', async () => {
+    show()
+    expect(screen.getByText('Settings JSON')).toBeTruthy()
+    expect(document.body.textContent).toContain('"hands"')
+  })
+
   it('shows 5-notes as unavailable for now', () => {
     show()
     expect((tile(/5 notes/i) as HTMLButtonElement).disabled).toBe(true)

@@ -2,6 +2,7 @@ import { Route, Routes } from 'react-router'
 import { AppShell } from './ui/AppShell'
 import { CorpusRecorderScreen } from './ui/CorpusRecorderScreen'
 import { MicTestScreen } from './ui/MicTestScreen'
+import { FlashTestScreen } from './ui/FlashTestScreen'
 import { GeneratorPreviewScreen } from './ui/GeneratorPreviewScreen'
 import { NotationGalleryScreen } from './ui/NotationGalleryScreen'
 import { HomeScreen, KeyIdScreen, NotFoundScreen, PlayScreen, SettingsScreen } from './ui/screens'
@@ -18,6 +19,7 @@ export default function App() {
         <Route path="settings/corpus-recorder" element={<CorpusRecorderScreen />} />
         <Route path="settings/notation-gallery" element={<NotationGalleryScreen />} />
         <Route path="settings/generator-preview" element={<GeneratorPreviewScreen />} />
+        <Route path="settings/flash-test" element={<FlashTestScreen />} />
         <Route path="*" element={<NotFoundScreen />} />
       </Route>
     </Routes>

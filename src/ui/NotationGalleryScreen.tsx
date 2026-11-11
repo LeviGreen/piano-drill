@@ -54,7 +54,7 @@ function grandSamples(): Target[] {
       {
         ...DEFAULT_TWO_HAND_CONFIG,
         keys: [key],
-        chordSizes: ['triad', 'seventh'],
+        notesPerHand: [1, 2, 3, 4],
         minorForm: 'either',
         maxSameKeyRun: 99,
       },
@@ -103,7 +103,7 @@ export function NotationGalleryScreen() {
           <section key={t.id + keyName(t.key)} className="gallery-item">
             <h2>{keyName(t.key)}</h2>
             <p className="gallery-keys">
-              {t.parts[0].label} · {t.content.voicing}
+              {t.parts[0].label} · {t.content.type}
             </p>
             <GrandStaff
               keySignature={t.key}

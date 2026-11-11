@@ -1,32 +1,29 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
+import { createLevelGenerator } from '../levels/levelGenerator'
+import { PRESET_LEVELS } from '../levels/presets'
+import {
+  mergeSettings,
+  parseSettings,
+  type DifficultySettings,
+  type HandMode,
+} from '../levels/settings'
 import { GrandStaff } from '../notation/GrandStaff'
 import { PianoKeyboard, type KeyMark } from '../notation/PianoKeyboard'
-import type { ChordSize } from '../theory/chords'
-import {
-  DEFAULT_SINGLE_HAND_CONFIG,
-  keysUpTo,
-  TargetGenerator,
-  type NotesPerHand,
-  type SingleHandConfig,
-} from '../theory/generator'
 import { keyName, type Mode } from '../theory/keys'
 import { formatPitch } from '../theory/pitch'
-import { mulberry32, pick } from '../theory/random'
-import type { Hand, Target } from '../theory/target'
-import { DEFAULT_TWO_HAND_CONFIG, TwoHandGenerator, type TwoHandConfig } from '../theory/twoHand'
+import type { Target } from '../theory/target'
 import { HandsPicture, NotesPicture } from './HandPictures'
 import { ToggleTile } from './ToggleTile'
 
-type HandMode = 'LH' | 'RH' | 'both'
 type Mark = 'almost' | 'heard' | 'wrong'
 
-const NOTE_COUNTS: { value: NotesPerHand; label: string; note: string }[] = [
+const NOTE_COUNTS = [
   { value: 1, label: '1 note', note: 'single note' },
   { value: 2, label: '2 notes', note: 'interval' },
   { value: 3, label: '3 notes', note: 'triad' },
   { value: 4, label: '4 notes', note: 'seventh chord' },
-]
+] as const
 
 /** Toggle a value in a list, but never remove the last one. */
 function toggle<T>(list: T[], value: T): T[] {
@@ -40,7 +37,7 @@ const names = (pitches: Target['parts'][number]['pitches']) => pitches.map(forma
 function describe(t: Target): string {
   if (t.parts.length === 2) {
     const [lh, rh] = t.parts
-    return `${keyName(t.key)}: ${lh.label} (${t.content.voicing})  LH [${names(lh.pitches)}]  RH [${names(rh.pitches)}]`
+    return `${keyName(t.key)}: ${lh.label}   LH [${names(lh.pitches)}]  RH [${names(rh.pitches)}]`
   }
   const part = t.parts[0]
   const what =
@@ -52,33 +49,18 @@ function describe(t: Target): string {
   return `${keyName(t.key)}: ${what}  [${names(part.pitches)}]`
 }
 
-/** One target source mixing the chosen hand modes: a random one is picked for each target. */
-function makeSource(
-  single: SingleHandConfig | null,
-  two: TwoHandConfig | null,
-  seed: number,
-): { next(): Target } {
-  const gens: { next(): Target }[] = []
-  if (single) gens.push(new TargetGenerator(single, seed))
-  if (two) gens.push(new TwoHandGenerator(two, seed + 1))
-  const rng = mulberry32(seed + 2)
-  return { next: () => pick(rng, gens).next() }
-}
-
-/** Shows generated targets for one configuration. Remounted (via key) when the settings change. */
+/** Shows generated targets for one set of settings. Remounted (via key) when the settings change. */
 function Preview({
-  single,
-  two,
+  settings,
   seed,
   showNames,
 }: {
-  single: SingleHandConfig | null
-  two: TwoHandConfig | null
+  settings: DifficultySettings
   seed: number
   showNames: boolean
 }) {
-  const [source] = useState(() => makeSource(single, two, seed))
-  const [history, setHistory] = useState<Target[]>(() => [source.next()])
+  const [generator] = useState(() => createLevelGenerator(settings, seed))
+  const [history, setHistory] = useState<Target[]>(() => [generator.next()])
   // Pretend-feedback for trying out the display: click a key to cycle a target note through
   // missing -> almost -> heard, or to mark a non-target key as a wrong note.
   const [marks, setMarks] = useState<Map<number, Mark>>(new Map())
@@ -113,7 +95,7 @@ function Preview({
     })
 
   const nextTarget = () => {
-    setHistory((h) => [source.next(), ...h].slice(0, 8))
+    setHistory((h) => [generator.next(), ...h].slice(0, 8))
     setMarks(new Map())
   }
 
@@ -153,47 +135,53 @@ function Preview({
   )
 }
 
-/** Dev screen for PD-105/106/202/203/205: generate targets and see them drawn. (PD-404 builds the real preview.) */
+const START: DifficultySettings = (() => {
+  const r = parseSettings({
+    name: 'Custom',
+    hands: ['RH'],
+    notesPerHand: [3],
+    keys: { maxAccidentals: 2, modes: 'both' },
+    inversions: true,
+    chromaticNotes: 'occasional',
+  })
+  if (!r.ok) throw new Error(r.errors.join('; '))
+  return r.settings
+})()
+
+/** Dev screen for PD-105/106/108/202/203/205: pick a level or build settings, and see the targets drawn. */
 export function GeneratorPreviewScreen() {
-  const [modes, setModes] = useState<HandMode[]>(['RH'])
-  const [counts, setCounts] = useState<NotesPerHand[]>([3])
-  const [maxAcc, setMaxAcc] = useState(2)
-  const [keyModes, setKeyModes] = useState<'both' | Mode>('both')
+  const [settings, setSettings] = useState<DifficultySettings>(START)
+  const [levelId, setLevelId] = useState<number | 'custom'>('custom')
   const [showNames, setShowNames] = useState(false)
   const [seed, setSeed] = useState(1)
 
-  const keys = keysUpTo(maxAcc, keyModes === 'both' ? ['major', 'minor'] : [keyModes])
-  const hands = modes.filter((m): m is Hand => m !== 'both')
-  const single: SingleHandConfig | null =
-    hands.length > 0
-      ? {
-          ...DEFAULT_SINGLE_HAND_CONFIG,
-          hands,
-          notesPerHand: counts,
-          keys,
-          inversions: true, // always allowed
-          alterations: 0.2, // occasional chromatic notes, always allowed
-          minorForm: 'either',
-        }
-      : null
-  const sizes: ChordSize[] = counts.includes(4)
-    ? counts.includes(3)
-      ? ['triad', 'seventh']
-      : ['seventh']
-    : ['triad']
-  const two: TwoHandConfig | null = modes.includes('both')
-    ? { ...DEFAULT_TWO_HAND_CONFIG, keys, chordSizes: sizes, minorForm: 'either' }
-    : null
+  /** Change some settings by hand; the settings stay valid, and the level picker goes back to "Custom". */
+  const edit = (patch: Record<string, unknown>) => {
+    const r = mergeSettings(settings, patch)
+    if (r.ok) {
+      setSettings({ ...r.settings, name: 'Custom' })
+      setLevelId('custom')
+    }
+  }
+  const pickLevel = (value: string) => {
+    if (value === 'custom') return setLevelId('custom')
+    const level = PRESET_LEVELS.find((l) => l.id === Number(value))
+    if (level) {
+      setSettings(level.settings)
+      setLevelId(level.id)
+    }
+  }
 
   const handTile = (mode: HandMode, label: string, pic: 'left' | 'right' | 'both') => (
     <ToggleTile
       label={label}
-      pressed={modes.includes(mode)}
-      onToggle={() => setModes((ms) => toggle(ms, mode))}
+      pressed={settings.hands.includes(mode)}
+      onToggle={() => edit({ hands: toggle(settings.hands, mode) })}
     >
       <HandsPicture hands={pic} />
     </ToggleTile>
   )
+  const level = PRESET_LEVELS.find((l) => l.id === levelId)
 
   return (
     <>
@@ -202,11 +190,24 @@ export function GeneratorPreviewScreen() {
       </p>
       <h1>Generator preview</h1>
       <p className="placeholder">
-        Targets from the generators (PD-105, PD-106) drawn on the staff (PD-201 to 203), within G2
-        to F5. Inversions and occasional chromatic notes are always on.
+        Targets from the level settings (PD-108) and generators (PD-105, PD-106) drawn on the grand
+        staff, within G2 to F5. Pick a preset level, or build your own.
       </p>
 
       <div className="recorder-form">
+        <label>
+          Level
+          <select value={levelId} onChange={(e) => pickLevel(e.target.value)}>
+            <option value="custom">Custom</option>
+            {PRESET_LEVELS.map((l) => (
+              <option key={l.id} value={l.id}>
+                {l.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        {level && <small className="placeholder">{level.description}</small>}
+
         <fieldset>
           <legend>Hands</legend>
           <div className="tiles">
@@ -214,11 +215,9 @@ export function GeneratorPreviewScreen() {
             {handTile('RH', 'Right hand only', 'right')}
             {handTile('both', 'Both hands', 'both')}
           </div>
-          <small className="placeholder">
-            Pick several to mix them at random. With both hands, 3 notes means triads and 4 means
-            seventh chords, split between the hands.
-          </small>
+          <small className="placeholder">Pick several to mix them at random.</small>
         </fieldset>
+
         <fieldset>
           <legend>Notes per hand</legend>
           <div className="tiles">
@@ -227,8 +226,8 @@ export function GeneratorPreviewScreen() {
                 key={n.value}
                 label={n.label}
                 note={n.note}
-                pressed={counts.includes(n.value)}
-                onToggle={() => setCounts((cs) => toggle(cs, n.value))}
+                pressed={settings.notesPerHand.includes(n.value)}
+                onToggle={() => edit({ notesPerHand: toggle(settings.notesPerHand, n.value) })}
               >
                 <NotesPicture count={n.value} />
               </ToggleTile>
@@ -243,10 +242,20 @@ export function GeneratorPreviewScreen() {
               <NotesPicture count={5} />
             </ToggleTile>
           </div>
+          <small className="placeholder">
+            The same choices for one hand or both. With both hands, each hand gets one of these
+            counts and together they make one chord.
+          </small>
         </fieldset>
+
         <label>
           Up to this many sharps/flats
-          <select value={maxAcc} onChange={(e) => setMaxAcc(Number(e.target.value))}>
+          <select
+            value={settings.keys.maxAccidentals}
+            onChange={(e) =>
+              edit({ keys: { maxAccidentals: Number(e.target.value), explicit: undefined } })
+            }
+          >
             {[0, 1, 2, 3, 4, 5, 6, 7].map((n) => (
               <option key={n}>{n}</option>
             ))}
@@ -254,7 +263,10 @@ export function GeneratorPreviewScreen() {
         </label>
         <label>
           Keys
-          <select value={keyModes} onChange={(e) => setKeyModes(e.target.value as 'both' | Mode)}>
+          <select
+            value={settings.keys.modes}
+            onChange={(e) => edit({ keys: { modes: e.target.value as 'both' | Mode } })}
+          >
             <option value="both">Major and minor</option>
             <option value="major">Major only</option>
             <option value="minor">Minor only</option>
@@ -273,12 +285,15 @@ export function GeneratorPreviewScreen() {
             New random seed
           </button>
         </p>
+        <details>
+          <summary>Settings JSON</summary>
+          <pre className="mic-readout">{JSON.stringify(settings, null, 2)}</pre>
+        </details>
       </div>
 
       <Preview
-        key={`${modes}|${counts}|${maxAcc}|${keyModes}|${seed}`}
-        single={single}
-        two={two}
+        key={`${JSON.stringify(settings)}|${seed}`}
+        settings={settings}
         seed={seed}
         showNames={showNames}
       />
