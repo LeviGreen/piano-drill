@@ -1,0 +1,16 @@
+{
+  "id": "interval-C4G4-mwca647w-13",
+  "file": "interval-C4G4-mwca647w-13.wav",
+  "source": "digital-speaker",
+  "category": "interval",
+  "played": [
+    "C4",
+    "G4"
+  ],
+  "expected": [
+    "C4",
+    "G4"
+  ],
+  "room": "living room",
+  "device": "Mac Book Pro"
+}

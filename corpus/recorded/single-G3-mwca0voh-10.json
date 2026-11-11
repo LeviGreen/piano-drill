@@ -1,0 +1,14 @@
+{
+  "id": "single-G3-mwca0voh-10",
+  "file": "single-G3-mwca0voh-10.wav",
+  "source": "digital-speaker",
+  "category": "single",
+  "played": [
+    "G3"
+  ],
+  "expected": [
+    "G3"
+  ],
+  "room": "living room",
+  "device": "Mac Book Pro"
+}

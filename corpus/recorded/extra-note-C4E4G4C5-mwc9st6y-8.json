@@ -1,0 +1,19 @@
+{
+  "id": "extra-note-C4E4G4C5-mwc9st6y-8",
+  "file": "extra-note-C4E4G4C5-mwc9st6y-8.wav",
+  "source": "digital-speaker",
+  "category": "extra-note",
+  "played": [
+    "C4",
+    "E4",
+    "G4",
+    "C5"
+  ],
+  "expected": [
+    "C4",
+    "E4",
+    "G4"
+  ],
+  "room": "living room",
+  "device": "Mac Book Pro"
+}

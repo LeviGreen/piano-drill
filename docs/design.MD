@@ -81,7 +81,7 @@ Difficulty is a combination of independent dimensions. Presets (levels) are just
 | **Content type** | Single notes · Intervals · Triads · Seventh chords · Extended/other (later) |
 | **Inversions** | Root position only · Allow inversions |
 | **Accidentals beyond key sig** | Off · Occasional (chromatic alterations, e.g. harmonic minor leading tone) |
-| **Register / ledger lines** | Staff only · Up to 1 ledger line · Up to 2–3 ledger lines |
+| **Register / ledger lines** | Staff only · Up to 1 ledger line · Up to 2–3 ledger lines (**MVP: range G2–F5, plus one ledger line for middle C**) |
 | **Timeout** | Off / 5 / 10 / 20 s |
 | **Octave strictness** | Exact octave required · Any octave (pitch class only) |
 
@@ -99,6 +99,8 @@ Difficulty is a combination of independent dimensions. Presets (levels) are just
 | 8 | Both hands | 1–2 + 3 | ≤4 accidentals | LH bass + RH triad/inversion |
 | 9 | Both hands | 2–3 + 3–4 | ≤5 accidentals | Triads/7ths, inversions, ledger lines |
 | 10 | Both hands | up to 5 + 5 | all 15 keys | Full range, accidentals, 7ths |
+
+> **MVP range: G2–F5** (bottom line of the bass staff to top line of the treble staff; middle C needs one ledger line). Levels 9 and 10 above assume ledger lines and the full range, so they need rethinking for the MVP (e.g. more keys, 7ths and 5-note chords inside G2–F5 instead).
 
 Levels are data (JSON), not code, so they can be tuned without a release.
 
@@ -388,7 +390,7 @@ IDLE → READY → FLASHED → (WRONG_NOTE → FLASHED)* → SUCCESS | TIMEOUT |
 | Risk / Question | Notes / Plan |
 |---|---|
 | **Polyphonic detection accuracy on phones** | Biggest risk. Front-load with a spike (Epic 3) before building the rest on top. On-screen input keeps the product developable regardless. |
-| **Low-register detection** | Bass notes below ~C2 may be unreliable; cap default range, flag as known limitation. |
+| **Low-register detection** | Bass notes below ~C2 may be unreliable (confirmed on a laptop mic). **MVP range is G2–F5** (the bass and treble staves); anything outside is out of scope. |
 | **iOS Safari audio quirks** (AudioWorklet, autoplay/permissions, background throttling) | Test early; consider native wrapper if blocking. |
 | **Timing honesty** (display latency, mic latency) | Calibrate; be explicit that absolute times are approximate and consistent per device. |
 | **Major/minor ambiguity in key ID** | Decide default (see §7). Proposed default: ask for major key name; minor optional with tonic hint. |

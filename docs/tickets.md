@@ -40,7 +40,7 @@ Cross out a row (`~~text~~` in each cell) when its ticket is Done. Rows that are
 | 3 Input & Verification | PD-302 | On-screen keyboard input |
 | ~~3 Input & Verification~~ | ~~PD-304~~ | ~~Mic capture pipeline~~ |
 | ~~3 Input & Verification~~ | ~~PD-305~~ | ~~Spectral analysis core~~ |
-| 3 Input & Verification | PD-306 | Test corpus & benchmark harness |
+| ~~3 Input & Verification~~ | ~~PD-306~~ | ~~Test corpus & benchmark harness~~ |
 | 3 Input & Verification | PD-307 | SPIKE — Target-aware note verifier |
 | 3 Input & Verification | PD-308 | Mic input implementation (`MicInput`) |
 | 3 Input & Verification | PD-309 | Onset-based timing & latency compensation |
@@ -182,7 +182,7 @@ Interval qualities/sizes; triads and seventh chords built diatonically per key (
 **Deps:** PD-101  
 **Status:** Done
 
-Clef staff ranges, ledger-line counting, hand-span check, max-notes-per-hand, low-interval-limit rule, LH/RH crossing check, comfortable range defaults.
+Clef staff ranges, ledger-line counting, hand-span check, max-notes-per-hand, low-interval-limit rule, LH/RH crossing check, comfortable range defaults. **MVP defaults: note range G2–F5 plus 1 ledger line (middle C needs one in both clefs).** Both stay configurable.
 
 **Acceptance:**
 - [x] Validation functions with unit tests; given a candidate target returns pass/fail + reasons.
@@ -226,7 +226,7 @@ Per-rep random hand selection; optional cross-clef (e.g. RH in bass clef) settin
 **Deps:** PD-105, PD-106  
 **Status:** Todo
 
-JSON schema + validator for difficulty settings (§3); the 10 preset levels from §3.1; custom preset merge/override; defaults; migration-safe versioning.
+JSON schema + validator for difficulty settings (§3); the 10 preset levels from §3.1; custom preset merge/override; defaults; migration-safe versioning. **MVP range note:** all content must fit G2–F5; levels 9 and 10 (which rely on extra ledger lines and the full range) need rethinking.
 
 **Acceptance:**
 - [ ] All presets validate; invalid configs produce readable errors; generator can consume any valid config.
@@ -303,7 +303,7 @@ Staff size setting, high-contrast mode, non-color-only feedback styles.
 
 ## Epic 3 — Input & Verification
 
-Progress: 3/11 tickets done
+Progress: 4/11 tickets done
 
 > **Risk-first epic.** PD-301–PD-304 should start early; PD-307 is the make-or-break spike.
 
@@ -360,12 +360,12 @@ Multi-resolution FFT (or CQT) pipeline, windowing, parabolic interpolation, nois
 
 **Size:** L  
 **Deps:** PD-301  
-**Status:** Todo
+**Status:** Done
 
 Record and label a corpus (acoustic piano, various phones/positions/rooms, plus digital piano/speaker and synthetic renders): single notes, intervals, triads, two-hand chords across the full range, plus negative cases (wrong note, extra note, silence, room noise). Harness computes precision/recall, octave-error rate, onset error, latency; CI regression thresholds.
 
 **Acceptance:**
-- [ ] One command produces a report; baseline numbers committed.
+- [x] One command produces a report; baseline numbers committed.
 
 ### PD-307: SPIKE — Target-aware note verifier
 
@@ -406,7 +406,7 @@ Compute reaction and completion times from onset estimates (not verifier fire ti
 **Deps:** PD-307  
 **Status:** Todo
 
-Improvements for bass notes and octave confusion: low-band long windows, octave-ambiguity checks, per-note confidence, configurable range cap and strict/relaxed octave modes.
+Improvements for bass notes and octave confusion: low-band long windows, octave-ambiguity checks, per-note confidence, configurable range cap and strict/relaxed octave modes. **MVP supported range is G2–F5** (about 98–698 Hz); notes outside it are out of scope.
 
 **Acceptance:**
 - [ ] Octave-error rate on corpus < 3%; bass-clef notes down to the supported range pass benchmark thresholds; documented supported range.

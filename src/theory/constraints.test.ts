@@ -76,21 +76,36 @@ describe('one-hand targets', () => {
     ).toEqual([])
   })
 
+  // Wider than the MVP defaults, for testing the individual rules.
+  const WIDE = { ...DEFAULT_CONSTRAINTS, lowestMidi: 0, highestMidi: 127, maxLedgerLines: 3 }
+
   it('enforces the ledger-line limit per clef', () => {
-    expect(codes(target(part('RH', 'treble', 'A3', 'C4')))).toEqual([]) // 2 ledger lines is the default max
-    expect(codes(target(part('RH', 'treble', 'F3')))).toContain('ledger-lines') // 3 ledger lines
-    expect(
-      codes(target(part('RH', 'treble', 'C4')), { ...DEFAULT_CONSTRAINTS, maxLedgerLines: 0 }),
-    ).toContain('ledger-lines')
-    expect(codes(target(part('LH', 'bass', 'C2')))).toEqual([]) // 2 below
-    expect(codes(target(part('LH', 'bass', 'A1')))).toContain('ledger-lines') // 3 below
+    const two = { ...WIDE, maxLedgerLines: 2 }
+    expect(codes(target(part('RH', 'treble', 'A3', 'C4')), two)).toEqual([]) // 2 ledger lines
+    expect(codes(target(part('RH', 'treble', 'F3')), two)).toContain('ledger-lines') // 3 ledger lines
+    expect(codes(target(part('RH', 'treble', 'C4')), { ...WIDE, maxLedgerLines: 0 })).toContain(
+      'ledger-lines',
+    )
+    expect(codes(target(part('LH', 'bass', 'C2')), two)).toEqual([]) // 2 below
+    expect(codes(target(part('LH', 'bass', 'A1')), two)).toContain('ledger-lines') // 3 below
+  })
+
+  it('MVP defaults: range G2 to F5, with middle C allowed in both clefs', () => {
+    expect(codes(target(part('RH', 'treble', 'C4')))).toEqual([])
+    expect(codes(target(part('LH', 'bass', 'C4')))).toEqual([])
+    expect(codes(target(part('RH', 'treble', 'F5')))).toEqual([])
+    expect(codes(target(part('LH', 'bass', 'G2')))).toEqual([])
+    expect(codes(target(part('RH', 'treble', 'F#5')))).toContain('out-of-range')
+    expect(codes(target(part('LH', 'bass', 'F#2')))).toContain('out-of-range')
+    expect(codes(target(part('LH', 'bass', 'C2')))).toContain('out-of-range')
   })
 
   it('flags muddy low intervals but allows wide ones and anything above C3', () => {
-    expect(codes(target(part('LH', 'bass', 'C2', 'E2')))).toContain('low-interval') // third below C3
-    expect(codes(target(part('LH', 'bass', 'C2', 'G2')))).toEqual([]) // fifth is fine
-    expect(codes(target(part('LH', 'bass', 'C3', 'E3')))).toEqual([]) // not below C3
-    expect(codes(target(part('LH', 'bass', 'C2', 'G2', 'D3')))).toEqual([])
+    expect(codes(target(part('LH', 'bass', 'C2', 'E2')), WIDE)).toContain('low-interval') // third below C3
+    expect(codes(target(part('LH', 'bass', 'C2', 'G2')), WIDE)).toEqual([]) // fifth is fine
+    expect(codes(target(part('LH', 'bass', 'C3', 'E3')), WIDE)).toEqual([]) // not below C3
+    expect(codes(target(part('LH', 'bass', 'C2', 'G2', 'D3')), WIDE)).toEqual([])
+    expect(codes(target(part('LH', 'bass', 'G2', 'A2')))).toContain('low-interval') // inside the MVP range
   })
 
   it('reports every reason, not just the first', () => {

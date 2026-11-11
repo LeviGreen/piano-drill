@@ -1,0 +1,14 @@
+{
+  "id": "single-C2-mwc9b2w5-3",
+  "file": "single-C2-mwc9b2w5-3.wav",
+  "source": "digital-speaker",
+  "category": "single",
+  "played": [
+    "C2"
+  ],
+  "expected": [
+    "C2"
+  ],
+  "room": "living room",
+  "device": "Mac Book Pro"
+}

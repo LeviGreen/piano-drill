@@ -10,6 +10,8 @@ export type SynthNote = {
   duration: number
   /** 0..1, default 0.7. */
   velocity?: number
+  /** Tuning offset in cents (to model an out-of-tune piano). */
+  detuneCents?: number
 }
 
 export type SynthOptions = {
@@ -43,7 +45,7 @@ export function renderNotes(notes: SynthNote[], opts: SynthOptions): Float32Arra
   const release = Math.round(0.05 * sr)
 
   for (const note of notes) {
-    const f0 = midiToHz(note.midi)
+    const f0 = midiToHz(note.midi) * 2 ** ((note.detuneCents ?? 0) / 1200)
     const vel = note.velocity ?? 0.7
     const B = 0.0004 // inharmonicity coefficient
     const tau0 = 0.5 + 4 * Math.exp(-(note.midi - 21) / 40) // lower notes ring longer

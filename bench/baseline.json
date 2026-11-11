@@ -1,0 +1,13 @@
+{
+  "verification.correctAcceptRate": 0.7291666666666666,
+  "verification.falseAcceptRate": 0.045454545454545456,
+  "notes.precision": 0.8472222222222222,
+  "notes.recall": 0.9384615384615385,
+  "notes.octaveErrorRate": 0.023076923076923078,
+  "onsets.meanAbsErrorMs": 0.16035876329033782,
+  "onsets.p95AbsErrorMs": 0.4141792901916075,
+  "onsets.missRate": 0,
+  "onsets.falseOnsetsPerNoiseClip": 0,
+  "latency.meanMs": 47.22837652759085,
+  "latency.p95Ms": 60.875051278840296
+}

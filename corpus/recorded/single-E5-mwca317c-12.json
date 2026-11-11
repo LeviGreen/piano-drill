@@ -1,0 +1,14 @@
+{
+  "id": "single-E5-mwca317c-12",
+  "file": "single-E5-mwca317c-12.wav",
+  "source": "digital-speaker",
+  "category": "single",
+  "played": [
+    "E5"
+  ],
+  "expected": [
+    "E5"
+  ],
+  "room": "living room",
+  "device": "Mac Book Pro"
+}

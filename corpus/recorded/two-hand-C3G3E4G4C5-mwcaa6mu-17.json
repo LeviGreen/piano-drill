@@ -1,0 +1,22 @@
+{
+  "id": "two-hand-C3G3E4G4C5-mwcaa6mu-17",
+  "file": "two-hand-C3G3E4G4C5-mwcaa6mu-17.wav",
+  "source": "digital-speaker",
+  "category": "two-hand",
+  "played": [
+    "C3",
+    "G3",
+    "E4",
+    "G4",
+    "C5"
+  ],
+  "expected": [
+    "C3",
+    "G3",
+    "E4",
+    "G4",
+    "C5"
+  ],
+  "room": "living room",
+  "device": "Mac Book Pro"
+}

@@ -1,0 +1,12 @@
+{
+  "id": "silence-none-mwc9xg0n-9",
+  "file": "silence-none-mwc9xg0n-9.wav",
+  "source": "digital-speaker",
+  "category": "silence",
+  "played": [],
+  "expected": [
+    "C4"
+  ],
+  "room": "living room",
+  "device": "Mac Book Pro"
+}

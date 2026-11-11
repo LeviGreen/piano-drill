@@ -1,0 +1,18 @@
+{
+  "id": "triad-C4E4G4-mwc9gp24-4",
+  "file": "triad-C4E4G4-mwc9gp24-4.wav",
+  "source": "digital-speaker",
+  "category": "triad",
+  "played": [
+    "C4",
+    "E4",
+    "G4"
+  ],
+  "expected": [
+    "C4",
+    "E4",
+    "G4"
+  ],
+  "room": "living room",
+  "device": "Mac Book Pro"
+}

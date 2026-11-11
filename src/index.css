@@ -228,6 +228,27 @@ select {
   }
 }
 
+/* Corpus recorder */
+.recorder-form {
+  display: grid;
+  gap: 0.5rem;
+  margin-bottom: var(--space);
+}
+
+.recorder-form label {
+  display: grid;
+  gap: 0.25rem;
+}
+
+input {
+  font: inherit;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.4rem 0.6rem;
+}
+
 /* Mic test screen */
 .onset-badge {
   display: inline-block;

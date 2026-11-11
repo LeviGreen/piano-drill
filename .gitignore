@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Benchmark output (the baseline in bench/baseline.json IS committed)
+bench/report.md
+bench/report.json
+# Recorded corpus audio is large; keep it local (manifest.json is committed)
+corpus/recorded/*.wav

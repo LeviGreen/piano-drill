@@ -1,0 +1,14 @@
+{
+  "id": "room-noise-none-mwcachx7-20",
+  "file": "room-noise-none-mwcachx7-20.wav",
+  "source": "digital-speaker",
+  "category": "room-noise",
+  "played": [],
+  "expected": [
+    "C4",
+    "E4",
+    "G4"
+  ],
+  "room": "living room",
+  "device": "Mac Book Pro"
+}

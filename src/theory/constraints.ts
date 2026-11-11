@@ -8,6 +8,9 @@ export type Constraints = {
   maxSpanSemitones: number
   /** 0 = staff only, 1 = one ledger line, and so on. */
   maxLedgerLines: number
+  /** Absolute playable range as MIDI numbers (default G2 to F5, the MVP range). */
+  lowestMidi: number
+  highestMidi: number
   /**
    * Muddy-interval rule: adjacent notes whose lower note is below `belowMidi` must be at least
    * `minSemitones` apart (default: nothing narrower than a perfect fifth below C3).
@@ -20,7 +23,11 @@ export type Constraints = {
 export const DEFAULT_CONSTRAINTS: Constraints = {
   maxNotesPerHand: 5,
   maxSpanSemitones: 14,
-  maxLedgerLines: 2,
+  // One ledger line, because middle C needs one in both clefs; the explicit range below is what
+  // actually bounds the MVP at G2-F5.
+  maxLedgerLines: 1,
+  lowestMidi: 43, // G2, bottom line of the bass staff
+  highestMidi: 77, // F5, top line of the treble staff
   lowIntervalLimit: { belowMidi: 48, minSemitones: 7 },
   allowHandCrossing: false,
 }
@@ -33,6 +40,7 @@ export type ViolationCode =
   | 'duplicate-pitch'
   | 'span-too-wide'
   | 'ledger-lines'
+  | 'out-of-range'
   | 'low-interval'
   | 'hand-crossing'
 
@@ -65,6 +73,9 @@ export function validatePart(part: HandPart, c: Constraints = DEFAULT_CONSTRAINT
     add('span-too-wide', `${part.hand} spans ${span} semitones (max ${c.maxSpanSemitones})`)
   }
   for (const p of pitches) {
+    if (p.midi < c.lowestMidi || p.midi > c.highestMidi) {
+      add('out-of-range', `${formatPitch(p)} is outside the supported range`)
+    }
     const n = ledgerLines(p, part.clef)
     if (n > c.maxLedgerLines) {
       add(

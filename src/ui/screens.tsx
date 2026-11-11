@@ -42,6 +42,9 @@ export function SettingsScreen() {
       <p>
         <Link to="/settings/mic-test">Mic test</Link>
       </p>
+      <p>
+        <Link to="/settings/corpus-recorder">Corpus recorder</Link>
+      </p>
     </>
   )
 }

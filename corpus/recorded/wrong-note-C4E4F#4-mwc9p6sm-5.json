@@ -1,0 +1,18 @@
+{
+  "id": "wrong-note-C4E4F#4-mwc9p6sm-5",
+  "file": "wrong-note-C4E4F#4-mwc9p6sm-5.wav",
+  "source": "digital-speaker",
+  "category": "wrong-note",
+  "played": [
+    "C4",
+    "E4",
+    "F#4"
+  ],
+  "expected": [
+    "C4",
+    "E4",
+    "G4"
+  ],
+  "room": "living room",
+  "device": "Mac Book Pro"
+}

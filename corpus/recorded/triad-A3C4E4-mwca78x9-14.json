@@ -1,0 +1,18 @@
+{
+  "id": "triad-A3C4E4-mwca78x9-14",
+  "file": "triad-A3C4E4-mwca78x9-14.wav",
+  "source": "digital-speaker",
+  "category": "triad",
+  "played": [
+    "A3",
+    "C4",
+    "E4"
+  ],
+  "expected": [
+    "A3",
+    "C4",
+    "E4"
+  ],
+  "room": "living room",
+  "device": "Mac Book Pro"
+}
