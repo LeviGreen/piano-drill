@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { answerLabel, signatureLabel } from '../keyid/labels'
+import { answerLabel } from '../keyid/labels'
 import type { KeyIdAnswer, KeyIdFormat } from '../keyid/questions'
 import { EMPTY_ENTRY, entryAnswer, entryKey, entryText, type Entry } from '../keyid/shortcuts'
 import {
@@ -9,10 +9,13 @@ import {
   wheelSectors,
   type WheelSector,
 } from '../keyid/wheel'
-import { keyName, keySignature, type Mode } from '../theory/keys'
+import { PianoKeyboard, type KeyMark } from '../notation/PianoKeyboard'
+import type { Mode } from '../theory/keys'
 
-/** After an answer. `ok` says whether it was accepted (an enharmonic answer can be accepted without matching exactly). */
-export type AnswerFeedback = { correct: KeyIdAnswer; given: KeyIdAnswer; ok?: boolean }
+/** After an answer. `ok` says whether it was right; `given` is null when the player gave no answer (timed out, skipped). */
+export type AnswerFeedback = { correct: KeyIdAnswer; given: KeyIdAnswer | null; ok?: boolean }
+
+export type AnswerView = 'wheel' | 'type' | 'play'
 
 type Props = {
   format: KeyIdFormat
@@ -20,39 +23,28 @@ type Props = {
   disabled?: boolean
   /** After an answer: marks the right answer and a wrong choice. */
   feedback?: AnswerFeedback | null
+  /**
+   * Offers a fourth way to answer: playing the tonic on a piano keyboard. `onNote` receives each key played, and `mark`
+   * shows which key was played and whether it was right.
+   */
+  play?: { onNote: (midi: number) => void; mark: { midi: number; right: boolean } | null }
+  /** Told when the player switches between wheel, type and play. */
+  onViewChange?: (view: AnswerView) => void
 }
 
 const SECTORS = wheelSectors()
 
 const TYPE_HELP: Record<KeyIdFormat, string> = {
-  major: 'Type a key, e.g. e b, then Enter',
-  key: 'Type a key, e.g. f # m, then Enter',
-  pair: 'Type either key of the pair, then Enter',
-  signature: 'Type a number then # or b, e.g. 3 b, then Enter',
+  major: 'A  Bb  C  Dm  Ebm  F#  G#m',
+  minor: 'A  Bb  C  D  Eb  F#  G#',
+  key: 'A  Bb  C  Dm  Ebm  F#  G#m',
 }
 
-/** What picking this sector means as an answer in each format. */
-function sectorAnswer(s: WheelSector, format: KeyIdFormat): KeyIdAnswer {
-  if (format === 'key') return { accidentals: s.accidentals, mode: s.mode }
-  if (format === 'major') return { accidentals: s.accidentals, mode: 'major' }
-  return { accidentals: s.accidentals }
-}
-
-/** Is this sector part of the given answer? (Pair answers light up both rings.) */
-function inAnswer(s: WheelSector, a: KeyIdAnswer | null | undefined, format: KeyIdFormat): boolean {
-  if (!a || a.accidentals !== s.accidentals) return false
-  if (format === 'pair' || format === 'signature') return true
-  return (a.mode ?? 'major') === s.mode
-}
-
-/** Do two answers say the same thing in this format? */
-function sameAnswer(a: KeyIdAnswer, b: KeyIdAnswer, format: KeyIdFormat): boolean {
-  if (a.accidentals !== b.accidentals) return false
-  if (format === 'key') return a.mode === b.mode
-  return true
-}
-
-const sharpFlat = (n: number) => (n === 0 ? '0' : `${Math.abs(n)}${n > 0 ? '♯' : '♭'}`)
+const sameAnswer = (a: KeyIdAnswer, b: KeyIdAnswer) =>
+  a.accidentals === b.accidentals && a.mode === b.mode
+const is = (s: { accidentals: number; mode: Mode }, a: KeyIdAnswer | null | undefined) =>
+  !!a && sameAnswer(s, a)
+const sectorAnswer = (s: WheelSector): KeyIdAnswer => ({ accidentals: s.accidentals, mode: s.mode })
 
 /** Is the keyboard event aimed at something the user is typing into? Then it is not an answer shortcut. */
 function typingElsewhere(e: KeyboardEvent): boolean {
@@ -67,15 +59,20 @@ function typingElsewhere(e: KeyboardEvent): boolean {
 }
 
 /**
- * Where the user gives a key-ID answer: a circle-of-fifths wheel (major keys outside, relative minors inside), a
- * button grid, or number buttons for the signature format. Every key can also be typed: a letter, then # or b,
- * then m for minor, then Enter.
+ * Where the player names a key: a circle-of-fifths wheel (major keys outside, relative minors inside), a text box with no picture at all (so there is nothing to count around), or by playing the tonic. Every key
+ * can also be typed anywhere: a letter, then # or b, then m for minor, then Enter.
  */
-export function KeyAnswerInput({ format, onAnswer, disabled = false, feedback = null }: Props) {
-  const [view, setView] = useState<'wheel' | 'grid' | 'type'>('wheel')
-  const typeBox = useRef<HTMLInputElement>(null)
-  const [gridMode, setGridMode] = useState<Mode>('major')
+export function KeyAnswerInput({
+  format,
+  onAnswer,
+  disabled = false,
+  feedback = null,
+  play,
+  onViewChange,
+}: Props) {
+  const [view, setView] = useState<AnswerView>('wheel')
   const [entry, setEntry] = useState<Entry>(EMPTY_ENTRY)
+  const typeBox = useRef<HTMLInputElement>(null)
   // The keyboard listener is attached once per format, so it reads the latest entry and callback through refs.
   const entryRef = useRef(entry)
   const onAnswerRef = useRef(onAnswer)
@@ -83,10 +80,12 @@ export function KeyAnswerInput({ format, onAnswer, disabled = false, feedback = 
     entryRef.current = entry
     onAnswerRef.current = onAnswer
   })
-  // Counting buttons have no wheel, so the wheel choice means the grid there.
-  const shownView = format === 'signature' && view === 'wheel' ? 'grid' : view
-  const useWheel = shownView === 'wheel'
+  const shownView: AnswerView = view === 'play' && !play ? 'wheel' : view
   const typing = shownView === 'type'
+  const choose_view = (v: AnswerView) => {
+    setView(v)
+    onViewChange?.(v)
+  }
 
   // A new question (or a locked/unlocked input) starts with nothing typed.
   const [seen, setSeen] = useState({ format, disabled })
@@ -96,7 +95,7 @@ export function KeyAnswerInput({ format, onAnswer, disabled = false, feedback = 
   }
 
   useEffect(() => {
-    if (disabled) return
+    if (disabled || shownView === 'play') return
     const onKey = (e: KeyboardEvent) => {
       if (e.ctrlKey || e.metaKey || e.altKey || typingElsewhere(e)) return
       const target = e.target as HTMLElement | null
@@ -107,7 +106,7 @@ export function KeyAnswerInput({ format, onAnswer, disabled = false, feedback = 
       if (!handled) return
       e.preventDefault()
       if (result.submit) {
-        const answer = entryAnswer(entryRef.current, format)
+        const answer = entryAnswer(entryRef.current)
         if (answer) {
           setEntry(EMPTY_ENTRY)
           onAnswerRef.current(answer)
@@ -118,13 +117,13 @@ export function KeyAnswerInput({ format, onAnswer, disabled = false, feedback = 
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [format, disabled])
+  }, [format, disabled, shownView])
 
   /** One key typed into the text box: the same rules as the global shortcuts. */
   const typeKey = (key: string) => {
     const result = entryKey(entryRef.current, key, format)
     if (result.submit) {
-      const answer = entryAnswer(entryRef.current, format)
+      const answer = entryAnswer(entryRef.current)
       if (answer) {
         entryRef.current = EMPTY_ENTRY
         setEntry(EMPTY_ENTRY)
@@ -135,7 +134,6 @@ export function KeyAnswerInput({ format, onAnswer, disabled = false, feedback = 
     entryRef.current = result.entry
     setEntry(result.entry)
   }
-
   const typeKeyRef = useRef(typeKey)
   useEffect(() => {
     typeKeyRef.current = typeKey
@@ -161,10 +159,10 @@ export function KeyAnswerInput({ format, onAnswer, disabled = false, feedback = 
     if (typing && !disabled) typeBox.current?.focus({ preventScroll: true })
   }, [typing, disabled, format])
 
-  const pending = entryAnswer(entry, format)
-  // Was the answer accepted? The caller can say (e.g. an enharmonic answer); otherwise it means "same as the right one".
+  const pending = entryAnswer(entry)
+  // Was the answer right? The caller can say; otherwise it means "same as the right one".
   const accepted = feedback
-    ? (feedback.ok ?? sameAnswer(feedback.given, feedback.correct, format))
+    ? (feedback.ok ?? (feedback.given !== null && sameAnswer(feedback.given, feedback.correct)))
     : null
   const choose = (a: KeyIdAnswer) => {
     if (disabled) return
@@ -172,26 +170,33 @@ export function KeyAnswerInput({ format, onAnswer, disabled = false, feedback = 
     onAnswer(a)
   }
 
+  const views: AnswerView[] = play ? ['wheel', 'type', 'play'] : ['wheel', 'type']
+  const viewLabel: Record<AnswerView, string> = {
+    wheel: 'Wheel',
+    type: 'Type',
+    play: 'Play',
+  }
+
+  const playMarks = new Map<number, KeyMark>()
+  if (play?.mark) playMarks.set(play.mark.midi, play.mark.right ? 'heard' : 'wrong')
+
   return (
     <div className="answer-input">
       <div className="answer-views" role="group" aria-label="Answer layout">
-        {(format === 'signature'
-          ? (['grid', 'type'] as const)
-          : (['wheel', 'grid', 'type'] as const)
-        ).map((v) => (
+        {views.map((v) => (
           <button
             key={v}
             type="button"
             className="seg"
             aria-pressed={shownView === v}
-            onClick={() => setView(v)}
+            onClick={() => choose_view(v)}
           >
-            {v === 'wheel' ? 'Wheel' : v === 'grid' ? 'Grid' : 'Type'}
+            {viewLabel[v]}
           </button>
         ))}
       </div>
 
-      {useWheel && (
+      {shownView === 'wheel' && (
         <svg
           className="wheel"
           viewBox="0 0 200 200"
@@ -199,14 +204,11 @@ export function KeyAnswerInput({ format, onAnswer, disabled = false, feedback = 
           aria-label="Circle of fifths: major keys outside, relative minors inside"
         >
           {SECTORS.map((s) => {
-            const enabled = !disabled && (format !== 'major' || s.mode === 'major')
-            const a = sectorAnswer(s, format)
+            const enabled = !disabled && (format === 'key' || s.mode === format)
             const isCorrect =
-              inAnswer(s, feedback?.correct, format) ||
-              (accepted === true && inAnswer(s, feedback?.given, format))
-            const isWrong = !isCorrect && accepted === false && inAnswer(s, feedback?.given, format)
-            const isPending =
-              inAnswer(s, pending, format) && (format !== 'pair' ? true : s.mode === 'major')
+              is(s, feedback?.correct) || (accepted === true && is(s, feedback?.given))
+            const isWrong = !isCorrect && accepted === false && is(s, feedback?.given)
+            const isPending = is(s, pending)
             const p = labelPoint(s)
             const cls = [
               'wheel-key',
@@ -227,11 +229,11 @@ export function KeyAnswerInput({ format, onAnswer, disabled = false, feedback = 
                 aria-label={s.name}
                 aria-disabled={!enabled}
                 tabIndex={enabled ? 0 : -1}
-                onClick={() => enabled && choose(a)}
+                onClick={() => enabled && choose(sectorAnswer(s))}
                 onKeyDown={(e) => {
                   if (enabled && (e.key === 'Enter' || e.key === ' ')) {
                     e.preventDefault()
-                    choose(a)
+                    choose(sectorAnswer(s))
                   }
                 }}
               >
@@ -255,83 +257,6 @@ export function KeyAnswerInput({ format, onAnswer, disabled = false, feedback = 
         </svg>
       )}
 
-      {!useWheel && !typing && (
-        <>
-          {format === 'key' && (
-            <div className="answer-views" role="group" aria-label="Major or minor">
-              {(['major', 'minor'] as const).map((m) => (
-                <button
-                  key={m}
-                  type="button"
-                  className="seg"
-                  aria-pressed={gridMode === m}
-                  onClick={() => setGridMode(m)}
-                >
-                  {m === 'major' ? 'Major' : 'Minor'}
-                </button>
-              ))}
-            </div>
-          )}
-          <div className="answer-grid">
-            {Array.from({ length: 15 }, (_, i) => i - 7).map((n) => {
-              const mode = format === 'major' ? 'major' : gridMode
-              const a: KeyIdAnswer =
-                format === 'signature'
-                  ? { accidentals: n }
-                  : format === 'pair'
-                    ? { accidentals: n }
-                    : { accidentals: n, mode }
-              const key = keySignature(n, mode)
-              const text =
-                format === 'signature'
-                  ? sharpFlat(n)
-                  : format === 'pair'
-                    ? `${keySignature(n, 'major').tonic.letter}${['𝄫', '♭', '', '♯', '𝄪'][keySignature(n, 'major').tonic.accidental + 2]} / ${keySignature(n, 'minor').tonic.letter}${['𝄫', '♭', '', '♯', '𝄪'][keySignature(n, 'minor').tonic.accidental + 2]}m`
-                    : `${key.tonic.letter}${['𝄫', '♭', '', '♯', '𝄪'][key.tonic.accidental + 2]}${mode === 'minor' ? 'm' : ''}`
-              const name =
-                format === 'signature'
-                  ? signatureLabel(n)
-                  : format === 'pair'
-                    ? answerLabel(a, 'pair')
-                    : keyName(key)
-              const matches = (x: KeyIdAnswer | null | undefined) =>
-                !!x &&
-                x.accidentals === n &&
-                (format !== 'key' || x.mode === mode) &&
-                (format !== 'major' || (x.mode ?? 'major') === 'major')
-              const isCorrect =
-                matches(feedback?.correct) || (accepted === true && matches(feedback?.given))
-              const isWrong = !isCorrect && accepted === false && matches(feedback?.given)
-              const isPending = matches(pending)
-              return (
-                <button
-                  key={n}
-                  type="button"
-                  className={[
-                    'answer-btn',
-                    isPending ? 'pending' : '',
-                    isCorrect ? 'correct' : '',
-                    isWrong ? 'wrong' : '',
-                  ]
-                    .filter(Boolean)
-                    .join(' ')}
-                  aria-label={name}
-                  disabled={disabled}
-                  onClick={() => choose(a)}
-                >
-                  {text}
-                  {(isCorrect || isWrong) && (
-                    <span className="answer-mark" aria-hidden="true">
-                      {isCorrect ? '✓' : '✕'}
-                    </span>
-                  )}
-                </button>
-              )
-            })}
-          </div>
-        </>
-      )}
-
       {typing && (
         <div className="type-answer">
           <input
@@ -344,14 +269,15 @@ export function KeyAnswerInput({ format, onAnswer, disabled = false, feedback = 
               .filter(Boolean)
               .join(' ')}
             aria-label="Your answer"
-            value={feedback ? answerLabel(feedback.given, format) : entryText(entry, format)}
+            value={
+              feedback ? (feedback.given ? answerLabel(feedback.given) : '') : entryText(entry)
+            }
             disabled={disabled}
             inputMode="text"
             autoCapitalize="off"
             autoComplete="off"
             autoCorrect="off"
             spellCheck={false}
-            placeholder={TYPE_HELP[format]}
             onChange={() => {}} // the value is driven by key handling; typing never edits it directly
             onKeyDown={(e) => {
               if (e.ctrlKey || e.metaKey || e.altKey) return
@@ -361,6 +287,11 @@ export function KeyAnswerInput({ format, onAnswer, disabled = false, feedback = 
               }
             }}
           />
+          {!disabled && !feedback && entry.letter === null && (
+            <span className="type-hint" aria-hidden="true">
+              {TYPE_HELP[format]}
+            </span>
+          )}
           {accepted !== null && (
             <span className="type-mark" aria-hidden="true">
               {accepted ? '✓' : '✕'}
@@ -369,13 +300,23 @@ export function KeyAnswerInput({ format, onAnswer, disabled = false, feedback = 
         </div>
       )}
 
+      {shownView === 'play' && play && (
+        <PianoKeyboard
+          marks={playMarks}
+          onKeyClick={disabled ? undefined : play.onNote}
+          label="Piano: play the tonic"
+        />
+      )}
+
       <p className="answer-pending" aria-live="polite">
         {disabled
           ? '' // what the right answer was is for the screen around this to say; the input only marks right and wrong
-          : typing
-            ? '' // the box shows what is typed, with the help as its placeholder
-            : entryText(entry, format) ||
-              'Tap an answer, or type it: a letter, then # or b, then m for minor, then Enter.'}
+          : shownView === 'play'
+            ? 'Play the tonic of the key, in any octave.'
+            : typing
+              ? '' // the box shows what is typed, with the help as its placeholder
+              : entryText(entry) ||
+                'Tap an answer, or type it: a letter, then # or b, then m for minor, then Enter.'}
       </p>
     </div>
   )

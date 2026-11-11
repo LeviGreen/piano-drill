@@ -54,10 +54,10 @@ Cross out a row (`~~text~~` in each cell) when its ticket is Done. Rows that are
 | 4 Drill Session (Play Mode) | PD-405 | Level progression & unlocking |
 | 4 Drill Session (Play Mode) | PD-406 | Mic-driven play end-to-end integration |
 | ~~5 Key Identification Mode~~ | ~~PD-501~~ | ~~Key-ID question generator~~ |
-| ~~5 Key Identification Mode~~ | ~~PD-502~~ | ~~Answer UI (circle-of-fifths / button grid)~~ |
-| 5 Key Identification Mode | PD-503 | Key-ID session screen & scoring |
-| 5 Key Identification Mode | PD-504 | Play-the-tonic answer option |
-| 5 Key Identification Mode | PD-505 | Key-ID settings & levels |
+| ~~5 Key Identification Mode~~ | ~~PD-502~~ | ~~Answer UI (circle-of-fifths wheel / typing)~~ |
+| ~~5 Key Identification Mode~~ | ~~PD-503~~ | ~~Key-ID session screen & scoring~~ |
+| ~~5 Key Identification Mode~~ | ~~PD-504~~ | ~~Play-the-tonic answer option~~ |
+| ~~5 Key Identification Mode~~ | ~~PD-505~~ | ~~Key-ID settings & levels~~ |
 | 7 Polish, Quality & Release | PD-701 | Onboarding & first-run flow |
 | 7 Polish, Quality & Release | PD-702 | PWA setup (offline, installable) |
 | 7 Polish, Quality & Release | PD-703 | Settings screen |
@@ -500,6 +500,7 @@ Level list with targets/locks, custom preset editor for all dimensions in §3, l
 
 **Acceptance:**
 - [ ] Any valid configuration can be created, previewed, saved, and launched.
+- [ ] Key-ID levels are selectable from the level screen too (moved from PD-505).
 
 ### PD-405: Level progression & unlocking
 
@@ -522,10 +523,11 @@ Wire `MicInput` into drill loop; handle permission-denied, mic loss, noisy envir
 
 **Acceptance:**
 - [ ] Complete a 20-rep session on a real piano using only the mic.
+- [ ] Key ID's Play view (answer by playing the tonic) works with the mic (moved from PD-504).
 
 ## Epic 5 — Key Identification Mode
 
-Progress: 2/5 tickets done
+Progress: 5/5 tickets done
 
 ### PD-501: Key-ID question generator
 
@@ -533,58 +535,64 @@ Progress: 2/5 tickets done
 **Deps:** PD-102  
 **Status:** Done
 
-Generate key-signature questions respecting settings (clef, accidental range, major/minor/both, tonic hint, enharmonic rules); anti-repeat.
+Generate key-signature questions on a treble staff respecting settings (accidental range, major/minor/both); anti-repeat. The question is always "name the key".
 
 **Acceptance:**
 - [x] Tests verify each generated question has an unambiguous correct answer under the selected answer format.
 
-**Notes:** four answer formats (count the sharps/flats, name the major key, name the key with the tonic shown, major/relative-minor pair), each proven to have exactly one right answer; strict or lenient enharmonic checking; no repeated signature back to back. See `src/keyid/questions.ts`.
+**Notes:** one question type, "name the key". The format follows from the keys asked: one mode (major only or minor only) shows the signature alone ("which major/minor key?"); only when major and minor are mixed is a whole note on the tonic added so the answer is unique. Treble clef only. F♯ and G♭ major are always different answers (no enharmonic setting). Each question is proven to have exactly one right answer; no repeated signature back to back. See `src/keyid/questions.ts`.
 
-### PD-502: Answer UI (circle-of-fifths / button grid)
+### PD-502: Answer UI (circle-of-fifths wheel / typing)
 
 **Size:** M  
 **Deps:** PD-002  
 **Status:** Done
 
-Touch-friendly answer input with proper enharmonic labelling; major/minor toggle where applicable; keyboard shortcuts. Three ways to answer: the circle-of-fifths **Wheel**, a button **Grid**, and **Type** (a text box with no visual cue, since a wheel or grid lets you count around it). Layout must not shift when an answer arrives.
+Touch-friendly answer input with proper enharmonic labelling; major/minor toggle where applicable; keyboard shortcuts. Three ways to answer: the circle-of-fifths **Wheel**, **Type** (a text box with no visual cue, since a wheel lets you count around it), and **Play** (the tonic on a piano; see PD-504). A button grid was tried and cut. Layout must not shift when an answer arrives.
 
 **Acceptance:**
-- [x] All 30 keys can be selected correctly on desktop, by wheel, grid and typing (phone check moved to PD-704).
+- [x] All 30 keys can be selected correctly on desktop, by wheel and typing (phone check moved to PD-704).
 
-**Notes:** three ways to answer: circle-of-fifths wheel (majors outside, relative minors inside, the three enharmonic positions split), button grid with a Major/Minor switch, and Type (no visual cue; works with a phone keyboard). Marks right and wrong by shape and color. The input marks right/wrong only; the screen around it says what the answer was. Verified on desktop in Settings > Key ID preview.
+**Notes:** circle-of-fifths wheel (majors outside, relative minors inside, the three enharmonic positions split; kept compact), Type (no visual cue; works with a phone keyboard), and Play. All centred under the staff. Marks right and wrong by shape and color. The input marks right/wrong only; the screen around it says what the answer was. Verified on desktop in Settings > Key ID preview.
 
 ### PD-503: Key-ID session screen & scoring
 
 **Size:** M  
 **Deps:** PD-501, PD-502, PD-401  
-**Status:** Todo
+**Status:** Done
 
-Flash → answer → timed result; reuse session machine/summary; record confusion data (answered vs. correct).
+Flash → answer → timed result; reuse the rep session machine (4 s first get-ready with countdown, 1 s between) and summary; record confusion data (answered vs. correct).
 
 **Acceptance:**
-- [ ] Full session works; results stored with the same `RepResult` shape (mode flag).
+- [x] Full session works; results stored with the same `RepResult` shape (mode flag).
+
+**Notes:** a session is always 20 questions. The staff has a 4 s countdown at the start, then a per-question countdown clock when a time limit is set. A wrong answer says what the right one was; a right one shows only the green mark. Results appear only at the end, in a modal: correct count, total time and mix-ups (no per-question times). See `src/keyid/KeyIdSession.ts` and `src/ui/KeyIdScreen.tsx`.
 
 ### PD-504: Play-the-tonic answer option
 
 **Size:** S  
 **Deps:** PD-503, PD-308  
-**Status:** Todo
+**Status:** Done
 
-Alternative answer method: play the tonic note on the piano and verify via the mic.
+Alternative answer: a fourth view on the main screen (next to Wheel and Type) where you play the tonic of the key on the piano, verified via the mic. Not a setting in the drawer; switchable at any time.
 
 **Acceptance:**
-- [ ] Works with the mic input; settings toggle between tap and play.
+- [x] The Play view toggles between tap and play; the first note struck decides, any octave (on-screen piano keys stand in for the piano).
+
+**Notes:** working with the real microphone moved to PD-406's acceptance, since it needs PD-307/308.
 
 ### PD-505: Key-ID settings & levels
 
 **Size:** S  
 **Deps:** PD-503, PD-404  
-**Status:** Todo
+**Status:** Done
 
-Presets (e.g. ≤2 accidentals → all keys; major → minor), custom options UI.
+Presets (≤2 accidentals → all major keys → major and minor → all 30 keys), custom options UI.
 
 **Acceptance:**
-- [ ] Presets selectable from the level screen.
+- [x] Presets selectable, and options editable, in the Key ID screen's settings drawer (level, sharps/flats, keys, time limit).
+
+**Notes:** selecting key-ID levels from the global level screen moved to PD-404's acceptance.
 
 ## Epic 7 — Polish, Quality & Release
 
@@ -635,7 +643,7 @@ Test matrix per §11; fix iOS Safari audio, permission, throttling, and layout b
 - [ ] Checklist passes on the device matrix; issues triaged.
 - [ ] Mic test screen level meter works on iOS Safari and Android Chrome (moved from PD-304); fill in the mobile rows in docs/audio-clock.md.
 - [ ] Flash test screen on a mid-range phone: swap within one frame, t0 callback once per flash (moved from PD-204); record the numbers.
-- [ ] Key-ID answer wheel, grid and Type mode work on a phone: every key tappable, soft keyboard works in Type mode (moved from PD-502).
+- [ ] Key-ID answer wheel and Type mode work on a phone: every key tappable, soft keyboard works in Type mode (moved from PD-502).
 
 ### PD-705: Performance & battery pass
 

@@ -61,15 +61,16 @@ export type ParseResult =
 
 // ---------- helpers ----------
 
-type Json = Record<string, unknown>
-const isObject = (v: unknown): v is Json => typeof v === 'object' && v !== null && !Array.isArray(v)
-const show = (v: unknown): string =>
+export type Json = Record<string, unknown>
+export const isObject = (v: unknown): v is Json =>
+  typeof v === 'object' && v !== null && !Array.isArray(v)
+export const show = (v: unknown): string =>
   typeof v === 'string' ? `"${v}"` : (JSON.stringify(v) ?? String(v))
-const isInt = (v: unknown, lo: number, hi: number): v is number =>
+export const isInt = (v: unknown, lo: number, hi: number): v is number =>
   Number.isInteger(v) && (v as number) >= lo && (v as number) <= hi
 
 /** Merge `over` onto `base`: objects merge key by key, arrays and values replace. */
-function deepMerge(base: unknown, over: unknown): unknown {
+export function deepMerge(base: unknown, over: unknown): unknown {
   if (over === undefined) return base
   if (isObject(base) && isObject(over)) {
     const out: Json = { ...base }

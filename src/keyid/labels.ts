@@ -1,23 +1,12 @@
 import { keyName, keySignature } from '../theory/keys'
-import type { KeyIdAnswer, KeyIdFormat } from './questions'
+import type { KeyIdAnswer } from './questions'
 
-/** "No sharps or flats", "1 sharp", "3 flats". */
-export function signatureLabel(accidentals: number): string {
-  if (accidentals === 0) return 'No sharps or flats'
-  const n = Math.abs(accidentals)
-  return `${n} ${accidentals > 0 ? 'sharp' : 'flat'}${n > 1 ? 's' : ''}`
-}
+/** "E♭ major", "A minor". */
+export const answerLabel = (answer: KeyIdAnswer): string =>
+  keyName(keySignature(answer.accidentals, answer.mode))
 
-/** How an answer reads in a given format: "3 flats", "E♭ major", "A minor", "E♭ major / C minor". */
-export function answerLabel(answer: KeyIdAnswer, format: KeyIdFormat): string {
-  switch (format) {
-    case 'signature':
-      return signatureLabel(answer.accidentals)
-    case 'major':
-      return keyName(keySignature(answer.accidentals, 'major'))
-    case 'key':
-      return keyName(keySignature(answer.accidentals, answer.mode ?? 'major'))
-    case 'pair':
-      return `${keyName(keySignature(answer.accidentals, 'major'))} / ${keyName(keySignature(answer.accidentals, 'minor'))}`
-  }
+/** The short name used on buttons: "E♭" for a major key, "Cm" for a minor key. */
+export function shortLabel(answer: KeyIdAnswer): string {
+  const t = keySignature(answer.accidentals, answer.mode).tonic
+  return `${t.letter}${['𝄫', '♭', '', '♯', '𝄪'][t.accidental + 2]}${answer.mode === 'minor' ? 'm' : ''}`
 }

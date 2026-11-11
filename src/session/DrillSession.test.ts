@@ -5,8 +5,8 @@ import { keySignature } from '../theory/keys'
 import { parsePitch } from '../theory/pitch'
 import type { Target } from '../theory/target'
 import { FakeClock } from '../test-utils/fakeClock'
-import { DrillSession, type SessionOptions } from './DrillSession'
-import type { Presenter, SessionSnapshot } from './types'
+import { DrillSession, type SessionOptions, type SessionSnapshot } from './DrillSession'
+import type { Presenter } from './types'
 
 const settings = (over: Record<string, unknown> = {}): DifficultySettings => {
   const r = parseSettings({ hands: ['RH'], timeoutSeconds: 10, ...over })
@@ -290,12 +290,12 @@ describe('waiting for quiet before a flash (READY)', () => {
     const r = rig({ getReadyMs: undefined, totalReps: 3 })
     expect(r.session.snapshot.ready).toBeNull() // not before the session starts
     await r.session.start()
-    expect(r.session.snapshot.ready).toEqual({ at: 4000, first: true })
+    expect(r.session.snapshot.ready).toEqual({ since: 0, at: 4000, first: true })
     await r.clock.advance(4003)
     expect(r.session.snapshot.ready).toBeNull() // not while a target is on screen
     r.play('C4', 'E4', 'G4')
     await r.clock.advance(100)
-    expect(r.session.snapshot.ready).toEqual({ at: 4003 + 100 + 1000, first: false })
+    expect(r.session.snapshot.ready).toEqual({ since: 4103, at: 4003 + 100 + 1000, first: false })
   })
 
   it('counts down again after a resume (it is a fresh start)', async () => {
@@ -305,7 +305,7 @@ describe('waiting for quiet before a flash (READY)', () => {
     r.session.pause()
     expect(r.session.snapshot.ready).toBeNull()
     r.session.resume()
-    expect(r.session.snapshot.ready).toEqual({ at: 1000 + 4000, first: true })
+    expect(r.session.snapshot.ready).toEqual({ since: 1000, at: 1000 + 4000, first: true })
   })
 
   it('then waits only 1 second between targets', async () => {

@@ -230,6 +230,58 @@ select {
   }
 }
 
+/* Phones: tighten the Key ID screen so the answer wheel fits without scrolling. */
+@media (max-width: 640px) {
+  .shell-header {
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+    min-height: 0;
+  }
+
+  .screen {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+
+  .keyid-screen h1 {
+    display: none; /* the tab bar already says Key ID */
+  }
+
+  .keyid-bar {
+    flex-wrap: nowrap;
+    gap: 0.25rem;
+  }
+
+  .keyid-bar button {
+    padding: 0.4rem 0.55rem;
+    font-size: 0.9rem;
+  }
+
+  .keyid-status {
+    min-height: 1.25rem;
+    margin: 0;
+  }
+
+  .keyid-clock {
+    height: 1.75rem;
+    margin: 0;
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+  }
+
+  .keyid-screen .result-slot {
+    min-height: 1.5rem;
+  }
+
+  .answer-views {
+    margin: 0.25rem 0;
+  }
+
+  .wheel {
+    margin: 0.25rem auto;
+  }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .card {
     transition: border-color 0.15s;
@@ -503,6 +555,98 @@ fieldset {
   pointer-events: none;
 }
 
+/* Settings drawer */
+.drawer-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+}
+
+.drawer-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgb(0 0 0 / 0.45);
+}
+
+.drawer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(24rem, 100%);
+  overflow-y: auto;
+  background: var(--bg);
+  color: var(--text);
+  border-left: 1px solid var(--border);
+  box-shadow: -8px 0 24px rgb(0 0 0 / 0.25);
+  padding: var(--space);
+}
+
+.drawer:focus {
+  outline: none;
+}
+
+.drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space);
+}
+
+.drawer-head h2 {
+  margin: 0;
+}
+
+.drawer-body {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.drawer-body label {
+  display: grid;
+  gap: 0.25rem;
+}
+
+/* Key ID screen: one centred column, so the staff and the answer input line up */
+.keyid-screen {
+  max-width: 34rem;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.keyid-screen .result-slot {
+  justify-content: center;
+}
+
+.keyid-summary {
+  text-align: left;
+}
+
+.keyid-bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.keyid-status {
+  min-height: 1.5rem; /* reserved: the status never changes the height of the page */
+  margin: 0.25rem 0 0;
+}
+
+/* Its own line, with digits of equal width, so counting down moves nothing. */
+.keyid-clock {
+  height: 2.5rem; /* fixed, with or without a number, so nothing moves */
+  margin: 0 0 0.25rem;
+  font-size: 1.5rem;
+  line-height: 2.5rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+
 /* Session demo results */
 .results {
   border-collapse: collapse;
@@ -519,11 +663,14 @@ fieldset {
 
 /* Key-ID answer input */
 .answer-input {
-  max-width: 30rem;
+  max-width: 26rem;
+  margin: 0 auto;
+  text-align: center;
 }
 
 .answer-views {
   display: flex;
+  justify-content: center;
   gap: 0.25rem;
   margin: 0.5rem 0;
 }
@@ -545,7 +692,7 @@ fieldset {
   display: block;
   width: 100%;
   height: auto;
-  max-width: 28rem;
+  max-width: 25rem;
   margin: 0.5rem auto;
   color: var(--text);
 }
@@ -564,13 +711,22 @@ fieldset {
   fill: var(--bg);
 }
 
-.wheel-key:hover path,
 .wheel-key:focus-visible path {
   fill: color-mix(in srgb, var(--accent) 30%, var(--surface));
 }
 
+/* Hover only where there is a real pointer: on a touchscreen it sticks to the last thing tapped. */
+@media (hover: hover) {
+  .wheel-key:hover path {
+    fill: color-mix(in srgb, var(--accent) 30%, var(--surface));
+  }
+}
+
+.wheel-key,
+.wheel-key:focus,
 .wheel-key:focus-visible {
-  outline: none;
+  outline: none; /* the browser's box around a clicked sector looks wrong; keyboard focus is drawn on the path below */
+  -webkit-tap-highlight-color: transparent;
 }
 
 .wheel-key:focus-visible path {
@@ -601,8 +757,10 @@ fieldset {
   opacity: 0.35;
 }
 
-.wheel-key.off:hover path {
-  fill: var(--surface);
+@media (hover: hover) {
+  .wheel-key.off:hover path {
+    fill: var(--surface);
+  }
 }
 
 .wheel-label,
@@ -637,15 +795,17 @@ fieldset {
   position: relative;
   width: 100%;
   max-width: 18rem;
-  margin: 1rem 0;
+  margin: 1rem auto;
 }
 
 .type-box {
   display: block;
   width: 100%;
-  height: 4.25rem;
-  padding: 0 3rem 0 1rem;
-  font-size: 1.6rem;
+  box-sizing: border-box;
+  height: 3.25rem;
+  padding: 0 2.75rem; /* equal on both sides so the text sits in the middle; room for the ✓/✕ */
+  line-height: 1.25;
+  font-size: 1.5rem;
   font-weight: 700;
   text-align: center;
   color: var(--text);
@@ -654,10 +814,16 @@ fieldset {
   border-radius: var(--radius);
 }
 
-.type-box::placeholder {
+.type-hint {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 0.95rem;
-  font-weight: 400;
   color: var(--text-muted);
+  white-space: pre;
+  pointer-events: none;
 }
 
 .type-box:focus {
@@ -682,6 +848,11 @@ fieldset {
   -webkit-text-fill-color: var(--text);
 }
 
+/* Not waiting for an answer and nothing to show: look idle, and don't invite typing. */
+.type-box:disabled:not(.correct):not(.wrong) {
+  opacity: 0.55;
+}
+
 .type-mark {
   position: absolute;
   top: 50%;
@@ -690,41 +861,6 @@ fieldset {
   font-size: 1.5rem;
   font-weight: 700;
   pointer-events: none;
-}
-
-.answer-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(3.6rem, 1fr));
-  gap: 0.4rem;
-}
-
-.answer-btn {
-  position: relative;
-  min-height: 3rem;
-  color: var(--text);
-  background: var(--surface);
-  border: 2px solid var(--border);
-  padding: 0.25rem;
-}
-
-.answer-btn:hover:not(:disabled) {
-  border-color: var(--accent);
-}
-
-.answer-btn.pending {
-  border-color: var(--accent);
-  box-shadow: inset 0 0 0 2px var(--accent);
-}
-
-.answer-btn.correct {
-  border-color: var(--ok);
-  box-shadow: inset 0 0 0 2px var(--ok);
-  font-weight: 700;
-}
-
-.answer-btn.wrong {
-  border-color: var(--bad);
-  border-style: dashed;
 }
 
 .answer-pending {
@@ -739,13 +875,6 @@ fieldset {
   align-items: center;
   flex-wrap: wrap;
   gap: 0.5rem;
-}
-
-.answer-mark {
-  position: absolute;
-  top: 1px;
-  right: 4px;
-  font-size: 0.8rem;
 }
 
 /* Corpus recorder */
@@ -840,4 +969,35 @@ button {
 button:disabled {
   opacity: 0.6;
   cursor: default;
+}
+
+/* Results modal */
+.modal {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(24rem, calc(100% - 2rem));
+  max-height: 90%;
+  overflow-y: auto;
+  padding: var(--space);
+  background: var(--bg);
+  color: var(--text);
+  border-radius: 0.5rem;
+  text-align: center;
+}
+
+.modal-score {
+  font-size: 1.5rem;
+}
+
+.modal ul {
+  text-align: left;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: var(--space);
 }

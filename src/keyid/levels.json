@@ -1,0 +1,77 @@
+[
+  {
+    "id": 1,
+    "name": "Level 1: First major keys",
+    "description": "Name the major key, up to 2 sharps or flats.",
+    "settings": {
+      "maxAccidentals": 2,
+      "modes": "major",
+      "goal": {
+        "medianSeconds": 3,
+        "accuracy": 0.9,
+        "reps": 10
+      },
+      "name": "Level 1: First major keys"
+    }
+  },
+  {
+    "id": 2,
+    "name": "Level 2: More major keys",
+    "description": "Name the major key, up to 4 sharps or flats.",
+    "settings": {
+      "maxAccidentals": 4,
+      "modes": "major",
+      "goal": {
+        "medianSeconds": 3,
+        "accuracy": 0.9,
+        "reps": 10
+      },
+      "name": "Level 2: More major keys"
+    }
+  },
+  {
+    "id": 3,
+    "name": "Level 3: All major keys",
+    "description": "Every major key, up to 7 sharps or flats.",
+    "settings": {
+      "maxAccidentals": 7,
+      "modes": "major",
+      "goal": {
+        "medianSeconds": 4,
+        "accuracy": 0.9,
+        "reps": 10
+      },
+      "name": "Level 3: All major keys"
+    }
+  },
+  {
+    "id": 4,
+    "name": "Level 4: Major and minor",
+    "description": "A note shows the tonic: name the major or minor key, up to 4 sharps or flats.",
+    "settings": {
+      "maxAccidentals": 4,
+      "modes": "both",
+      "goal": {
+        "medianSeconds": 4,
+        "accuracy": 0.9,
+        "reps": 10
+      },
+      "name": "Level 4: Major and minor"
+    }
+  },
+  {
+    "id": 5,
+    "name": "Level 5: All 30 keys",
+    "description": "Every major and minor key.",
+    "settings": {
+      "maxAccidentals": 7,
+      "modes": "both",
+      "goal": {
+        "medianSeconds": 5,
+        "accuracy": 0.9,
+        "reps": 10
+      },
+      "name": "Level 5: All 30 keys"
+    }
+  }
+]

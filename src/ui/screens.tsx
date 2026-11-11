@@ -34,7 +34,6 @@ function Placeholder({ title, ticket }: { title: string; ticket: string }) {
 }
 
 export const PlayScreen = () => <Placeholder title="Play" ticket="PD-402" />
-export const KeyIdScreen = () => <Placeholder title="Key ID" ticket="PD-503" />
 export function SettingsScreen() {
   return (
     <>
@@ -53,9 +52,6 @@ export function SettingsScreen() {
       </p>
       <p>
         <Link to="/settings/flash-test">Flash test</Link>
-      </p>
-      <p>
-        <Link to="/settings/key-id-preview">Key ID preview</Link>
       </p>
       <p>
         <Link to="/settings/session-demo">Session demo</Link>

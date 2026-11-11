@@ -39,7 +39,7 @@ describe('the circle-of-fifths wheel: all 30 keys', () => {
     expect(onAnswer).toHaveBeenLastCalledWith({ accidentals: -7, mode: 'major' })
   })
 
-  it('"major" format: only the major ring answers; the minor ring is switched off', async () => {
+  it('only the major ring answers; the minor ring is switched off', async () => {
     const onAnswer = setup('major')
     const minor = screen.getByRole('button', { name: 'A minor' })
     expect(minor.getAttribute('aria-disabled')).toBe('true')
@@ -49,12 +49,13 @@ describe('the circle-of-fifths wheel: all 30 keys', () => {
     expect(onAnswer).toHaveBeenCalledWith({ accidentals: 0, mode: 'major' })
   })
 
-  it('"pair" format: either ring picks the pair, and the answer has no mode', async () => {
-    const onAnswer = setup('pair')
+  it('"minor" format: only the minor ring answers', async () => {
+    const onAnswer = setup('minor')
+    expect(screen.getByRole('button', { name: 'C major' }).getAttribute('aria-disabled')).toBe(
+      'true',
+    )
     await userEvent.click(screen.getByRole('button', { name: 'C minor' }))
-    expect(onAnswer).toHaveBeenLastCalledWith({ accidentals: -3 })
-    await userEvent.click(screen.getByRole('button', { name: 'E♭ major' }))
-    expect(onAnswer).toHaveBeenLastCalledWith({ accidentals: -3 })
+    expect(onAnswer).toHaveBeenCalledWith({ accidentals: -3, mode: 'minor' })
   })
 
   it('can be used from the keyboard: Tab to a sector and press Enter or Space', async () => {
@@ -64,52 +65,6 @@ describe('the circle-of-fifths wheel: all 30 keys', () => {
     expect(onAnswer).toHaveBeenLastCalledWith({ accidentals: 2, mode: 'major' })
     await userEvent.keyboard(' ')
     expect(onAnswer).toHaveBeenCalledTimes(2)
-  })
-})
-
-describe('the button grid', () => {
-  it('"key" format: Major and Minor pages of 15 keys each, in order from 7 flats to 7 sharps; every key answers correctly', async () => {
-    const onAnswer = setup('key')
-    await userEvent.click(screen.getByRole('button', { name: 'Grid' }))
-    for (const mode of ['major', 'minor'] as const) {
-      await userEvent.click(
-        screen.getByRole('button', { name: mode === 'major' ? 'Major' : 'Minor' }),
-      )
-      for (const key of ALL_KEYS.filter((k) => k.mode === mode)) {
-        await userEvent.click(screen.getByRole('button', { name: keyName(key) }))
-        expect(onAnswer).toHaveBeenLastCalledWith({ accidentals: key.accidentals, mode })
-      }
-    }
-    expect(onAnswer).toHaveBeenCalledTimes(30)
-  })
-
-  it('"major" format grid has 15 major keys and no mode switch', async () => {
-    setup('major')
-    await userEvent.click(screen.getByRole('button', { name: 'Grid' }))
-    expect(screen.queryByRole('button', { name: 'Minor' })).toBeNull()
-    expect(screen.getByRole('button', { name: 'A♭ major' })).toBeTruthy()
-    expect(screen.queryByRole('button', { name: 'A minor' })).toBeNull()
-  })
-
-  it('"pair" format grid shows each pair, e.g. E♭ major / C minor', async () => {
-    const onAnswer = setup('pair')
-    await userEvent.click(screen.getByRole('button', { name: 'Grid' }))
-    await userEvent.click(screen.getByRole('button', { name: 'E♭ major / C minor' }))
-    expect(onAnswer).toHaveBeenCalledWith({ accidentals: -3 })
-  })
-
-  it('"signature" format: 15 buttons from 7 flats to 7 sharps, always a grid', async () => {
-    const onAnswer = setup('signature')
-    expect(screen.queryByRole('button', { name: 'Wheel' })).toBeNull() // no wheel for counting
-    for (let n = -7; n <= 7; n++) {
-      const name =
-        n === 0
-          ? 'No sharps or flats'
-          : `${Math.abs(n)} ${n > 0 ? 'sharp' : 'flat'}${Math.abs(n) > 1 ? 's' : ''}`
-      await userEvent.click(screen.getByRole('button', { name }))
-      expect(onAnswer).toHaveBeenLastCalledWith({ accidentals: n })
-    }
-    expect(onAnswer).toHaveBeenCalledTimes(15)
   })
 })
 
@@ -146,16 +101,6 @@ describe('typing an answer', () => {
     expect(onAnswer).not.toHaveBeenCalled()
   })
 
-  it('the signature format is typed with a digit and a sign', async () => {
-    const onAnswer = setup('signature')
-    await userEvent.keyboard('3b{Enter}')
-    expect(onAnswer).toHaveBeenLastCalledWith({ accidentals: -3 })
-    await userEvent.keyboard('0{Enter}')
-    expect(onAnswer).toHaveBeenLastCalledWith({ accidentals: 0 })
-    await userEvent.keyboard('7#{Enter}')
-    expect(onAnswer).toHaveBeenLastCalledWith({ accidentals: 7 })
-  })
-
   it('shows the typed key on the wheel as a pending choice', async () => {
     setup('major')
     await userEvent.keyboard('a')
@@ -183,7 +128,7 @@ describe('typing an answer', () => {
   })
 })
 
-describe('Type mode: no wheel or grid to count around', () => {
+describe('Type mode: no wheel to count around', () => {
   const typeMode = async (
     format: KeyIdFormat,
     props: Partial<Parameters<typeof KeyAnswerInput>[0]> = {},
@@ -193,23 +138,19 @@ describe('Type mode: no wheel or grid to count around', () => {
     return onAnswer
   }
 
-  it('offers Wheel, Grid and Type for key names, and Grid and Type for counting', () => {
+  it('offers Wheel and Type, and Play only when the screen can listen for notes', () => {
     setup('key')
-    expect(['Wheel', 'Grid', 'Type'].every((n) => screen.getByRole('button', { name: n }))).toBe(
-      true,
-    )
+    expect(['Wheel', 'Type'].every((n) => screen.getByRole('button', { name: n }))).toBe(true)
+    expect(screen.queryByRole('button', { name: 'Play' })).toBeNull()
     cleanup()
-    setup('signature')
-    expect(screen.queryByRole('button', { name: 'Wheel' })).toBeNull()
-    expect(screen.getByRole('button', { name: 'Grid' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Type' })).toBeTruthy()
+    setup('key', { play: { onNote: vi.fn(), mark: null } })
+    expect(screen.getByRole('button', { name: 'Play' })).toBeTruthy()
   })
 
-  it('removes every visual cue: no wheel sectors, no grid buttons, just a text box', async () => {
+  it('removes every visual cue: no wheel sectors, just a text box', async () => {
     await typeMode('key')
     expect(screen.queryByRole('group', { name: /circle of fifths/i })).toBeNull()
     expect(screen.queryByRole('button', { name: 'C major' })).toBeNull()
-    expect(screen.queryByRole('button', { name: 'Major' })).toBeNull()
     expect(screen.getByLabelText('Your answer')).toBeTruthy()
   })
 
@@ -249,15 +190,6 @@ describe('Type mode: no wheel or grid to count around', () => {
     const box = screen.getByLabelText('Your answer') as HTMLInputElement
     await userEvent.type(box, 'hello world 123')
     expect(box.value).toMatch(/^[A-G][♭♯]? major(: no such key)?$|^$/)
-  })
-
-  it('counting by typing: a digit and a sign', async () => {
-    const onAnswer = await typeMode('signature')
-    const box = screen.getByLabelText('Your answer')
-    await userEvent.type(box, '3b{Enter}')
-    expect(onAnswer).toHaveBeenLastCalledWith({ accidentals: -3 })
-    await userEvent.type(box, '0{Enter}')
-    expect(onAnswer).toHaveBeenLastCalledWith({ accidentals: 0 })
   })
 
   it('does not submit an invalid key, and is locked after an answer', async () => {
@@ -354,36 +286,42 @@ describe('locking and feedback', () => {
     expect(bad.textContent).toContain('✕')
   })
 
-  it('marks answers on the grid too, and a pair lights up both rings of the wheel', async () => {
-    setup('signature', {
-      disabled: true,
-      feedback: { correct: { accidentals: -2 }, given: { accidentals: 4 } },
-    })
-    expect(screen.getByRole('button', { name: '2 flats' }).textContent).toContain('✓')
-    expect(screen.getByRole('button', { name: '4 sharps' }).textContent).toContain('✕')
-    cleanup()
-    setup('pair', {
-      disabled: true,
-      feedback: { correct: { accidentals: -3 }, given: { accidentals: -3 } },
-    })
-    expect(screen.getByRole('button', { name: 'E♭ major' }).classList.contains('correct')).toBe(
-      true,
-    )
-    expect(screen.getByRole('button', { name: 'C minor' }).classList.contains('correct')).toBe(true)
-  })
-
-  it('puts grid marks on top of the buttons, in their own element, so buttons never change size', () => {
-    setup('signature', {
-      disabled: true,
-      feedback: { correct: { accidentals: -2 }, given: { accidentals: 4 } },
-    })
-    const good = screen.getByRole('button', { name: '2 flats' })
-    expect(good.querySelector('.answer-mark')?.textContent).toBe('✓')
-  })
-
   it('groups the wheel so a screen reader knows what it is', () => {
     setup('key')
     const wheel = screen.getByRole('group', { name: /circle of fifths/i })
     expect(within(wheel).getAllByRole('button')).toHaveLength(30)
+  })
+})
+
+describe('the Play view: answering with the tonic on a piano', () => {
+  it('shows a piano, reports the key struck, and tells the screen the view changed', async () => {
+    const onNote = vi.fn()
+    const onViewChange = vi.fn()
+    setup('major', { play: { onNote, mark: null }, onViewChange })
+    await userEvent.click(screen.getByRole('button', { name: 'Play' }))
+    expect(onViewChange).toHaveBeenLastCalledWith('play')
+    expect(screen.queryByRole('group', { name: /circle of fifths/i })).toBeNull()
+    const piano = screen.getByLabelText('Piano: play the tonic')
+    const keys = piano.querySelectorAll('[data-midi]')
+    expect(keys.length).toBeGreaterThan(20)
+    await userEvent.click(keys[0] as Element)
+    expect(onNote).toHaveBeenCalledWith(Number(keys[0].getAttribute('data-midi')))
+    await userEvent.click(screen.getByRole('button', { name: 'Wheel' }))
+    expect(onViewChange).toHaveBeenLastCalledWith('wheel')
+  })
+
+  it('typing does not answer while in the Play view, and the hint says to play', async () => {
+    const onAnswer = setup('major', { play: { onNote: vi.fn(), mark: null } })
+    await userEvent.click(screen.getByRole('button', { name: 'Play' }))
+    await userEvent.keyboard('c{Enter}')
+    expect(onAnswer).not.toHaveBeenCalled()
+    expect(screen.getByText(/Play the tonic of the key/)).toBeTruthy()
+  })
+
+  it('marks the key that was played', async () => {
+    setup('major', { play: { onNote: vi.fn(), mark: { midi: 60, right: false } }, disabled: true })
+    await userEvent.click(screen.getByRole('button', { name: 'Play' }))
+    const key = document.querySelector('[data-midi="60"]')
+    expect(key?.getAttribute('class') ?? '').toMatch(/wrong/)
   })
 })

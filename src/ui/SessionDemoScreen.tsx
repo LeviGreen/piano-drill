@@ -6,10 +6,11 @@ import { PRESET_LEVELS } from '../levels/presets'
 import { FlashController } from '../notation/flash'
 import { PianoKeyboard, type KeyMark } from '../notation/PianoKeyboard'
 import { renderGrandStaff } from '../notation/renderGrandStaff'
-import { DrillSession } from '../session/DrillSession'
-import type { Presenter, RepResult, SessionSnapshot } from '../session/types'
+import { DrillSession, type SessionSnapshot } from '../session/DrillSession'
+import type { Presenter, RepResult } from '../session/types'
 import { keySignature } from '../theory/keys'
 import { formatPitch } from '../theory/pitch'
+import { useCountdown } from './useCountdown'
 import type { Target } from '../theory/target'
 
 const REPS = 5
@@ -35,7 +36,6 @@ export function SessionDemoScreen() {
   const [snap, setSnap] = useState<SessionSnapshot | null>(null)
   const [results, setResults] = useState<RepResult[]>([])
   const [elapsed, setElapsed] = useState(0)
-  const [now, setNow] = useState(() => performance.now())
 
   const stop = () => session.current?.end()
 
@@ -82,7 +82,6 @@ export function SessionDemoScreen() {
     session.current = s
     s.subscribe((snapshot) => {
       setSnap(snapshot)
-      setNow(performance.now()) // a fresh reading, so the countdown starts from the true time left
       setResults([...s.results])
       // While notes are being heard, redraw the staff with a halo on each one that has been heard.
       const t = snapshot.target
@@ -111,15 +110,8 @@ export function SessionDemoScreen() {
     return () => clearInterval(id)
   }, [snap?.state, snap?.t0])
 
-  // While counting down to the first target, keep the clock moving so the number changes.
-  const countingDown = snap?.state === 'READY' && snap.ready?.first === true
-  useEffect(() => {
-    if (!countingDown) return
-    const id = setInterval(() => setNow(performance.now()), 100)
-    return () => clearInterval(id)
-  }, [countingDown])
-  const count =
-    countingDown && snap?.ready ? Math.max(0, Math.ceil((snap.ready.at - now) / 1000)) : null
+  const count = useCountdown(snap?.ready ?? null)
+  const countingDown = count !== null
 
   /** A click on a key is a note struck and let go. */
   const tap = (midi: number) => {

@@ -56,7 +56,7 @@ Timeout (configurable, default 10 s): the target is revealed with note names + a
 ### 2.2 Key Identification Mode
 
 1. A staff with a **key signature only** is flashed (clef varies; optionally a tonic hint, see §7).
-2. User answers by tapping a key button (circle-of-fifths wheel or a button grid), or optionally by playing the tonic on the piano.
+2. User answers by tapping a key button (the circle-of-fifths wheel), or optionally by playing the tonic on the piano.
 3. Timed; correct/incorrect recorded; same summary/stat treatment as Play Mode.
 
 ### 2.3 Settings / Level Select
@@ -269,13 +269,16 @@ Results stored per input device.
 
 ## 7. Key Identification Mode
 
-**Presentation:** a staff with a key signature (and clef) only; no notes. Optional variants:
+**Presentation:** a treble staff with a key signature. The question is always "name the key". Which keys are asked decides what is drawn:
 
-- **Signature only** — answer by choosing how many sharps/flats (or the major key name).
-- **Major/minor** — the signature is ambiguous between a major key and its relative minor. Options: (a) accept either as correct and ask the user to name the **major** key by default; (b) include a **tonic hint** (e.g. a single note, a cadence tone, or a dominant-tonic bass note) so the answer is unique; (c) ask for both "major / relative minor" names.
-- **Answer method:** tap-based UI (circle-of-fifths wheel or 15-button grid with sharp/flat enharmonic handling, e.g. F♯/G♭ for 6 accidentals), **typing** (a text box with no visual cue: a wheel or grid lets you count around it, so typing is the harder, more direct test), or optionally *play the tonic* via the mic.
+- **Major keys only** or **minor keys only** — the signature alone; the answer is the key it names in that mode. No note is shown (it would give the answer away).
+- **Major and minor mixed** — a major key and its relative minor share a signature, so a whole note on the **tonic** is shown with it and the answer is unique.
 
-**Settings:** clef (treble/bass/random), accidental range, major only/minor only/both, answer format, timeout, enharmonic strictness (F♯ major vs G♭ major are different signatures but the same sound — the key signature determines the answer).
+F♯ major and G♭ major sound the same but have different signatures; they are always different answers.
+
+**Answering:** three views on the main screen, switchable at any time: the circle-of-fifths **wheel**, **typing** (a text box with no visual cue: a wheel lets you count around it, so typing is the harder, more direct test), and **playing the tonic** (on the piano, via the mic).
+
+**Settings** (kept small): level, up to how many sharps/flats, major only/minor only/both, questions per session, time limit. Treble clef, the question type, enharmonic strictness and the answer method are not settings.
 
 ---
 
@@ -648,7 +651,7 @@ Generate key-signature questions respecting settings (clef, accidental range, ma
 **Acceptance:**
 - Tests verify each generated question has an unambiguous correct answer under the selected answer format.
 
-### PD-502: Answer UI (circle-of-fifths / button grid)
+### PD-502: Answer UI (circle-of-fifths wheel / typing)
 **Size:** M · **Deps:** PD-002
 Touch-friendly answer input with proper enharmonic labelling; major/minor toggle where applicable; keyboard shortcuts.
 **Acceptance:**
