@@ -17,10 +17,10 @@ describe('the 10 preset levels', () => {
     }
   })
 
-  it('keeps every level inside the MVP range G2 to F5', () => {
+  it('every level uses the range C2 to C6: one ledger line for levels 1 and 2, two for levels 3 to 10', () => {
     for (const l of PRESET_LEVELS) {
-      expect(l.settings.range).toEqual({ low: 'G2', high: 'F5' })
-      expect(l.settings.ledgerLines).toBeLessThanOrEqual(1)
+      expect(l.settings.range).toEqual({ low: 'C2', high: 'C6' })
+      expect(l.settings.ledgerLines, l.name).toBe(l.id <= 2 ? 1 : 2)
     }
   })
 
@@ -95,12 +95,45 @@ describe('any valid settings can drive the generators', () => {
     expect(counts.two).toBeGreaterThan(100)
   })
 
-  it('level 1 never goes beyond the staff (no ledger lines) and uses only the right hand', () => {
-    const g = createLevelGenerator(levelById(1).settings, 2)
-    for (let i = 0; i < 200; i++) {
-      const t = g.next()
-      expect(t.parts[0].hand).toBe('RH')
-      for (const p of t.parts[0].pitches) expect(ledgerLines(p, 'treble')).toBe(0) // middle C (C4) would need one
+  it('levels 1 and 2 stay within one ledger line of each staff, and use it', () => {
+    for (const id of [1, 2]) {
+      const g = createLevelGenerator(levelById(id).settings, 2)
+      let usedLedger = false
+      for (let i = 0; i < 600; i++) {
+        const t = g.next()
+        for (const part of t.parts)
+          for (const p of part.pitches) {
+            const n = ledgerLines(p, part.clef)
+            expect(n, `level ${id}`).toBeLessThanOrEqual(1)
+            if (n === 1) usedLedger = true
+          }
+      }
+      expect(usedLedger, `level ${id} never used a ledger line`).toBe(true)
+    }
+    const l1 = createLevelGenerator(levelById(1).settings, 2)
+    for (let i = 0; i < 100; i++) expect(l1.next().parts[0].hand).toBe('RH')
+  })
+
+  it('levels 3 to 10 use up to two ledger lines past the treble and bass staves, in both clefs', () => {
+    for (let id = 3; id <= 10; id++) {
+      const g = createLevelGenerator(levelById(id).settings, 6)
+      const seen = { treble: 0, bass: 0 }
+      let lowest = Infinity
+      let highest = -Infinity
+      for (let i = 0; i < 1500; i++) {
+        for (const part of g.next().parts)
+          for (const p of part.pitches) {
+            const n = ledgerLines(p, part.clef)
+            expect(n, `level ${id}`).toBeLessThanOrEqual(2)
+            if (n === 2) seen[part.clef]++
+            lowest = Math.min(lowest, p.midi)
+            highest = Math.max(highest, p.midi)
+          }
+      }
+      expect(seen.treble, `level ${id}: no 2-ledger-line treble notes`).toBeGreaterThan(0)
+      expect(seen.bass, `level ${id}: no 2-ledger-line bass notes`).toBeGreaterThan(0)
+      expect(lowest, `level ${id}`).toBeGreaterThanOrEqual(36) // C2
+      expect(highest, `level ${id}`).toBeLessThanOrEqual(84) // C6
     }
   })
 

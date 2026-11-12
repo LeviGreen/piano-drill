@@ -37,6 +37,10 @@ type Props = {
   onViewChange?: (view: AnswerView) => void
 }
 
+/** The piano in the Play view is one octave, C4 to C5: the tonic counts in any octave, so one is enough. */
+const PLAY_LOW = 60
+const PLAY_HIGH = 72
+
 const SECTORS = wheelSectors()
 
 const TYPE_HELP: Record<KeyIdFormat, string> = {
@@ -328,6 +332,8 @@ export function KeyAnswerInput({
 
       {shownView === 'play' && play && (
         <PianoKeyboard
+          low={PLAY_LOW}
+          high={PLAY_HIGH}
           marks={playMarks}
           onKeyClick={disabled ? undefined : play.onNote}
           label="Piano: play the tonic"

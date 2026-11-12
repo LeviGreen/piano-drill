@@ -308,8 +308,8 @@ describe('the settings drawer', () => {
   })
 })
 
-describe('the screen shows one treble staff, centred, with the answer input under it', () => {
-  it('has a treble clef only and a minor-key question shows the tonic note', async () => {
+describe('the screen shows one staff at a time, centred, with the answer input under it', () => {
+  it('has one clef and a minor-key question shows the tonic note', async () => {
     const s = store({ modes: 'both', maxAccidentals: 3 })
     const [q] = upcoming(s, 1)
     show({ timing: FAST })
@@ -318,6 +318,69 @@ describe('the screen shows one treble staff, centred, with the answer input unde
     expect(document.querySelectorAll('.staff .vf-clef')).toHaveLength(1)
     expect(document.querySelectorAll('.staff .vf-notehead')).toHaveLength(1) // the tonic
     expect(document.querySelector('.keyid-screen .answer-input')).toBeTruthy()
+  })
+})
+
+describe('the question counter', () => {
+  it('says the question just answered while its result shows, and the next number only when the next begins', async () => {
+    const s = store({ maxAccidentals: 3 })
+    const [q] = upcoming(s, 1)
+    show({ timing: { ...FAST, feedbackMs: 60_000 }, questions: 5 })
+    await userEvent.click(button('Start'))
+    await screen.findByText(q.prompt)
+    await waitFor(() => expect((button('Skip') as HTMLButtonElement).disabled).toBe(false))
+    expect(document.querySelector('.keyid-status')!.textContent).toMatch(/Question 1 of 5/)
+    await userEvent.click(answerButton(q))
+    await waitFor(() => expect((button('Skip') as HTMLButtonElement).disabled).toBe(true))
+    expect(document.querySelector('.keyid-status')!.textContent).toMatch(/Question 1 of 5/) // not 2 yet
+    await userEvent.click(button('End'))
+  })
+})
+
+describe('the clef changes from question to question, treble or bass', () => {
+  /** A seed (as the screen takes it from Math.random) whose first question is in the given clef. */
+  const seedFor = (clef: 'treble' | 'bass', s: KeyIdSettings): number => {
+    for (let seed = 1; seed < 500; seed++) {
+      if (new KeyIdGenerator(toQuestionConfig(s), seed).next().clef === clef) return seed
+    }
+    throw new Error('no seed')
+  }
+  const clefShape = () => document.querySelector('.staff .vf-clef')!.innerHTML
+  const idleTreble = () => {
+    show()
+    const shape = clefShape()
+    cleanup()
+    return shape
+  }
+
+  it('draws the key signature in the bass clef when the question is in the bass clef, and in treble otherwise', async () => {
+    const s = store({ modes: 'major', maxAccidentals: 3 })
+    const treble = idleTreble()
+    for (const clef of ['bass', 'treble'] as const) {
+      vi.spyOn(Math, 'random').mockReturnValue((seedFor(clef, s) + 0.5) / 1e6)
+      show({ timing: FAST })
+      await userEvent.click(button('Start'))
+      const [q] = [new KeyIdGenerator(toQuestionConfig(s), seedFor(clef, s)).next()]
+      await screen.findByText(q.prompt)
+      await waitFor(() => expect((button('Skip') as HTMLButtonElement).disabled).toBe(false))
+      expect(document.querySelectorAll('.staff .vf-clef')).toHaveLength(1)
+      if (clef === 'bass') expect(clefShape()).not.toBe(treble)
+      else expect(clefShape()).toBe(treble)
+      await userEvent.click(button('End'))
+      cleanup()
+    }
+  })
+
+  it('there is no clef setting', async () => {
+    show()
+    await userEvent.click(button('Settings'))
+    expect(within(screen.getByRole('dialog')).queryByLabelText(/clef/i)).toBeNull()
+  })
+
+  it('the Play view piano is one octave', async () => {
+    show()
+    await userEvent.click(button('Play'))
+    expect(document.querySelectorAll('svg.keyboard [data-midi]')).toHaveLength(13)
   })
 })
 

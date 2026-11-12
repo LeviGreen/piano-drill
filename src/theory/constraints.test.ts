@@ -90,14 +90,24 @@ describe('one-hand targets', () => {
     expect(codes(target(part('LH', 'bass', 'A1')), two)).toContain('ledger-lines') // 3 below
   })
 
-  it('MVP defaults: range G2 to F5, with middle C allowed in both clefs', () => {
+  it('MVP defaults: C2 to C6, which is two ledger lines past the treble and bass staves', () => {
     expect(codes(target(part('RH', 'treble', 'C4')))).toEqual([])
     expect(codes(target(part('LH', 'bass', 'C4')))).toEqual([])
-    expect(codes(target(part('RH', 'treble', 'F5')))).toEqual([])
-    expect(codes(target(part('LH', 'bass', 'G2')))).toEqual([])
-    expect(codes(target(part('RH', 'treble', 'F#5')))).toContain('out-of-range')
-    expect(codes(target(part('LH', 'bass', 'F#2')))).toContain('out-of-range')
-    expect(codes(target(part('LH', 'bass', 'C2')))).toContain('out-of-range')
+    // The top of the range: C6 sits on the second ledger line above the treble staff.
+    expect(codes(target(part('RH', 'treble', 'C6')))).toEqual([])
+    expect(codes(target(part('RH', 'treble', 'C#6')))).toContain('out-of-range')
+    // The bottom: C2 sits on the second ledger line below the bass staff.
+    expect(codes(target(part('LH', 'bass', 'C2')))).toEqual([])
+    expect(codes(target(part('LH', 'bass', 'B1')))).toContain('out-of-range')
+  })
+
+  it('allows two ledger lines past each staff, in its own clef, and no more', () => {
+    expect(codes(target(part('RH', 'treble', 'A5')))).toEqual([]) // one line above
+    expect(codes(target(part('RH', 'treble', 'A3')))).toEqual([]) // two lines below the treble staff
+    expect(codes(target(part('RH', 'treble', 'F3')))).toContain('ledger-lines') // a third
+    expect(codes(target(part('LH', 'bass', 'E4')))).toEqual([]) // two lines above the bass staff
+    expect(codes(target(part('LH', 'bass', 'A4')))).toContain('ledger-lines')
+    expect(codes(target(part('LH', 'bass', 'C2')))).toEqual([]) // two lines below
   })
 
   it('flags muddy low intervals but allows wide ones and anything above C3', () => {

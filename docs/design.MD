@@ -83,7 +83,7 @@ Difficulty is a combination of independent dimensions. Presets (levels) are just
 | **Content type** | Single notes · Intervals · Triads · Seventh chords · Extended/other (later) |
 | **Inversions** | Root position only · Allow inversions |
 | **Accidentals beyond key sig** | Off · Occasional (chromatic alterations, e.g. harmonic minor leading tone) |
-| **Register / ledger lines** | Staff only · Up to 1 ledger line · Up to 2–3 ledger lines (**MVP: range G2–F5, plus one ledger line for middle C**) |
+| **Register / ledger lines** | Staff only · Up to 1 ledger line · Up to 2–3 ledger lines (**MVP: range C2–C6: up to 2 ledger lines past the treble and bass staves; levels 1–2 use 1, levels 3–10 use 2**) |
 | **Timeout** | Off / 5 / 10 / 20 s |
 | **Octave strictness** | Exact octave required · Any octave (pitch class only) |
 
@@ -102,7 +102,7 @@ Difficulty is a combination of independent dimensions. Presets (levels) are just
 | 9 | Both hands | 2–3 + 3–4 | ≤5 accidentals | Triads/7ths, inversions, ledger lines |
 | 10 | Both hands | up to 5 + 5 | all 15 keys | Full range, accidentals, 7ths |
 
-> **MVP range: G2–F5** (bottom line of the bass staff to top line of the treble staff; middle C needs one ledger line). Levels 9 and 10 above assume ledger lines and the full range, so they need rethinking for the MVP (e.g. more keys, 7ths and 5-note chords inside G2–F5 instead).
+> **MVP range: C2–C6** (decided 2026-11-12, replacing the mic-era G2–F5). Each hand reads its own clef and may go up to two ledger lines past the staff: C6 is on the second ledger line above the treble staff and C2 on the second below the bass staff. Levels 1 and 2 use one ledger line, levels 3 to 10 use two. It is not a setting in Play.
 
 Levels are data (JSON), not code, so they can be tuned without a release.
 
@@ -272,7 +272,7 @@ Results stored per input device.
 
 ## 7. Key Identification Mode
 
-**Presentation:** a treble staff with a key signature. The question is always "name the key". Which keys are asked decides what is drawn:
+**Presentation:** a staff with a key signature, in the treble or the bass clef (chosen at random for each question, one at a time; it is not a setting). The question is always "name the key". Which keys are asked decides what is drawn:
 
 - **Major keys only** or **minor keys only** — the signature alone; the answer is the key it names in that mode. No note is shown (it would give the answer away).
 - **Major and minor mixed** — a major key and its relative minor share a signature, so a whole note on the **tonic** is shown with it and the answer is unique.
@@ -283,7 +283,7 @@ F♯ major and G♭ major sound the same but have different signatures; they are
 
 **Gameplay (decided 2026-11-12):** modelled on Play. A wrong guess is marked ✕ and stays marked, but it does not end the question or reveal the answer: you keep guessing until you get it, time runs out, or you skip. Only a timeout or a skip shows the answer. Each wrong guess costs 25 points like a wrong note in Play; getting it after wrong guesses counts as correct with errors.
 
-**Settings** (kept small): level, up to how many sharps/flats, major only/minor only/both, questions per session, time limit. Treble clef, the question type, enharmonic strictness and the answer method are not settings.
+**Settings** (kept small): level, up to how many sharps/flats, major only/minor only/both, questions per session, time limit. The clef (random, treble or bass), the question type, enharmonic strictness and the answer method are not settings.
 
 ---
 

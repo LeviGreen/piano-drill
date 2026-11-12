@@ -144,10 +144,24 @@ export abstract class RepSession<Item, Snapshot extends BaseSnapshot<Item> = Bas
     return () => this.listeners.delete(cb)
   }
 
+  /**
+   * Which rep the screen should say it is on. While the result of a rep is showing (the feedback or the reveal after
+   * it), that is still the rep just finished; the next number appears when the next rep's get-ready begins.
+   */
+  private repNumber(): number {
+    const showingResult =
+      this.state === 'SUCCESS' ||
+      this.state === 'TIMEOUT' ||
+      this.state === 'SKIPPED' ||
+      this.state === 'INCORRECT' ||
+      this.state === 'INTERSTITIAL'
+    return this.results.length + (showingResult || this.state === 'ENDED' ? 0 : 1)
+  }
+
   protected baseSnapshot(): BaseSnapshot<Item> {
     return {
       state: this.state,
-      repNumber: this.results.length + (this.state === 'ENDED' ? 0 : 1),
+      repNumber: this.repNumber(),
       totalReps: this.cfg.totalReps,
       item: this.item,
       t0: this.t0,

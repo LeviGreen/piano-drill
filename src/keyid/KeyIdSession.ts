@@ -177,7 +177,7 @@ export class KeyIdSession extends RepSession<KeyIdQuestion, KeyIdSnapshot> {
       sessionId: this.sessionId,
       mode: 'keyid',
       targetId: q.id,
-      dims: { key: keyName(q.key), format: q.format, keyMode: q.key.mode },
+      dims: { key: keyName(q.key), clef: q.clef, format: q.format, keyMode: q.key.mode },
       reactionMs: this.firstGuessAt !== null ? this.firstGuessAt - t0 : null,
       completionMs: solved,
       errors: this.errors.map((e) => ({ ...e, notes: [...e.notes] })),

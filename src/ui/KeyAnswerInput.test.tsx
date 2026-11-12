@@ -303,7 +303,10 @@ describe('the Play view: answering with the tonic on a piano', () => {
     expect(screen.queryByRole('group', { name: /circle of fifths/i })).toBeNull()
     const piano = screen.getByLabelText('Piano: play the tonic')
     const keys = piano.querySelectorAll('[data-midi]')
-    expect(keys.length).toBeGreaterThan(20)
+    expect(keys).toHaveLength(13) // one octave, C4 to C5: the tonic counts in any octave
+    expect([...keys].map((k) => Number(k.getAttribute('data-midi'))).sort((a, b) => a - b)).toEqual(
+      Array.from({ length: 13 }, (_, i) => 60 + i),
+    )
     await userEvent.click(keys[0] as Element)
     expect(onNote).toHaveBeenCalledWith(Number(keys[0].getAttribute('data-midi')))
     await userEvent.click(screen.getByRole('button', { name: 'Wheel' }))

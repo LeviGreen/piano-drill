@@ -24,7 +24,7 @@ export type GrandStaffOptions = {
   /** Per-note feedback for each hand, lowest note first (see overlays.ts). */
   rhStates?: (NoteState | undefined)[]
   lhStates?: (NoteState | undefined)[]
-  /** Ledger lines to leave room for above, below and between the staves (default 1, the MVP range). */
+  /** Ledger lines to leave room for above, below and between the staves (default 2, the most the levels use). */
   ledgerRoom?: number
 }
 
@@ -32,7 +32,7 @@ export type GrandStaffOptions = {
  * Drawing size of a grand staff. The two staves, the gap between them (which holds the ledger lines of both
  * hands) and the margins are all fixed for a given `ledgerRoom`, so the layout never jumps between targets.
  */
-export function grandStaffSize(ledgerRoom = 1): {
+export function grandStaffSize(ledgerRoom = 2): {
   width: number
   height: number
   margin: number

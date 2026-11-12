@@ -27,9 +27,9 @@ import { useRemainingSeconds } from './useRemainingSeconds'
 /** A session is always this many questions. */
 const DEFAULT_QUESTIONS = 20
 
-/** The on-screen piano's range (G2 to F5, the MVP range). */
-const KEYBOARD_LOW = 43
-const KEYBOARD_HIGH = 77
+/** The on-screen piano in the Play view shows one octave, C4 to C5: the tonic counts in any octave. */
+const KEYBOARD_LOW = 60
+const KEYBOARD_HIGH = 72
 
 const STORAGE_KEY = 'piano-drill.keyid-settings'
 
@@ -68,7 +68,7 @@ export type KeyIdScreenProps = {
 }
 
 /**
- * Key identification (design §7): a key signature is flashed on a treble staff and you name the key, by tapping the
+ * Key identification (design §7): a key signature is flashed on a treble or bass staff and you name the key, by tapping the
  * wheel, typing, or playing the tonic.
  */
 export function KeyIdScreen({
@@ -112,7 +112,7 @@ export function KeyIdScreen({
     const flash = new FlashController<KeyIdQuestion>({
       container: stage.current!,
       render: (into, q) =>
-        renderStaff(into, { clef: 'treble', key: q.key, notes: q.hint ? [q.hint] : undefined }),
+        renderStaff(into, { clef: q.clef, key: q.key, notes: q.hint ? [q.hint] : undefined }),
     })
     const presenter: Presenter<KeyIdQuestion> = {
       prepare: (q) => flash.prepare(q),

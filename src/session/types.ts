@@ -28,6 +28,7 @@ export type PlayDims = {
 /** Key-ID reps are described by what was asked. */
 export type KeyIdDims = {
   key: string
+  clef: 'treble' | 'bass'
   format: KeyIdFormat
   keyMode: 'major' | 'minor'
 }
@@ -101,7 +102,10 @@ export interface Presenter<Item = Target> {
 /** What every kind of session reports, whatever it is asking. */
 export type BaseSnapshot<Item> = {
   state: SessionState
-  /** Which rep is current (1-based) and how many there will be (null = until ended). */
+  /**
+   * Which rep the screen is on (1-based): the one being asked or got ready for, or, while its result is still showing,
+   * the one just finished. And how many there will be (null = until ended).
+   */
   repNumber: number
   totalReps: number | null
   item: Item | null

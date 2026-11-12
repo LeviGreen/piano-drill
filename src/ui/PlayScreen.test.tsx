@@ -308,6 +308,21 @@ describe('the rep loop with the on-screen piano', () => {
   })
 })
 
+describe('the target counter', () => {
+  it('says the target just answered while its result shows, and the next number only when the next begins', async () => {
+    const [t] = upcoming(1, 1)
+    show({ timing: { ...FAST, feedbackMs: 60_000 }, reps: 5 })
+    await userEvent.click(button('Start'))
+    await waitForTarget()
+    expect(document.querySelector('.keyid-status')!.textContent).toMatch(/Target 1 of 5/)
+    const midis = midisOf(t)
+    playChord(midis)
+    await waitFor(() => expect(keyEl(midis[0]).classList.contains('heard')).toBe(true)) // answered
+    expect(document.querySelector('.keyid-status')!.textContent).toMatch(/Target 1 of 5/) // not 2 yet
+    await userEvent.click(button('End'))
+  })
+})
+
 describe('scores', () => {
   it('a finished session is scored, saved, and put on the level board with your initials', async () => {
     const db = new PianoDrillDB(`play-scores-${Date.now()}`)

@@ -147,6 +147,16 @@ describe('a successful rep', () => {
     expect(log.indexOf('flash t2')).toBeGreaterThan(lastClear) // ...and before the second is flashed
   })
 
+  it('keeps saying the rep just finished while its result shows, and counts the next one when it begins', async () => {
+    r.play('C4', 'E4', 'G4')
+    expect(r.session.snapshot.state).toBe('INTERSTITIAL')
+    expect(r.session.snapshot.repNumber).toBe(1) // not 2 the moment it was answered
+    await r.clock.advance(50)
+    expect(r.session.snapshot.repNumber).toBe(1)
+    await r.clock.advance(50) // the feedback pause is over, the next rep begins
+    expect(r.session.snapshot.repNumber).toBe(2)
+  })
+
   it('moves to the next rep after the feedback pause, with the next target', async () => {
     r.play('C4', 'E4', 'G4')
     expect(r.session.snapshot.state).toBe('INTERSTITIAL')

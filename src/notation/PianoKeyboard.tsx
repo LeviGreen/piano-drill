@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { RANGE_HIGH_MIDI, RANGE_LOW_MIDI } from '../theory/constraints'
 import { formatPitch, pitchFromMidi } from '../theory/pitch'
 import { keyboardLayout, WHITE_H } from './keyboardLayout'
 
@@ -14,7 +15,7 @@ const WORD: Record<KeyMark, string> = {
 }
 
 export type PianoKeyboardProps = {
-  /** First and last key, both white. Default G2 to F5, the MVP range. */
+  /** First and last key, both white. Default C2 to C6, the MVP range. */
   low?: number
   high?: number
   marks?: Map<number, KeyMark>
@@ -37,8 +38,8 @@ export type PianoKeyboardProps = {
  * a check mark for heard, a dashed outline for almost, a cross for a wrong note.
  */
 export function PianoKeyboard({
-  low = 43,
-  high = 77,
+  low = RANGE_LOW_MIDI,
+  high = RANGE_HIGH_MIDI,
   marks,
   labels,
   showNames,

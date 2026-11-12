@@ -30,10 +30,11 @@ export const DEFAULT_TWO_HAND_CONFIG: Omit<TwoHandConfig, 'keys'> = {
 }
 
 const ROLE_ORDER: ChordRole[] = ['root', 'third', 'fifth', 'seventh']
-// Where each hand's notes may sit (MIDI): the left hand up to D4, the right hand down to B3. The staves and
-// ledger-line rules in `constraints` do the precise checking; this just keeps the search small.
-const LH_TOP = 62
-const RH_BOTTOM = 59
+// Where each hand's notes may sit (MIDI): the left hand up to F4 (two ledger lines above the bass staff), the right
+// hand down to G3 (two ledger lines below the treble staff). The staves and ledger-line rules in `constraints` do the
+// precise checking; this just keeps the search small.
+const LH_TOP = 65
+const RH_BOTTOM = 55
 
 type Tone = { role: ChordRole; pitch: Pitch }
 

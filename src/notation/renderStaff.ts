@@ -24,7 +24,7 @@ export type StaffOptions = {
   /** Per-note feedback, lowest note first (see overlays.ts). */
   states?: (NoteState | undefined)[]
   /**
-   * How many ledger lines to leave room for above and below the staff (default 1, the MVP range).
+   * How many ledger lines to leave room for above and below the staff (default 1, enough for the single-staff screens; the grand staff uses 2).
    * The drawing height grows with it; keep it constant for a given screen so the layout never jumps.
    */
   ledgerRoom?: number

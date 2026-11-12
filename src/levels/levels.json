@@ -10,7 +10,7 @@
         "maxAccidentals": 0,
         "modes": "major"
       },
-      "ledgerLines": 0,
+      "ledgerLines": 1,
       "inversions": false,
       "chromaticNotes": "off",
       "name": "Level 1: First notes",
@@ -18,6 +18,10 @@
         "medianSeconds": 2.0,
         "accuracy": 0.9,
         "reps": 20
+      },
+      "range": {
+        "low": "C2",
+        "high": "C6"
       }
     }
   },
@@ -32,7 +36,7 @@
         "maxAccidentals": 1,
         "modes": "both"
       },
-      "ledgerLines": 0,
+      "ledgerLines": 1,
       "inversions": false,
       "chromaticNotes": "off",
       "name": "Level 2: Either hand",
@@ -40,6 +44,10 @@
         "medianSeconds": 2.0,
         "accuracy": 0.9,
         "reps": 20
+      },
+      "range": {
+        "low": "C2",
+        "high": "C6"
       }
     }
   },
@@ -55,7 +63,7 @@
         "maxAccidentals": 2,
         "modes": "both"
       },
-      "ledgerLines": 1,
+      "ledgerLines": 2,
       "inversions": false,
       "chromaticNotes": "off",
       "name": "Level 3: Small intervals",
@@ -63,6 +71,10 @@
         "medianSeconds": 2.5,
         "accuracy": 0.9,
         "reps": 20
+      },
+      "range": {
+        "low": "C2",
+        "high": "C6"
       }
     }
   },
@@ -78,7 +90,7 @@
         "maxAccidentals": 3,
         "modes": "both"
       },
-      "ledgerLines": 1,
+      "ledgerLines": 2,
       "inversions": false,
       "chromaticNotes": "off",
       "name": "Level 4: All intervals",
@@ -86,6 +98,10 @@
         "medianSeconds": 3.0,
         "accuracy": 0.9,
         "reps": 20
+      },
+      "range": {
+        "low": "C2",
+        "high": "C6"
       }
     }
   },
@@ -100,7 +116,7 @@
         "maxAccidentals": 3,
         "modes": "both"
       },
-      "ledgerLines": 1,
+      "ledgerLines": 2,
       "inversions": false,
       "chromaticNotes": "off",
       "name": "Level 5: Triads",
@@ -108,6 +124,10 @@
         "medianSeconds": 3.5,
         "accuracy": 0.9,
         "reps": 20
+      },
+      "range": {
+        "low": "C2",
+        "high": "C6"
       }
     }
   },
@@ -122,7 +142,7 @@
         "maxAccidentals": 4,
         "modes": "both"
       },
-      "ledgerLines": 1,
+      "ledgerLines": 2,
       "inversions": true,
       "chromaticNotes": "occasional",
       "name": "Level 6: Inversions",
@@ -130,6 +150,10 @@
         "medianSeconds": 4.0,
         "accuracy": 0.9,
         "reps": 20
+      },
+      "range": {
+        "low": "C2",
+        "high": "C6"
       }
     }
   },
@@ -144,7 +168,7 @@
         "maxAccidentals": 2,
         "modes": "both"
       },
-      "ledgerLines": 1,
+      "ledgerLines": 2,
       "inversions": false,
       "chromaticNotes": "off",
       "name": "Level 7: Two hands",
@@ -152,6 +176,10 @@
         "medianSeconds": 4.5,
         "accuracy": 0.9,
         "reps": 20
+      },
+      "range": {
+        "low": "C2",
+        "high": "C6"
       }
     }
   },
@@ -166,7 +194,7 @@
         "maxAccidentals": 4,
         "modes": "both"
       },
-      "ledgerLines": 1,
+      "ledgerLines": 2,
       "inversions": true,
       "chromaticNotes": "off",
       "name": "Level 8: Two hands, more notes",
@@ -174,6 +202,10 @@
         "medianSeconds": 5.0,
         "accuracy": 0.9,
         "reps": 20
+      },
+      "range": {
+        "low": "C2",
+        "high": "C6"
       }
     }
   },
@@ -188,7 +220,7 @@
         "maxAccidentals": 5,
         "modes": "both"
       },
-      "ledgerLines": 1,
+      "ledgerLines": 2,
       "inversions": true,
       "chromaticNotes": "off",
       "name": "Level 9: Two hands, sevenths",
@@ -196,6 +228,10 @@
         "medianSeconds": 6.0,
         "accuracy": 0.9,
         "reps": 20
+      },
+      "range": {
+        "low": "C2",
+        "high": "C6"
       }
     }
   },
@@ -210,7 +246,7 @@
         "maxAccidentals": 7,
         "modes": "both"
       },
-      "ledgerLines": 1,
+      "ledgerLines": 2,
       "inversions": true,
       "chromaticNotes": "occasional",
       "name": "Level 10: Everything",
@@ -218,6 +254,10 @@
         "medianSeconds": 7.0,
         "accuracy": 0.9,
         "reps": 20
+      },
+      "range": {
+        "low": "C2",
+        "high": "C6"
       }
     }
   }

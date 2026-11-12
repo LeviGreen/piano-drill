@@ -163,7 +163,7 @@ export function GeneratorPreviewScreen() {
       <h1>Generator preview</h1>
       <p className="placeholder">
         Targets from the level settings (PD-108) and generators (PD-105, PD-106) drawn on the grand
-        staff, within G2 to F5. Pick a preset level, or build your own.
+        staff, within C2 to C6. Pick a preset level, or build your own.
       </p>
 
       <div className="recorder-form">

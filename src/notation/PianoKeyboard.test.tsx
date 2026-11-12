@@ -12,7 +12,7 @@ describe('keyboard layout', () => {
     expect(black).toEqual([1, 3, 6, 8, 10])
   })
 
-  it('G2 to F5 has 21 white and 14 black keys, laid out left to right', () => {
+  it('G2 to F5 (a smaller range) has 21 white and 14 black keys, laid out left to right', () => {
     const { keys, width } = keyboardLayout(43, 77)
     expect(keys.filter((k) => !k.black)).toHaveLength(21)
     expect(keys.filter((k) => k.black)).toHaveLength(14)
@@ -111,7 +111,11 @@ describe('PianoKeyboard', () => {
 
   it('draws the whole MVP range by default', () => {
     const { container } = render(<PianoKeyboard />)
-    expect(container.querySelectorAll('.kb-key')).toHaveLength(35)
+    expect(container.querySelectorAll('.kb-key')).toHaveLength(49) // C2 to C6: 29 white and 20 black
+    expect(container.querySelector('[data-midi="36"]')).toBeTruthy()
+    expect(container.querySelector('[data-midi="84"]')).toBeTruthy()
+    expect(container.querySelector('[data-midi="35"]')).toBeNull()
+    expect(container.querySelector('[data-midi="85"]')).toBeNull()
   })
 })
 

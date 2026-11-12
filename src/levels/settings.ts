@@ -32,7 +32,7 @@ export type DifficultySettings = {
   chromaticNotes: 'off' | 'occasional'
   /** Ledger lines allowed above and below the staff. */
   ledgerLines: number
-  /** Playable range as note names (MVP: G2 to F5). */
+  /** Playable range as note names (MVP: C2 to C6). */
   range: { low: string; high: string }
   /** Seconds before a target times out, or null for no timeout. */
   timeoutSeconds: number | null
@@ -50,8 +50,8 @@ export const DEFAULT_SETTINGS: DifficultySettings = {
   intervalSizes: [2, 3, 4, 5, 6, 7, 8],
   inversions: false,
   chromaticNotes: 'off',
-  ledgerLines: 1,
-  range: { low: 'G2', high: 'F5' },
+  ledgerLines: 2,
+  range: { low: 'C2', high: 'C6' },
   timeoutSeconds: 10,
   octaveStrictness: 'exact',
 }
@@ -273,7 +273,7 @@ function validate(s: Json): { errors: string[]; warnings: string[] } {
     errors.push(`ledgerLines: must be a whole number from 0 to 3 (got ${show(s.ledgerLines)})`)
 
   const range = s.range
-  if (!isObject(range)) errors.push('range: must be an object like { "low": "G2", "high": "F5" }')
+  if (!isObject(range)) errors.push('range: must be an object like { "low": "C2", "high": "C6" }')
   else {
     const parse = (k: 'low' | 'high') => {
       try {

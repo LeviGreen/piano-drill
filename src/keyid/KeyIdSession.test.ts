@@ -25,6 +25,7 @@ function question(
   return {
     id,
     key,
+    clef: 'treble',
     accidentals,
     format,
     hint: null,
@@ -132,6 +133,17 @@ describe('answering by tap or typing', () => {
     })
     expect(r.presenter.log).not.toContain('reveal a') // solved: nothing to reveal
     expect(r.session.snapshot.given).toEqual({ accidentals: -3, mode: 'major' })
+  })
+
+  it('keeps the question number while the result shows, and counts the next one when it begins', async () => {
+    const r = rig({}, [question('a')])
+    await r.session.start()
+    await r.clock.advance(3)
+    expect(r.session.snapshot.repNumber).toBe(1)
+    r.session.answer({ accidentals: -3, mode: 'major' })
+    expect(r.session.snapshot.repNumber).toBe(1) // not 2 the moment it was answered
+    await r.clock.advance(100) // the feedback pause is over
+    expect(r.session.snapshot.repNumber).toBe(2)
   })
 
   it('right on the first try is plain correct', async () => {
@@ -273,6 +285,7 @@ describe('the shared rep cycle', () => {
     r.session.answer({ accidentals: 0, mode: 'minor' })
     expect(r.session.results[0].dims).toEqual({
       key: 'A minor',
+      clef: 'treble',
       format: 'key',
       keyMode: 'minor',
     })

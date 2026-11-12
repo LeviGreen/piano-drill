@@ -143,7 +143,7 @@ describe('chord layout (PD-202)', () => {
       expect(handle.lineY.top).toBe(25 + 10 * ledgerRoom)
       expect(handle.size.height - handle.lineY.bottom).toBe(25 + 10 * ledgerRoom)
     }
-    expect(draw('treble').handle.size).toEqual({ width: 320, height: 110 }) // default: MVP range, one ledger line
+    expect(draw('treble').handle.size).toEqual({ width: 320, height: 110 }) // default: one ledger line
   })
 
   it("draws ledger lines in the theme color, not VexFlow's default dark gray (visible in dark mode)", () => {

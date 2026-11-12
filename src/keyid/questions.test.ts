@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { keyName, keySignature } from '../theory/keys'
+import { formatPitch } from '../theory/pitch'
 import { ledgerLines } from '../theory/staff'
 import { answerLabel, shortLabel } from './labels'
 import {
@@ -68,7 +69,7 @@ describe('questions that mix major and minor keys', () => {
     for (const q of qs) {
       expect(q.format).toBe('key')
       expect(q.hint).not.toBeNull()
-      expect(ledgerLines(q.hint!, 'treble')).toBe(0)
+      expect(ledgerLines(q.hint!, q.clef)).toBe(0)
       expect(q.answer).toEqual({ accidentals: q.accidentals, mode: q.key.mode })
       expect(consistentAnswers(q)).toEqual([q.answer])
     }
@@ -79,6 +80,32 @@ describe('questions that mix major and minor keys', () => {
     const qs = take(new KeyIdGenerator(config({ modes: 'minor', maxAccidentals: 3 }), 2), 100)
     expect(qs.every((q) => q.key.mode === 'minor' && q.hint === null)).toBe(true)
     expect(qs.every((q) => q.format === 'minor' && q.answer.mode === 'minor')).toBe(true)
+    for (const q of qs) expect(consistentAnswers(q)).toEqual([q.answer])
+  })
+})
+
+describe('the clef is random, treble or bass, one at a time', () => {
+  it.each(['major', 'minor', 'both'] as const)(
+    '%s: both clefs come up, roughly evenly',
+    (modes) => {
+      const qs = take(new KeyIdGenerator(config({ modes, maxAccidentals: 7 }), 11), 600)
+      const bass = qs.filter((q) => q.clef === 'bass').length
+      expect(qs.every((q) => q.clef === 'treble' || q.clef === 'bass')).toBe(true)
+      expect(bass).toBeGreaterThan(200)
+      expect(bass).toBeLessThan(400)
+    },
+  )
+
+  it('the tonic note shown with a minor/mixed question sits on the staff of its own clef, with no ledger lines', () => {
+    const qs = take(new KeyIdGenerator(config({ modes: 'both', maxAccidentals: 7 }), 5), 600)
+    for (const q of qs) {
+      expect(ledgerLines(q.hint!, q.clef), `${q.clef} ${formatPitch(q.hint!)}`).toBe(0)
+    }
+    expect(new Set(qs.map((q) => q.clef))).toEqual(new Set(['treble', 'bass']))
+  })
+
+  it('has the same single right answer in either clef (the clef changes how it looks, not the answer)', () => {
+    const qs = take(new KeyIdGenerator(config({ modes: 'both', maxAccidentals: 7 }), 8), 400)
     for (const q of qs) expect(consistentAnswers(q)).toEqual([q.answer])
   })
 })
@@ -135,6 +162,7 @@ describe('played answers', () => {
     return {
       id: 'x',
       key,
+      clef: 'treble' as const,
       accidentals,
       format: 'key' as const,
       hint: null,

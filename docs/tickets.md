@@ -35,7 +35,6 @@ Cross out a row (`~~text~~` in each cell) when its ticket is Done. Rows that are
 | ~~2 Notation Rendering~~ | ~~PD-203~~ | ~~Grand staff renderer~~ |
 | ~~2 Notation Rendering~~ | ~~PD-204~~ | ~~Flash performance & timing hook~~ |
 | ~~2 Notation Rendering~~ | ~~PD-205~~ | ~~Overlays — note names & keyboard diagram~~ |
-| 2 Notation Rendering | PD-206 | Large-print & accessibility options |
 | ~~3 Input & Verification~~ | ~~PD-301~~ | ~~`NoteInput` interface & `ScriptedInput`~~ |
 | ~~3 Input & Verification~~ | ~~PD-302~~ | ~~On-screen keyboard input~~ |
 | ~~3 Input & Verification~~ | ~~PD-304~~ | ~~Mic capture pipeline~~ |
@@ -70,7 +69,7 @@ Cross out a row (`~~text~~` in each cell) when its ticket is Done. Rows that are
 ## Suggested Build Order
 
 1. **PD-001 → PD-003** (foundations; PD-004, the Pages deploy, comes last of all)
-2. **Theory and notation:** PD-101 → PD-108, PD-201 → PD-206
+2. **Theory and notation:** PD-101 → PD-108, PD-201 → PD-205
 3. **Input:** PD-301, PD-302 (on-screen piano), PD-304 → PD-306 (mic capture, analysis and benchmark, built before the mic was shelved), then **PD-313 → PD-314 (MIDI, the MVP's input)**
 4. **Play and Key ID screens:** PD-401 → PD-404, Epic 5
 5. **Polish:** Epic 7
@@ -82,21 +81,12 @@ Cross out a row (`~~text~~` in each cell) when its ticket is Done. Rows that are
 |---|---|
 | 0 Foundations | PD-001 – PD-004 |
 | 1 Theory Engine | PD-101 – PD-108 |
-| 2 Notation | PD-201 – PD-206 |
+| 2 Notation | PD-201 – PD-205 (PD-206 cut) |
 | 3 Input & Verification | PD-301, PD-302, PD-304 – PD-306, PD-313, PD-314 (PD-303 cut) |
 | 4 Drill Session | PD-401 – PD-404 |
 | 5 Key ID Mode | PD-501 – PD-505 |
 | 7 Polish & Release | PD-701 – PD-706 |
 | 8 Post-MVP | PD-307 – PD-312, PD-405, PD-406 |
-
----|---|
-| 0 Foundations | PD-001 – PD-004 |
-| 1 Theory Engine | PD-101 – PD-108 |
-| 2 Notation | PD-201 – PD-206 |
-| 3 Input & Verification | PD-301 – PD-314 (PD-303 cut; PD-307 – PD-312 deferred) |
-| 4 Drill Session | PD-401 – PD-406 |
-| 5 Key ID Mode | PD-501 – PD-505 |
-| 7 Polish & Release | PD-701 – PD-706 |
 
 ---
 
@@ -224,16 +214,22 @@ Generator that picks one chord and splits it between the hands per §4.3 (left h
 
 **Notes:** `TwoHandGenerator`: each hand gets a count from `notesPerHand`; the left hand plays the chord root (lowest) plus chord tones, the right hand chord tones above; only playable results are kept. Reworked after verification to drop named voicings (too granular). Verified in the Generator preview (Both hands).
 
-### PD-107: "Either hand, one at a time" & cross-clef options
+### PD-107: Ledger-line register (notes above and below the staves)
 
 **Size:** S  
-**Deps:** PD-105  
-**Status:** Todo
+**Deps:** PD-105, PD-106  
+**Status:** In progress (built and tested; awaiting verification in the browser)
 
-Per-rep random hand selection; optional cross-clef (e.g. RH in bass clef) setting. **Partly built in PD-105:** the generator takes a list of hands and picks one per target (own clef each); the cross-clef option remains.
+Reworked on 2026-11-12 (it was "either hand, one at a time & cross-clef options"; the either-hand part was already built in PD-105, and cross-clef reading was dropped). What it is now: the right hand reads treble clef and the left hand reads bass clef, and each clef offers a few notes above and below its staff using **ledger lines**, with no setting for it in Play. **Levels 1 and 2 allow up to 1 ledger line, levels 3 to 10 allow up to 2.** The playable range becomes **C2 to C6**, which is exactly two ledger lines past the outer ends (C6 sits on the second ledger line above the treble staff, C2 on the second below the bass staff). That replaces the mic-era range of G2 to F5.
 
 **Acceptance:**
-- [ ] Settings produce expected hand/clef distribution in tests.
+- [x] Levels 1 and 2 use at most 1 ledger line and levels 3 to 10 at most 2, in both clefs, and every note stays within C2 to C6 (tests generate hundreds of targets per level and check).
+- [x] Levels 3 to 10 really do reach notes needing 2 ledger lines in the treble and in the bass clef.
+- [x] The grand staff leaves room for two ledger lines above, below and between the staves, at a fixed size so nothing shifts.
+- [x] The on-screen piano spans C2 to C6.
+- [ ] Checked by eye on the Play screen at desktop and phone width.
+
+**Notes:** `src/theory/constraints.ts` (`RANGE_LOW_MIDI` = 36, `RANGE_HIGH_MIDI` = 84, default 2 ledger lines), `src/levels/levels.json` (per-level ledger lines and range), `renderGrandStaff` (default `ledgerRoom` 2), `PianoKeyboard` (default range), and the two-hand search window (left hand up to F4, right hand down to G3).
 
 ### PD-108: Level & preset schema
 
@@ -248,7 +244,7 @@ JSON schema + validator for difficulty settings (§3); the 10 preset levels from
 
 ## Epic 2 — Notation Rendering
 
-Progress: 5/6 tickets done
+Progress: 5/5 tickets done
 
 **Notes:** `src/levels/`: `settings.ts` (types, defaults, validation with field-named errors, merge, migration; version 2), `levels.json` (the 10 levels, data not code, adapted to the MVP range and with no voicing options), `levelGenerator.ts` (`createLevelGenerator(settings)`). Both hands use the same notes-per-hand settings as one hand. Verified in the Generator preview via the Level picker.
 
@@ -315,18 +311,7 @@ Optional note-name labels on notes; piano keyboard component highlighting target
 **Acceptance:**
 - [x] Reveal view shows correct names/highlights for any target.
 
-**Notes:** note names, three per-note states (heard = halo + check, almost = dashed ring, missing = none), a G2-F5 piano keyboard (marks by shape and color, names below the keys), click-to-cycle in the Generator preview. Names carry `stroke: none` because VexFlow's SVG root has a black stroke.
-
-### PD-206: Large-print & accessibility options
-
-**Size:** S  
-**Deps:** PD-203  
-**Status:** Todo
-
-Staff size setting, high-contrast mode, non-color-only feedback styles.
-
-**Acceptance:**
-- [ ] Staff size scales without clipping; passes automated contrast checks.
+**Notes:** note names, three per-note states (heard = halo + check, almost = dashed ring, missing = none), a piano keyboard (now C2-C6) (marks by shape and color, names below the keys), click-to-cycle in the Generator preview. Names carry `stroke: none` because VexFlow's SVG root has a black stroke.
 
 ## Epic 3 — Input & Verification
 
@@ -490,12 +475,12 @@ Progress: 5/5 tickets done
 **Deps:** PD-102  
 **Status:** Done
 
-Generate key-signature questions on a treble staff respecting settings (accidental range, major/minor/both); anti-repeat. The question is always "name the key".
+Generate key-signature questions on a treble or bass staff (random for each question, one at a time; not a setting) respecting settings (accidental range, major/minor/both); anti-repeat. The question is always "name the key".
 
 **Acceptance:**
 - [x] Tests verify each generated question has an unambiguous correct answer under the selected answer format.
 
-**Notes:** one question type, "name the key". The format follows from the keys asked: one mode (major only or minor only) shows the signature alone ("which major/minor key?"); only when major and minor are mixed is a whole note on the tonic added so the answer is unique. Treble clef only. F♯ and G♭ major are always different answers (no enharmonic setting). Each question is proven to have exactly one right answer; no repeated signature back to back. See `src/keyid/questions.ts`.
+**Notes:** one question type, "name the key". The format follows from the keys asked: one mode (major only or minor only) shows the signature alone ("which major/minor key?"); only when major and minor are mixed is a whole note on the tonic added so the answer is unique. The clef is treble or bass, random per question (not a setting). F♯ and G♭ major are always different answers (no enharmonic setting). Each question is proven to have exactly one right answer; no repeated signature back to back. See `src/keyid/questions.ts`.
 
 ### PD-502: Answer UI (circle-of-fifths wheel / typing)
 

@@ -4,7 +4,7 @@ import { parseSettings, type DifficultySettings } from './settings'
 export type Level = { id: number; name: string; description: string; settings: DifficultySettings }
 
 /**
- * The 10 preset levels (design §3.1, adapted to the MVP range G2-F5), loaded from levels.json. Every level
+ * The 10 preset levels (design §3.1, adapted to the MVP range C2-C6: one ledger line for levels 1 and 2, two for levels 3 to 10), loaded from levels.json. Every level
  * is validated when this module loads, so a bad edit to the JSON fails immediately and with a readable error.
  */
 export const PRESET_LEVELS: Level[] = (

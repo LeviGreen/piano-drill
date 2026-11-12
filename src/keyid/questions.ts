@@ -2,10 +2,11 @@ import { keysUpTo } from '../theory/generator'
 import { keySignature, type KeySignature, type Mode } from '../theory/keys'
 import { pitch, type Pitch } from '../theory/pitch'
 import { mulberry32, pick, randInt, type Rng } from '../theory/random'
-import { ledgerLines } from '../theory/staff'
+import { ledgerLines, type Clef } from '../theory/staff'
 
 /**
- * Key identification questions (design §7): a key signature is flashed on a treble staff and the player names the key.
+ * Key identification questions (design §7): a key signature is flashed on a staff, treble or bass (one at a time, chosen
+ * at random for each question; it is not a setting), and the player names the key.
  * A signature alone fits two keys (a major and its relative minor), so each question is asked so that it has exactly one
  * right answer:
  *  - 'major': only major keys are asked, so the signature alone names the key ("which major key?")
@@ -40,6 +41,8 @@ export type KeyIdQuestion = {
   id: string
   /** The key behind the question. Its signature is what is drawn. */
   key: KeySignature
+  /** The clef the signature is drawn in: treble or bass, so the sharps and flats are read in both. */
+  clef: Clef
   accidentals: number
   format: KeyIdFormat
   /** For format 'key': a whole note on the tonic, drawn on the staff. */
@@ -47,6 +50,8 @@ export type KeyIdQuestion = {
   prompt: string
   answer: KeyIdAnswer
 }
+
+const CLEFS: Clef[] = ['treble', 'bass']
 
 const PROMPTS: Record<KeyIdFormat, string> = {
   major: 'Which major key?',
@@ -96,12 +101,12 @@ export function tonicMatches(q: KeyIdQuestion, midi: number): boolean {
   return pitch(key.tonic.letter, key.tonic.accidental, 4).midi % 12 === ((midi % 12) + 12) % 12
 }
 
-/** A tonic note on the treble staff with no ledger lines, in a random octave that fits. */
-function tonicOnStaff(key: KeySignature, rng: Rng): Pitch {
+/** A tonic note on the staff (treble or bass) with no ledger lines, in a random octave that fits. */
+function tonicOnStaff(key: KeySignature, clef: Clef, rng: Rng): Pitch {
   const options: Pitch[] = []
   for (let octave = 1; octave <= 6; octave++) {
     const p = pitch(key.tonic.letter, key.tonic.accidental, octave)
-    if (ledgerLines(p, 'treble') === 0) options.push(p)
+    if (ledgerLines(p, clef) === 0) options.push(p)
   }
   // The staff holds a full octave and more, so there is always at least one place for a tonic.
   return options[randInt(rng, options.length)]
@@ -132,13 +137,15 @@ export class KeyIdGenerator {
     const candidates = this.pool.filter((k) => k.accidentals !== this.lastSignature)
     const key = pick(this.rng, candidates.length > 0 ? candidates : this.pool)
     const format = formatFor(this.config.modes)
+    const clef = pick(this.rng, CLEFS)
     this.lastSignature = key.accidentals
     return {
       id: `k${++this.count}`,
       key,
+      clef,
       accidentals: key.accidentals,
       format,
-      hint: format === 'key' ? tonicOnStaff(key, this.rng) : null,
+      hint: format === 'key' ? tonicOnStaff(key, clef, this.rng) : null,
       prompt: PROMPTS[format],
       answer: correctAnswer(format, key),
     }

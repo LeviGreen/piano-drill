@@ -6,9 +6,9 @@ export type Constraints = {
   maxNotesPerHand: number
   /** Widest comfortable one-hand stretch in semitones (default 14 = a major 9th). */
   maxSpanSemitones: number
-  /** 0 = staff only, 1 = one ledger line, and so on. */
+  /** 0 = staff only, 1 = one ledger line, 2 = two, and so on. */
   maxLedgerLines: number
-  /** Absolute playable range as MIDI numbers (default G2 to F5, the MVP range). */
+  /** Absolute playable range as MIDI numbers (default C2 to C6: the notes with up to two ledger lines past either end). */
   lowestMidi: number
   highestMidi: number
   /**
@@ -20,14 +20,19 @@ export type Constraints = {
   allowHandCrossing: boolean
 }
 
+/**
+ * The MVP range, C2 to C6 (MIDI 36 to 84). With two ledger lines allowed, the treble staff reaches up to C6 (on its second
+ * ledger line above) and the bass staff down to C2 (on its second ledger line below); the other ends are well inside.
+ */
+export const RANGE_LOW_MIDI = 36
+export const RANGE_HIGH_MIDI = 84
+
 export const DEFAULT_CONSTRAINTS: Constraints = {
   maxNotesPerHand: 5,
   maxSpanSemitones: 14,
-  // One ledger line, because middle C needs one in both clefs; the explicit range below is what
-  // actually bounds the MVP at G2-F5.
-  maxLedgerLines: 1,
-  lowestMidi: 43, // G2, bottom line of the bass staff
-  highestMidi: 77, // F5, top line of the treble staff
+  maxLedgerLines: 2,
+  lowestMidi: RANGE_LOW_MIDI, // C2, on the second ledger line below the bass staff
+  highestMidi: RANGE_HIGH_MIDI, // C6, on the second ledger line above the treble staff
   lowIntervalLimit: { belowMidi: 48, minSemitones: 7 },
   allowHandCrossing: false,
 }
