@@ -21,13 +21,18 @@ type Props = {
   format: KeyIdFormat
   onAnswer: (answer: KeyIdAnswer) => void
   disabled?: boolean
-  /** After an answer: marks the right answer and a wrong choice. */
+  /** The wrong keys named so far in this question: they stay marked ✕ and cannot be picked again. */
+  wrong?: KeyIdAnswer[]
+  /** When the question is over: marks the right answer (and, if it was given by tapping, which one was chosen). */
   feedback?: AnswerFeedback | null
   /**
    * Offers a fourth way to answer: playing the tonic on a piano keyboard. `onNote` receives each key played, and `mark`
    * shows which key was played and whether it was right.
    */
-  play?: { onNote: (midi: number) => void; mark: { midi: number; right: boolean } | null }
+  play?: {
+    onNote: (midi: number) => void
+    marks: { midi: number; kind: 'right' | 'wrong' | 'target' }[]
+  }
   /** Told when the player switches between wheel, type and play. */
   onViewChange?: (view: AnswerView) => void
 }
@@ -66,6 +71,7 @@ export function KeyAnswerInput({
   format,
   onAnswer,
   disabled = false,
+  wrong = [],
   feedback = null,
   play,
   onViewChange,
@@ -164,8 +170,14 @@ export function KeyAnswerInput({
   const accepted = feedback
     ? (feedback.ok ?? (feedback.given !== null && sameAnswer(feedback.given, feedback.correct)))
     : null
+  // Time ran out (or they skipped) without the right answer: it is shown, in the "to play" colour like in Play.
+  const revealed = accepted === false && feedback?.given === null
+  const wasWrong = (a: KeyIdAnswer) => wrong.some((w) => sameAnswer(w, a))
+  const lastWrong = wrong.at(-1) ?? null
+  // After a wrong guess the box shows it in red until you start typing the next one.
+  const showingWrong = !feedback && !entry.letter && lastWrong !== null
   const choose = (a: KeyIdAnswer) => {
-    if (disabled) return
+    if (disabled || wasWrong(a)) return
     setEntry(EMPTY_ENTRY)
     onAnswer(a)
   }
@@ -178,7 +190,8 @@ export function KeyAnswerInput({
   }
 
   const playMarks = new Map<number, KeyMark>()
-  if (play?.mark) playMarks.set(play.mark.midi, play.mark.right ? 'heard' : 'wrong')
+  for (const m of play?.marks ?? [])
+    playMarks.set(m.midi, m.kind === 'right' ? 'heard' : m.kind === 'wrong' ? 'wrong' : 'target')
 
   return (
     <div className="answer-input">
@@ -204,10 +217,13 @@ export function KeyAnswerInput({
           aria-label="Circle of fifths: major keys outside, relative minors inside"
         >
           {SECTORS.map((s) => {
-            const enabled = !disabled && (format === 'key' || s.mode === format)
+            const enabled = !disabled && !wasWrong(s) && (format === 'key' || s.mode === format)
+            const isReveal = revealed && is(s, feedback?.correct)
             const isCorrect =
-              is(s, feedback?.correct) || (accepted === true && is(s, feedback?.given))
-            const isWrong = !isCorrect && accepted === false && is(s, feedback?.given)
+              !revealed &&
+              (is(s, feedback?.correct) || (accepted === true && is(s, feedback?.given)))
+            const isWrong =
+              !isCorrect && ((accepted === false && is(s, feedback?.given)) || wasWrong(s))
             const isPending = is(s, pending)
             const p = labelPoint(s)
             const cls = [
@@ -216,6 +232,7 @@ export function KeyAnswerInput({
               s.split ? 'split' : '',
               isPending ? 'pending' : '',
               isCorrect ? 'correct' : '',
+              isReveal ? 'reveal' : '',
               isWrong ? 'wrong' : '',
               enabled ? '' : 'off',
             ]
@@ -246,9 +263,9 @@ export function KeyAnswerInput({
                 >
                   {s.label}
                 </text>
-                {(isCorrect || isWrong) && (
+                {(isCorrect || isWrong || isReveal) && (
                   <text x={p.x} y={p.y + (s.mode === 'major' ? 8 : 7)} className="wheel-mark">
-                    {isCorrect ? '✓' : '✕'}
+                    {isCorrect ? '✓' : isReveal ? '●' : '✕'}
                   </text>
                 )}
               </g>
@@ -264,13 +281,22 @@ export function KeyAnswerInput({
             className={[
               'type-box',
               accepted === true ? 'correct' : '',
-              accepted === false ? 'wrong' : '',
+              revealed ? 'reveal' : '',
+              (accepted === false && !revealed) || showingWrong ? 'wrong' : '',
             ]
               .filter(Boolean)
               .join(' ')}
             aria-label="Your answer"
             value={
-              feedback ? (feedback.given ? answerLabel(feedback.given) : '') : entryText(entry)
+              feedback
+                ? feedback.given
+                  ? answerLabel(feedback.given)
+                  : revealed
+                    ? answerLabel(feedback.correct)
+                    : ''
+                : showingWrong
+                  ? answerLabel(lastWrong)
+                  : entryText(entry)
             }
             disabled={disabled}
             inputMode="text"
@@ -287,14 +313,14 @@ export function KeyAnswerInput({
               }
             }}
           />
-          {!disabled && !feedback && entry.letter === null && (
+          {!disabled && !feedback && entry.letter === null && !showingWrong && (
             <span className="type-hint" aria-hidden="true">
               {TYPE_HELP[format]}
             </span>
           )}
-          {accepted !== null && (
+          {(accepted !== null || showingWrong) && (
             <span className="type-mark" aria-hidden="true">
-              {accepted ? '✓' : '✕'}
+              {accepted ? '✓' : revealed ? '●' : '✕'}
             </span>
           )}
         </div>

@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import { createLevelGenerator } from '../levels/levelGenerator'
 import { PRESET_LEVELS } from '../levels/presets'
+import { PianoDrillDB, Storage } from '../storage'
 import type { Target } from '../theory/target'
 import { PlayScreen } from './PlayScreen'
 
@@ -48,6 +49,10 @@ const upcoming = (levelId: number, n: number): Target[] => {
   const g = createLevelGenerator(PRESET_LEVELS.find((l) => l.id === levelId)!.settings, SEED)
   return Array.from({ length: n }, () => g.next())
 }
+/** The breakdown shows when you hover over (or tap) the score. */
+const showDetails = async (dialog: HTMLElement) =>
+  await userEvent.hover(within(dialog).getByRole('button', { name: 'Score' }))
+
 const midisOf = (t: Target) => t.parts.flatMap((p) => p.pitches.map((x) => x.midi))
 /** Put all the fingers down, then lift them: a chord. */
 const playChord = (midis: number[]) => {
@@ -190,6 +195,7 @@ describe('the rep loop with the on-screen piano', () => {
         { name: 'Session summary' },
         { timeout: 4000 },
       )
+      await showDetails(summary)
       expect(within(summary).getByText(/2 of 2 correct \(100%\)/)).toBeTruthy()
       expect(within(summary).getByText(/Total time: \d+:\d\d/)).toBeTruthy()
     },
@@ -238,6 +244,7 @@ describe('the rep loop with the on-screen piano', () => {
     await waitFor(() => expect(keyEl(wrong).classList.contains('wrong')).toBe(true))
     playChord([right])
     const summary = await screen.findByRole('dialog', { name: 'Session summary' })
+    await showDetails(summary)
     expect(within(summary).getByText(/1 of 1 correct/)).toBeTruthy()
     expect(within(summary).getByText(/Wrong notes: 1/)).toBeTruthy()
   })
@@ -278,6 +285,66 @@ describe('the rep loop with the on-screen piano', () => {
     ).toBeNull()
     expect(screen.getByText('Get ready…')).toBeTruthy()
     await userEvent.click(button('End'))
+  })
+})
+
+describe('scores', () => {
+  it('a finished session is scored, saved, and put on the level board with your initials', async () => {
+    const db = new PianoDrillDB(`play-scores-${Date.now()}`)
+    const storage = new Storage(db)
+    const [t] = upcoming(1, 1)
+    show({ timing: FAST, reps: 1, storage })
+    await userEvent.click(button('Start'))
+    await waitForTarget()
+    playChord(midisOf(t))
+    const summary = await screen.findByRole('dialog', { name: 'Session summary' })
+    expect(within(summary).getByLabelText('Score').textContent).toMatch(/^[\d,]+ \/ 200/)
+    await within(summary).findByText(/New high score! #1/)
+    await userEvent.type(within(summary).getByLabelText(/Your initials/), 'kay')
+    await userEvent.click(within(summary).getByRole('button', { name: 'Save' }))
+    await within(summary).findByText(/Saved! You are #1/)
+    const [top] = await storage.topScores('play', '1')
+    expect(top).toMatchObject({ initials: 'KAY', correct: 1, reps: 1 })
+    expect(top.score).toBeGreaterThan(100)
+    db.close()
+  })
+
+  it('two sessions give two board lines (the second does not replace the first)', async () => {
+    const db = new PianoDrillDB(`play-two-${Date.now()}`)
+    const storage = new Storage(db)
+    const [t1] = upcoming(1, 1) // each session starts its generator from the same seed, so both open with this target
+    show({ timing: FAST, reps: 1, storage })
+    for (const [i, t] of [t1, t1].entries()) {
+      await userEvent.click(button('Start'))
+      await waitForTarget()
+      playChord(midisOf(t))
+      const summary = await screen.findByRole('dialog', { name: 'Session summary' })
+      await userEvent.type(await within(summary).findByLabelText(/Your initials/), `P${'AB'[i]}`)
+      await userEvent.click(within(summary).getByRole('button', { name: 'Save' }))
+      await within(summary).findByText(/Saved!/)
+      await userEvent.click(within(summary).getByRole('button', { name: 'Close' }))
+    }
+    expect(await storage.listSessions()).toEqual([]) // only high scores are kept
+    expect(await storage.topScores('play', '1')).toHaveLength(2)
+    db.close()
+  })
+
+  it('a session on a custom setup is not eligible for the board', async () => {
+    const db = new PianoDrillDB(`play-custom-${Date.now()}`)
+    const storage = new Storage(db)
+    show({ timing: FAST, reps: 1, storage })
+    await userEvent.click(button('Settings'))
+    await userEvent.click(
+      within(screen.getByRole('dialog')).getByRole('button', { name: /Left hand only/ }),
+    )
+    await userEvent.keyboard('{Escape}')
+    await userEvent.click(button('Start'))
+    await waitForTarget()
+    await userEvent.click(button('Skip'))
+    const summary = await screen.findByRole('dialog', { name: 'Session summary' })
+    await within(summary).findByText(/Only finished sessions on the preset levels/)
+    expect(within(summary).queryByLabelText(/Your initials/)).toBeNull()
+    db.close()
   })
 })
 

@@ -143,7 +143,7 @@ describe('Type mode: no wheel to count around', () => {
     expect(['Wheel', 'Type'].every((n) => screen.getByRole('button', { name: n }))).toBe(true)
     expect(screen.queryByRole('button', { name: 'Play' })).toBeNull()
     cleanup()
-    setup('key', { play: { onNote: vi.fn(), mark: null } })
+    setup('key', { play: { onNote: vi.fn(), marks: [] } })
     expect(screen.getByRole('button', { name: 'Play' })).toBeTruthy()
   })
 
@@ -297,7 +297,7 @@ describe('the Play view: answering with the tonic on a piano', () => {
   it('shows a piano, reports the key struck, and tells the screen the view changed', async () => {
     const onNote = vi.fn()
     const onViewChange = vi.fn()
-    setup('major', { play: { onNote, mark: null }, onViewChange })
+    setup('major', { play: { onNote, marks: [] }, onViewChange })
     await userEvent.click(screen.getByRole('button', { name: 'Play' }))
     expect(onViewChange).toHaveBeenLastCalledWith('play')
     expect(screen.queryByRole('group', { name: /circle of fifths/i })).toBeNull()
@@ -311,7 +311,7 @@ describe('the Play view: answering with the tonic on a piano', () => {
   })
 
   it('typing does not answer while in the Play view, and the hint says to play', async () => {
-    const onAnswer = setup('major', { play: { onNote: vi.fn(), mark: null } })
+    const onAnswer = setup('major', { play: { onNote: vi.fn(), marks: [] } })
     await userEvent.click(screen.getByRole('button', { name: 'Play' }))
     await userEvent.keyboard('c{Enter}')
     expect(onAnswer).not.toHaveBeenCalled()
@@ -319,9 +319,119 @@ describe('the Play view: answering with the tonic on a piano', () => {
   })
 
   it('marks the key that was played', async () => {
-    setup('major', { play: { onNote: vi.fn(), mark: { midi: 60, right: false } }, disabled: true })
+    setup('major', {
+      play: { onNote: vi.fn(), marks: [{ midi: 60, kind: 'wrong' as const }] },
+      disabled: true,
+    })
     await userEvent.click(screen.getByRole('button', { name: 'Play' }))
     const key = document.querySelector('[data-midi="60"]')
     expect(key?.getAttribute('class') ?? '').toMatch(/wrong/)
+  })
+})
+
+describe('wrong guesses while the question is still open', () => {
+  const wrong = [
+    { accidentals: 2, mode: 'major' as const },
+    { accidentals: -1, mode: 'major' as const },
+  ]
+
+  it('each wrong key stays marked ✕ on the wheel and cannot be picked again, but the rest still work', async () => {
+    const onAnswer = setup('major', { wrong })
+    for (const name of ['D major', 'F major']) {
+      const sector = screen.getByRole('button', { name })
+      expect(sector.classList.contains('wrong')).toBe(true)
+      expect(sector.textContent).toContain('✕')
+      expect(sector.getAttribute('aria-disabled')).toBe('true')
+      await userEvent.click(sector)
+    }
+    expect(onAnswer).not.toHaveBeenCalled()
+    await userEvent.click(screen.getByRole('button', { name: 'C major' }))
+    expect(onAnswer).toHaveBeenCalledWith({ accidentals: 0, mode: 'major' })
+    // Nothing is marked as right: the answer is not given away.
+    expect(document.querySelectorAll('.wheel-key.correct')).toHaveLength(0)
+  })
+
+  it('the Type box shows the last wrong guess in red with a ✕ until you start typing the next one', async () => {
+    setup('major', { wrong })
+    await userEvent.click(screen.getByRole('button', { name: 'Type' }))
+    const box = screen.getByLabelText('Your answer') as HTMLInputElement
+    expect(box.value).toBe('F major') // the last one named
+    expect(box.classList.contains('wrong')).toBe(true)
+    expect(document.querySelector('.type-mark')?.textContent).toBe('✕')
+    expect(document.querySelector('.type-hint')).toBeNull() // the hint would sit on top of it
+    await userEvent.type(box, 'e')
+    expect(box.value).toBe('E major')
+    expect(box.classList.contains('wrong')).toBe(false)
+    expect(document.querySelector('.type-mark')).toBeNull()
+  })
+
+  it('the piano marks every wrong note played so far, and the right one when it comes', async () => {
+    setup('major', {
+      play: {
+        onNote: vi.fn(),
+        marks: [
+          { midi: 60, kind: 'wrong' as const },
+          { midi: 62, kind: 'wrong' as const },
+          { midi: 63, kind: 'right' as const },
+        ],
+      },
+    })
+    await userEvent.click(screen.getByRole('button', { name: 'Play' }))
+    const cls = (m: number) =>
+      document.querySelector(`[data-midi="${m}"]`)?.getAttribute('class') ?? ''
+    expect(cls(60)).toMatch(/wrong/)
+    expect(cls(62)).toMatch(/wrong/)
+    expect(cls(63)).toMatch(/heard/)
+  })
+})
+
+describe('when time runs out the right answer is shown in the "to play" colour, not as a success', () => {
+  const timedOut = {
+    disabled: true,
+    feedback: { correct: { accidentals: 2, mode: 'major' as const }, given: null, ok: false },
+  }
+
+  it('on the wheel: purple with a dot, and not green', () => {
+    setup('major', timedOut)
+    const d = screen.getByRole('button', { name: 'D major' })
+    expect(d.classList.contains('reveal')).toBe(true)
+    expect(d.classList.contains('correct')).toBe(false)
+    expect(d.textContent).toContain('●')
+    expect(d.textContent).not.toContain('✓')
+    expect(document.querySelectorAll('.wheel-key.correct')).toHaveLength(0)
+  })
+
+  it('in the Type box: the answer in purple', async () => {
+    setup('major', timedOut)
+    await userEvent.click(screen.getByRole('button', { name: 'Type' }))
+    const box = screen.getByLabelText('Your answer') as HTMLInputElement
+    expect(box.value).toBe('D major')
+    expect(box.classList.contains('reveal')).toBe(true)
+    expect(box.classList.contains('correct')).toBe(false)
+    expect(box.classList.contains('wrong')).toBe(false)
+    expect(document.querySelector('.type-mark')?.textContent).toBe('●')
+  })
+
+  it('on the piano: keys marked "to play"', async () => {
+    setup('major', {
+      ...timedOut,
+      play: { onNote: vi.fn(), marks: [{ midi: 62, kind: 'target' }] },
+    })
+    await userEvent.click(screen.getByRole('button', { name: 'Play' }))
+    expect(document.querySelector('[data-midi="62"]')?.getAttribute('class')).toMatch(/target/)
+  })
+
+  it('a right answer is still green', () => {
+    setup('major', {
+      disabled: true,
+      feedback: {
+        correct: { accidentals: 2, mode: 'major' },
+        given: { accidentals: 2, mode: 'major' },
+        ok: true,
+      },
+    })
+    const d = screen.getByRole('button', { name: 'D major' })
+    expect(d.classList.contains('correct')).toBe(true)
+    expect(d.classList.contains('reveal')).toBe(false)
   })
 })

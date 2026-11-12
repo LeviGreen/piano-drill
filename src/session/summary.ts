@@ -47,19 +47,21 @@ export function summarize(results: RepResult[]): SessionSummary {
   }
 }
 
-/** Which wrong answers were given for which keys, most frequent first (the data for a confusion matrix). */
+/** Which wrong guesses were made for which keys, most frequent first (the data for a confusion matrix). */
 export type Confusion = { correct: string; given: string; count: number }
 
 export function confusions(results: RepResult[]): Confusion[] {
   const counts = new Map<string, Confusion>()
   for (const r of results) {
-    if (r.mode !== 'keyid' || r.outcome !== 'incorrect' || !r.keyId?.given) continue
+    if (r.mode !== 'keyid' || !r.keyId) continue
     const correct = answerLabel(r.keyId.correct)
-    const given = answerLabel(r.keyId.given)
-    const k = `${correct}→${given}`
-    const c = counts.get(k) ?? { correct, given, count: 0 }
-    c.count++
-    counts.set(k, c)
+    for (const guess of r.keyId.wrong) {
+      const given = answerLabel(guess)
+      const k = `${correct}→${given}`
+      const c = counts.get(k) ?? { correct, given, count: 0 }
+      c.count++
+      counts.set(k, c)
+    }
   }
   return [...counts.values()].sort(
     (a, b) => b.count - a.count || a.correct.localeCompare(b.correct),

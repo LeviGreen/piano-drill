@@ -34,14 +34,21 @@ export type KeyIdDims = {
 
 export type RepDims = PlayDims | KeyIdDims
 
-/** Extra detail on a key-ID rep: what was answered and what was right (the data for a confusion matrix). */
+/**
+ * Extra detail on a key-ID rep: what was right, and every wrong guess on the way (the data for a confusion matrix). A
+ * wrong guess does not end the question: the player keeps guessing until they get it, time runs out, or they skip.
+ */
 export type KeyIdDetail = {
   format: KeyIdFormat
   correct: KeyIdAnswer
-  /** What the player answered; null when they timed out or skipped, or played a note that names no single key. */
+  /** The right answer as the player gave it (tapped or typed); null if they never got it, or got it by playing. */
   given: KeyIdAnswer | null
+  /** Every wrong key named (tapped or typed), in order. */
+  wrong: KeyIdAnswer[]
+  /** Every wrong note played, in order (the play method). */
+  wrongPlayed: number[]
   method: 'tap' | 'play'
-  /** For the play method: the MIDI note that was played. */
+  /** For the play method: the note that was right. */
   playedMidi?: number
 }
 

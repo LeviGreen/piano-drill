@@ -5,6 +5,8 @@ import { MemoryRouter } from 'react-router'
 import { KeyIdGenerator, type KeyIdQuestion } from '../keyid/questions'
 import { parseKeyIdSettings, toQuestionConfig, type KeyIdSettings } from '../keyid/settings'
 import { answerLabel } from '../keyid/labels'
+import { KEY_ID_LEVELS } from '../keyid/presets'
+import { PianoDrillDB, Storage } from '../storage'
 import { pitch } from '../theory/pitch'
 import { KeyIdScreen } from './KeyIdScreen'
 
@@ -45,6 +47,10 @@ const upcoming = (s: KeyIdSettings, n: number): KeyIdQuestion[] => {
 }
 const button = (name: string | RegExp) => screen.getByRole('button', { name })
 const message = () => document.querySelector('.result-slot')!.textContent!
+/** The breakdown shows when you hover over (or tap) the score. */
+const showDetails = async (dialog: HTMLElement) =>
+  await userEvent.hover(within(dialog).getByRole('button', { name: 'Score' }))
+
 const answerButton = (q: KeyIdQuestion) => button(answerLabel(q.answer))
 
 describe('before starting', () => {
@@ -85,23 +91,62 @@ describe('playing a session (tap answers)', () => {
     await screen.findByText(q.prompt) // flashed
     expect(document.querySelectorAll('.staff .vf-keysignature').length).toBe(1)
     await userEvent.click(answerButton(q))
-    await screen.findByText(/Question 2 of 20/)
+    await screen.findByText(/Question 2 of \d+/)
     expect(message()).toBe('')
   })
 
-  it('says Not quite and what the answer was for a wrong answer, then moves on to the next question', async () => {
+  it('a wrong guess is marked ✕ and the question carries on, without giving the answer away', async () => {
     const s = store({ maxAccidentals: 3 })
-    const [q1, q2] = upcoming(s, 2)
+    const [q1] = upcoming(s, 1)
     show({ timing: FAST })
     await userEvent.click(button('Start'))
     await screen.findByText(q1.prompt)
-    const wrong = button(q1.answer.accidentals === 0 ? 'G major' : 'C major')
-    await userEvent.click(wrong)
-    await waitFor(() =>
-      expect(message()).toBe(`Not quite. The answer is ${answerLabel(q1.answer)}.`),
+    await waitFor(() => expect((button('Skip') as HTMLButtonElement).disabled).toBe(false))
+    const wrongName = q1.answer.accidentals === 0 ? 'G major' : 'C major'
+    await userEvent.click(button(wrongName))
+    const wrong = button(wrongName)
+    expect(wrong.classList.contains('wrong')).toBe(true)
+    expect(wrong.textContent).toContain('✕')
+    expect(wrong.getAttribute('aria-disabled')).toBe('true') // no point picking it twice
+    expect(message()).toBe('') // nothing says what the right answer is
+    expect(answerButton(q1).classList.contains('correct')).toBe(false)
+    expect(screen.getByText(/Question 1 of \d+/)).toBeTruthy() // still on the same question
+    await userEvent.click(answerButton(q1)) // now the right one
+    await screen.findByText(/Question 2 of \d+/)
+    expect(message()).toBe('') // solved: just the green mark
+  })
+
+  it('the ✕ marks go away for the next question', async () => {
+    const s = store({ maxAccidentals: 3 })
+    const [q1] = upcoming(s, 1)
+    show({ timing: FAST })
+    await userEvent.click(button('Start'))
+    await screen.findByText(q1.prompt)
+    await waitFor(() => expect((button('Skip') as HTMLButtonElement).disabled).toBe(false))
+    await userEvent.click(button(q1.answer.accidentals === 0 ? 'G major' : 'C major'))
+    await userEvent.click(answerButton(q1))
+    await screen.findByText(/Question 2 of \d+/)
+    await waitFor(() => expect((button('Skip') as HTMLButtonElement).disabled).toBe(false))
+    expect(document.querySelectorAll('.wheel-key.wrong')).toHaveLength(0)
+  })
+
+  it('timing out after a wrong guess reveals the answer', async () => {
+    const s = store({ maxAccidentals: 3, timeoutSeconds: 1 })
+    const [q] = upcoming(s, 1)
+    show({ timing: FAST, questions: 1 })
+    await userEvent.click(button('Start'))
+    await screen.findByText(q.prompt)
+    await waitFor(() => expect((button('Skip') as HTMLButtonElement).disabled).toBe(false))
+    await userEvent.click(button(q.answer.accidentals === 0 ? 'G major' : 'C major'))
+    await waitFor(
+      () => expect(message()).toBe(`Time's up. The answer is ${answerLabel(q.answer)}.`),
+      {
+        timeout: 3000,
+      },
     )
-    await waitFor(() => expect(screen.getByText(/Question 2 of 20/)).toBeTruthy())
-    expect(q2).toBeDefined()
+    // The answer is shown purple ("to play"), not green like a right answer.
+    expect(answerButton(q).classList.contains('reveal')).toBe(true)
+    expect(answerButton(q).classList.contains('correct')).toBe(false)
   })
 
   it('skip reveals the answer', async () => {
@@ -129,6 +174,7 @@ describe('playing a session (tap answers)', () => {
       { name: 'Session summary' },
       { timeout: 3000 },
     )
+    await showDetails(summary)
     expect(within(summary).getByText(/3 of 3 correct \(100%\)/)).toBeTruthy()
     expect(within(summary).getByText(/Total time: \d+:\d\d/)).toBeTruthy()
     expect(within(summary).queryByRole('table')).toBeNull() // no per-question times
@@ -136,7 +182,7 @@ describe('playing a session (tap answers)', () => {
     expect((button('Start') as HTMLButtonElement).disabled).toBe(false) // can go again
   })
 
-  it('lists the mix-ups after wrong answers: which key you said for which', async () => {
+  it('counts the wrong guesses in the score breakdown, without listing mix-ups', async () => {
     const s = store({ maxAccidentals: 3 })
     const qs = upcoming(s, 2)
     show({ timing: FAST, questions: 2 })
@@ -144,10 +190,12 @@ describe('playing a session (tap answers)', () => {
     for (const q of qs) {
       await screen.findByText(q.prompt)
       await waitFor(() => expect((button('Skip') as HTMLButtonElement).disabled).toBe(false))
-      // Always answer "C major" (wrong unless the question is C major).
+      // Guess "C major" first (wrong unless the question is C major), then get it right.
       await userEvent.click(button('C major'))
-      await waitFor(() => expect(message()).not.toBe('')).catch(() => {}) // the last one clears fast
-      await waitFor(() => expect(message()).toBe(''), { timeout: 2000 }).catch(() => {})
+      if (q.answer.accidentals !== 0) await userEvent.click(answerButton(q))
+      await waitFor(() => expect((button('Skip') as HTMLButtonElement).disabled).toBe(true), {
+        timeout: 2000,
+      }).catch(() => {})
     }
     const summary = await screen.findByRole(
       'dialog',
@@ -155,10 +203,10 @@ describe('playing a session (tap answers)', () => {
       { timeout: 3000 },
     )
     const wrongOnes = qs.filter((q) => q.answer.accidentals !== 0)
-    if (wrongOnes.length > 0) {
-      expect(within(summary).getByText('Mix-ups')).toBeTruthy()
-      expect(within(summary).getAllByText(/you said C major/).length).toBeGreaterThan(0)
-    }
+    await showDetails(summary)
+    expect(within(summary).getByText(`Wrong guesses: ${wrongOnes.length}`)).toBeTruthy()
+    expect(within(summary).queryByText('Mix-ups')).toBeNull() // not in the score breakdown
+    expect(within(summary).queryByText(/you said/)).toBeNull()
   })
 
   it('does not rearrange the page when an answer arrives: the staff, answer area and result area are the same elements', async () => {
@@ -171,7 +219,7 @@ describe('playing a session (tap answers)', () => {
     const slot = document.querySelector('.result-slot')
     const hint = document.querySelector('.answer-pending')
     await userEvent.click(answerButton(q))
-    await screen.findByText(/Question 2 of 20/)
+    await screen.findByText(/Question 2 of \d+/)
     expect(document.querySelector('.staff')).toBe(staff)
     expect(document.querySelector('.result-slot')).toBe(slot)
     expect(document.querySelector('.answer-pending')).toBe(hint)
@@ -273,6 +321,32 @@ describe('the screen shows one treble staff, centred, with the answer input unde
   })
 })
 
+describe('scores', () => {
+  it('a finished session is scored and can be put on the key-ID board', async () => {
+    const db = new PianoDrillDB(`keyid-scores-${Date.now()}`)
+    const storage = new Storage(db)
+    const [q] = upcoming(KEY_ID_LEVELS[0].settings, 1) // the default: preset level 1
+    show({ timing: FAST, questions: 1, storage })
+    await userEvent.click(button('Start'))
+    await screen.findByText(q.prompt)
+    await waitFor(() => expect((button('Skip') as HTMLButtonElement).disabled).toBe(false))
+    await userEvent.click(answerButton(q))
+    const summary = await screen.findByRole(
+      'dialog',
+      { name: 'Session summary' },
+      { timeout: 3000 },
+    )
+    expect(within(summary).getByLabelText('Score').textContent).toMatch(/^\d+ \/ 200/)
+    await within(summary).findByText(/New high score! #1/)
+    await userEvent.type(within(summary).getByLabelText(/Your initials/), 'abc')
+    await userEvent.click(within(summary).getByRole('button', { name: 'Save' }))
+    await within(summary).findByText(/Saved!/)
+    // The level is remembered, so the board is the one for the level you played.
+    expect(await storage.topScores('keyid', '1')).toHaveLength(1)
+    db.close()
+  })
+})
+
 describe('the question clock', () => {
   const clock = () => document.querySelector('.keyid-clock')!.textContent
   it('counts down in whole seconds from the time allowed, on its own line apart from the status', async () => {
@@ -332,10 +406,10 @@ describe('answering by playing the tonic (on-screen keys stand in for the piano)
     await userEvent.click(button('Start'))
     await screen.findByText(q.prompt)
     await play(q, 0)
-    await screen.findByText(/Question 2 of 20/)
+    await screen.findByText(/Question 2 of \d+/)
   })
 
-  it('any other note is wrong, and the message gives the answer', async () => {
+  it('any other note is a wrong guess, marked on the piano, and you keep playing', async () => {
     const s = store({ maxAccidentals: 3 })
     const [q] = upcoming(s, 1)
     show({ timing: FAST })
@@ -343,7 +417,12 @@ describe('answering by playing the tonic (on-screen keys stand in for the piano)
     await userEvent.click(button('Start'))
     await screen.findByText(q.prompt)
     await play(q, 1)
-    await waitFor(() => expect(message()).toMatch(/Not quite\. The answer is/))
+    const wrongKey = document.querySelector('svg.keyboard .kb-key.wrong')
+    expect(wrongKey).toBeTruthy()
+    expect(message()).toBe('')
+    expect(screen.getByText(/Question 1 of \d+/)).toBeTruthy()
+    await play(q, 0) // now the tonic
+    await screen.findByText(/Question 2 of \d+/)
   })
 
   it('can switch from the wheel to Play in the middle of a session', async () => {
@@ -354,6 +433,6 @@ describe('answering by playing the tonic (on-screen keys stand in for the piano)
     await screen.findByText(q.prompt)
     await userEvent.click(button('Play'))
     await play(q, 0)
-    await screen.findByText(/Question 2 of 20/)
+    await screen.findByText(/Question 2 of \d+/)
   })
 })

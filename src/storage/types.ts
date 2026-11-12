@@ -15,6 +15,14 @@ export type SessionRecord = {
   endedAt: string | null
   plannedReps: number
   completedReps: number
+  /** The arcade score (PD-403), when the session was scored. */
+  score?: number
+  /** How many targets were right. */
+  correct?: number
+  /** Wrong notes played (Play) or wrong keys guessed (Key ID), added up over the session. */
+  wrong?: number
+  /** Total time in ms, as shown on the results screen. */
+  totalMs?: number
 }
 
 /** A rep result as stored: the session's reps share its id. `id` is assigned by the database. */
@@ -28,6 +36,22 @@ export type PresetRecord = {
   settings: unknown
   createdAt: string
   updatedAt: string
+}
+
+/** One line on a level's high-score board: three initials, like an old arcade game. */
+export type ScoreRecord = {
+  id: string
+  mode: StoredMode
+  /** The preset level ("1" to "10"): only preset levels have boards. */
+  level: string
+  initials: string
+  score: number
+  correct: number
+  /** Wrong notes or wrong guesses over the session (older scores did not record this). */
+  wrong?: number
+  reps: number
+  totalMs: number
+  achievedAt: string
 }
 
 /** A remembered setting, such as the last level or a display option. */

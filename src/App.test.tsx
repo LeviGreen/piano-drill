@@ -26,7 +26,7 @@ describe('routing', () => {
   it('shows the home screen with links to every section', () => {
     renderAt('/')
     expect(screen.getByRole('heading', { level: 1, name: 'Piano Drill' })).toBeTruthy()
-    for (const name of ['Play', 'Key ID', 'Settings']) {
+    for (const name of ['Play', 'Key ID', 'Scores', 'Settings']) {
       expect(screen.getAllByRole('link', { name: new RegExp(name) }).length).toBeGreaterThan(0)
     }
   })

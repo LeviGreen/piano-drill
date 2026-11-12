@@ -1,6 +1,6 @@
 import { isObject } from '../levels/settings'
 import type { Storage } from './repositories'
-import type { PresetRecord, SessionRecord, SettingRecord, StoredRep } from './types'
+import type { PresetRecord, ScoreRecord, SessionRecord, SettingRecord, StoredRep } from './types'
 
 /** Version of the backup file format. Bump it when the shape of a backup changes. */
 export const BACKUP_VERSION = 1
@@ -15,6 +15,8 @@ export type Backup = {
   reps: Omit<StoredRep, 'id'>[]
   presets: PresetRecord[]
   settings: SettingRecord[]
+  /** High-score boards. Backups made before they existed have none. */
+  scores?: ScoreRecord[]
 }
 
 export type BackupParse = { ok: true; backup: Backup } | { ok: false; errors: string[] }
@@ -65,6 +67,20 @@ export function parseBackup(input: unknown): BackupParse {
     (p) => isStr(p.id) && MODES.includes(p.mode as string) && isStr(p.name),
   )
   check(input.settings as unknown[], 'settings', (s) => isStr(s.key))
+  if (input.scores !== undefined) {
+    if (!Array.isArray(input.scores)) errors.push('scores: must be a list')
+    else
+      check(
+        input.scores,
+        'scores',
+        (s) =>
+          isStr(s.id) &&
+          MODES.includes(s.mode as string) &&
+          isStr(s.level) &&
+          isStr(s.initials) &&
+          typeof s.score === 'number',
+      )
+  }
   if (errors.length > 0) return { ok: false, errors: errors.slice(0, 10) }
   return { ok: true, backup: input as unknown as Backup }
 }
@@ -72,11 +88,12 @@ export function parseBackup(input: unknown): BackupParse {
 /** Read everything out. */
 export async function exportBackup(storage: Storage): Promise<Backup> {
   const { db } = storage
-  const [sessions, reps, presets, settings] = await Promise.all([
+  const [sessions, reps, presets, settings, scores] = await Promise.all([
     db.sessions.toArray(),
     db.reps.orderBy('id').toArray(),
     db.presets.toArray(),
     db.settings.toArray(),
+    db.scores.toArray(),
   ])
   return {
     app: 'piano-drill',
@@ -86,6 +103,21 @@ export async function exportBackup(storage: Storage): Promise<Backup> {
     reps: reps.map(({ id: _id, ...rest }) => rest),
     presets,
     settings,
+    scores,
+  }
+}
+
+/** Keep each board to its top scores (a merged backup can add more than fit). */
+async function trimBoards(storage: Storage): Promise<void> {
+  const { db } = storage
+  const all = await db.scores.toArray()
+  const keys = new Set(all.map((s) => `${s.mode}|${s.level}`))
+  for (const key of keys) {
+    const [mode, level] = key.split('|')
+    const board = await storage.topScores(mode as ScoreRecord['mode'], level)
+    const keep = new Set(board.map((s) => s.id))
+    const drop = all.filter((s) => s.mode === mode && s.level === level && !keep.has(s.id))
+    if (drop.length > 0) await db.scores.bulkDelete(drop.map((s) => s.id))
   }
 }
 
@@ -100,40 +132,52 @@ export async function importBackup(
   storage: Storage,
   backup: Backup,
   mode: ImportMode = 'replace',
-): Promise<{ sessions: number; reps: number; presets: number; settings: number }> {
+): Promise<{ sessions: number; reps: number; presets: number; settings: number; scores: number }> {
   const { db } = storage
-  return db.transaction('rw', [db.sessions, db.reps, db.presets, db.settings], async () => {
-    if (mode === 'replace') {
-      await Promise.all([
-        db.sessions.clear(),
-        db.reps.clear(),
-        db.presets.clear(),
-        db.settings.clear(),
-      ])
-    }
-    const haveSessions = new Set(
-      mode === 'merge' ? await db.sessions.toCollection().primaryKeys() : [],
-    )
-    const havePresets = new Set(
-      mode === 'merge' ? await db.presets.toCollection().primaryKeys() : [],
-    )
-    const haveSettings = new Set(
-      mode === 'merge' ? await db.settings.toCollection().primaryKeys() : [],
-    )
-    const sessions = backup.sessions.filter((s) => !haveSessions.has(s.id))
-    const added = new Set(sessions.map((s) => s.id))
-    const reps = backup.reps.filter((r) => added.has(r.sessionId))
-    const presets = backup.presets.filter((p) => !havePresets.has(p.id))
-    const settings = backup.settings.filter((s) => !haveSettings.has(s.key))
-    await db.sessions.bulkAdd(sessions)
-    await db.reps.bulkAdd(reps)
-    await db.presets.bulkAdd(presets)
-    await db.settings.bulkAdd(settings)
-    return {
-      sessions: sessions.length,
-      reps: reps.length,
-      presets: presets.length,
-      settings: settings.length,
-    }
-  })
+  return db.transaction(
+    'rw',
+    [db.sessions, db.reps, db.presets, db.settings, db.scores],
+    async () => {
+      if (mode === 'replace') {
+        await Promise.all([
+          db.sessions.clear(),
+          db.reps.clear(),
+          db.presets.clear(),
+          db.settings.clear(),
+          db.scores.clear(),
+        ])
+      }
+      const haveSessions = new Set(
+        mode === 'merge' ? await db.sessions.toCollection().primaryKeys() : [],
+      )
+      const havePresets = new Set(
+        mode === 'merge' ? await db.presets.toCollection().primaryKeys() : [],
+      )
+      const haveScores = new Set(
+        mode === 'merge' ? await db.scores.toCollection().primaryKeys() : [],
+      )
+      const haveSettings = new Set(
+        mode === 'merge' ? await db.settings.toCollection().primaryKeys() : [],
+      )
+      const sessions = backup.sessions.filter((s) => !haveSessions.has(s.id))
+      const added = new Set(sessions.map((s) => s.id))
+      const reps = backup.reps.filter((r) => added.has(r.sessionId))
+      const presets = backup.presets.filter((p) => !havePresets.has(p.id))
+      const settings = backup.settings.filter((s) => !haveSettings.has(s.key))
+      await db.sessions.bulkAdd(sessions)
+      await db.reps.bulkAdd(reps)
+      await db.presets.bulkAdd(presets)
+      await db.settings.bulkAdd(settings)
+      const scores = (backup.scores ?? []).filter((s) => !haveScores.has(s.id))
+      await db.scores.bulkAdd(scores)
+      await trimBoards(storage)
+      return {
+        sessions: sessions.length,
+        reps: reps.length,
+        presets: presets.length,
+        settings: settings.length,
+        scores: scores.length,
+      }
+    },
+  )
 }

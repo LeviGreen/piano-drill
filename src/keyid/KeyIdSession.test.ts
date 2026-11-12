@@ -87,43 +87,86 @@ describe('answering by tap or typing', () => {
     expect(r.session.snapshot.lastOutcome).toBe('correct')
   })
 
-  it('a wrong answer ends the rep at once as incorrect, reveals the answer, and records both', async () => {
+  it('a wrong guess does not end the question or reveal the answer: you keep guessing', async () => {
     const r = rig({}, [question('a')])
     await r.session.start()
     await r.clock.advance(503)
     r.session.answer({ accidentals: 2, mode: 'major' })
+    expect(r.session.results).toHaveLength(0)
+    expect(r.session.snapshot.state).toBe('FLASHED')
+    expect(r.session.snapshot.wrong).toEqual([{ accidentals: 2, mode: 'major' }])
+    expect(r.session.snapshot.given).toBeNull()
+    expect(r.presenter.log).not.toContain('reveal a')
+    r.session.answer({ accidentals: 1, mode: 'major' })
+    expect(r.session.snapshot.wrong).toHaveLength(2)
+    expect(r.session.results).toHaveLength(0)
+  })
+
+  it('getting it right after wrong guesses finishes as correct with errors, and records every try', async () => {
+    const r = rig({}, [question('a')])
+    await r.session.start()
+    await r.clock.advance(503) // t0 = 3, so this is 500 ms in
+    r.session.answer({ accidentals: 2, mode: 'major' })
+    await r.clock.advance(700)
+    r.session.answer({ accidentals: 1, mode: 'major' })
+    await r.clock.advance(800)
+    r.session.answer({ accidentals: -3, mode: 'major' })
     const rep = r.session.results[0]
-    expect(rep.outcome).toBe('incorrect')
-    expect(rep.reactionMs).toBe(500)
-    expect(rep.completionMs).toBeNull() // not completed correctly
+    expect(rep.outcome).toBe('correct_with_errors')
+    expect(rep.reactionMs).toBe(500) // the first guess
+    expect(rep.completionMs).toBe(2000) // the right one
+    expect(rep.errors).toEqual([
+      { t: 500, notes: [] },
+      { t: 1200, notes: [] },
+    ])
     expect(rep.keyId).toEqual({
       format: 'major',
       correct: { accidentals: -3, mode: 'major' },
-      given: { accidentals: 2, mode: 'major' },
+      given: { accidentals: -3, mode: 'major' },
+      wrong: [
+        { accidentals: 2, mode: 'major' },
+        { accidentals: 1, mode: 'major' },
+      ],
+      wrongPlayed: [],
       method: 'tap',
     })
-    expect(r.presenter.log).toContain('reveal a')
-    expect(r.snaps.map((s) => s.state)).toContain('INCORRECT')
+    expect(r.presenter.log).not.toContain('reveal a') // solved: nothing to reveal
+    expect(r.session.snapshot.given).toEqual({ accidentals: -3, mode: 'major' })
   })
 
-  it('exposes what was answered once the rep is over', async () => {
+  it('right on the first try is plain correct', async () => {
+    const r = rig({}, [question('a')])
+    await r.session.start()
+    await r.clock.advance(1203)
+    r.session.answer({ accidentals: -3, mode: 'major' })
+    expect(r.session.results[0]).toMatchObject({
+      outcome: 'correct',
+      errors: [],
+      reactionMs: 1200,
+      completionMs: 1200,
+    })
+  })
+
+  it('naming the same wrong key again is not a new mistake', async () => {
     const r = rig({}, [question('a')])
     await r.session.start()
     await r.clock.advance(3)
-    expect(r.session.snapshot.given).toBeNull()
-    r.session.answer({ accidentals: 1, mode: 'major' })
-    expect(r.session.snapshot.given).toEqual({ accidentals: 1, mode: 'major' })
-    expect(r.session.snapshot.question?.id).toBe('a')
+    r.session.answer({ accidentals: 2, mode: 'major' })
+    r.session.answer({ accidentals: 2, mode: 'major' })
+    expect(r.session.snapshot.wrong).toHaveLength(1)
+    r.session.answer({ accidentals: -3, mode: 'major' })
+    expect(r.session.results[0].errors).toHaveLength(1)
   })
 
-  it('only the first answer counts: a second one during the feedback is ignored', async () => {
+  it('only the first right answer counts: another one during the feedback is ignored', async () => {
     const r = rig({}, [question('a')])
     await r.session.start()
     await r.clock.advance(3)
+    r.session.answer({ accidentals: -3, mode: 'major' })
     r.session.answer({ accidentals: 1, mode: 'major' })
     r.session.answer({ accidentals: -3, mode: 'major' })
     expect(r.session.results).toHaveLength(1)
-    expect(r.session.results[0].outcome).toBe('incorrect')
+    expect(r.session.results[0].outcome).toBe('correct')
   })
 
   it('answers before the question appears are ignored', async () => {
@@ -134,6 +177,21 @@ describe('answering by tap or typing', () => {
     await r.clock.advance(1003)
     r.session.answer({ accidentals: -3, mode: 'major' })
     expect(r.session.results).toHaveLength(1)
+  })
+
+  it('times out after wrong guesses: the guesses are kept, and now the answer is revealed', async () => {
+    const r = rig({ totalReps: 1 }, [question('a')])
+    await r.session.start()
+    await r.clock.advance(503)
+    r.session.answer({ accidentals: 2, mode: 'major' })
+    await r.clock.advance(10_010)
+    const rep = r.session.results[0]
+    expect(rep.outcome).toBe('timeout')
+    expect(rep.completionMs).toBeNull()
+    expect(rep.reactionMs).toBe(500)
+    expect(rep.keyId?.wrong).toEqual([{ accidentals: 2, mode: 'major' }])
+    expect(rep.errors).toHaveLength(1)
+    expect(r.presenter.log).toContain('reveal a')
   })
 
   it('times out, and skipping works; neither records an answer', async () => {
@@ -154,8 +212,11 @@ describe('answering by tap or typing', () => {
     const r = rig({}, [question('a', 'major', 6)])
     await r.session.start()
     await r.clock.advance(3)
-    r.session.answer({ accidentals: -6, mode: 'major' }) // G♭ for F♯
-    expect(r.session.results[0].outcome).toBe('incorrect')
+    r.session.answer({ accidentals: -6, mode: 'major' }) // G♭ for F♯: a wrong guess
+    expect(r.session.snapshot.state).toBe('FLASHED')
+    expect(r.session.snapshot.wrong).toEqual([{ accidentals: -6, mode: 'major' }])
+    r.session.answer({ accidentals: 6, mode: 'major' })
+    expect(r.session.results[0].outcome).toBe('correct_with_errors')
   })
 })
 
@@ -268,14 +329,27 @@ describe('answering by playing the tonic (PD-504 logic)', () => {
     })
   })
 
-  it('any other note is a wrong answer; the first note struck decides', async () => {
+  it('any other note is a wrong guess and you keep playing; the tonic ends the question', async () => {
     const r = playRig('major')
     await r.session.start()
     await r.clock.advance(3)
     tap(r, 'G4')
-    tap(r, 'Eb4') // too late: the first note was the answer
-    expect(r.session.results[0].outcome).toBe('incorrect')
-    expect(r.session.results[0].keyId?.playedMidi).toBe(parsePitch('G4').midi)
+    tap(r, 'A3')
+    expect(r.session.results).toHaveLength(0)
+    expect(r.session.snapshot.wrongPlayed).toEqual([parsePitch('G4').midi, parsePitch('A3').midi])
+    tap(r, 'Eb4')
+    const rep = r.session.results[0]
+    expect(rep.outcome).toBe('correct_with_errors')
+    expect(rep.errors.map((e) => e.notes)).toEqual([
+      [parsePitch('G4').midi],
+      [parsePitch('A3').midi],
+    ])
+    expect(rep.keyId).toMatchObject({
+      method: 'play',
+      playedMidi: parsePitch('Eb4').midi,
+      wrongPlayed: [parsePitch('G4').midi, parsePitch('A3').midi],
+      given: null,
+    })
   })
 
   it('a note that was ringing before the question appeared does not count', async () => {
@@ -289,13 +363,12 @@ describe('answering by playing the tonic (PD-504 logic)', () => {
   it('waits for the room to go quiet before flashing (the input is a live one)', async () => {
     const r = playRig('major')
     await r.session.start()
-    // The session flashed at once since it was quiet; now a held note keeps the next one from flashing.
     await r.clock.advance(3)
-    r.input.noteOn(parsePitch('C4').midi, r.clock.now()) // a held note: this is the answer (wrong)
-    expect(r.session.results[0].outcome).toBe('incorrect')
-    await r.clock.advance(3000) // feedback + reveal over, but the note is still held
+    r.input.noteOn(parsePitch('Eb4').midi, r.clock.now()) // the tonic, and the key is held down
+    expect(r.session.results[0].outcome).toBe('correct')
+    await r.clock.advance(3000) // feedback is over, but the note is still held
     expect(r.session.snapshot.state).toBe('READY') // not flashed while notes sound
-    r.input.noteOff(parsePitch('C4').midi, r.clock.now())
+    r.input.noteOff(parsePitch('Eb4').midi, r.clock.now())
     await r.clock.advance(20)
     expect(r.session.snapshot.state).toBe('FLASHED')
   })

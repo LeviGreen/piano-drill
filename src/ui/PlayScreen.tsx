@@ -8,12 +8,14 @@ import { PianoKeyboard, type KeyMark } from '../notation/PianoKeyboard'
 import { renderGrandStaff } from '../notation/renderGrandStaff'
 import { DrillSession, type SessionSnapshot } from '../session/DrillSession'
 import { summarize } from '../session/summary'
+import type { Storage } from '../storage'
 import type { Presenter, RepResult } from '../session/types'
 import { keySignature } from '../theory/keys'
 import { formatPitch } from '../theory/pitch'
 import type { Target } from '../theory/target'
 import { DifficultyFields } from './DifficultyFields'
-import { ResultsModal } from './ResultsModal'
+import { levelLabel } from './levelLabel'
+import { ScoreSummary } from './ScoreSummary'
 import { SettingsDrawer } from './SettingsDrawer'
 import { useCountdown } from './useCountdown'
 import { useRemainingSeconds } from './useRemainingSeconds'
@@ -53,6 +55,8 @@ function loadSettings(): Loaded {
 }
 
 export type PlayScreenProps = {
+  /** For tests: where results are saved. Defaults to the app's database. */
+  storage?: Storage
   /** For tests only: a shorter session than the product's fixed 20 targets. */
   reps?: number
   /** For tests only: shorter waits than the product's fixed ones. */
@@ -69,7 +73,7 @@ export type PlayScreenProps = {
  * turns green on the staff and the keyboard, in any order, and the rep ends when all of them have been heard. The
  * on-screen piano stands in for a real piano until the microphone can listen.
  */
-export function PlayScreen({ reps = DEFAULT_REPS, timing }: PlayScreenProps) {
+export function PlayScreen({ reps = DEFAULT_REPS, timing, storage }: PlayScreenProps) {
   const [initial] = useState(loadSettings)
   const [settings, setSettings] = useState<DifficultySettings>(initial.settings)
   const [levelId, setLevelId] = useState<number | 'custom'>(initial.levelId)
@@ -197,11 +201,6 @@ export function PlayScreen({ reps = DEFAULT_REPS, timing }: PlayScreenProps) {
     ? `${snap?.lastOutcome === 'timeout' ? "Time's up." : 'Skipped.'} Here is the answer.`
     : ''
   const summary = state === 'ENDED' && results.length > 0 ? summarize(results) : null
-  const totalMs = results.reduce(
-    (sum, r) => sum + (r.completionMs ?? (settings.timeoutSeconds ?? 0) * 1000),
-    0,
-  )
-  const strays = results.reduce((n, r) => n + r.errors.length, 0)
 
   return (
     <div className="keyid-screen play-screen">
@@ -273,15 +272,18 @@ export function PlayScreen({ reps = DEFAULT_REPS, timing }: PlayScreenProps) {
       </div>
 
       {summary && !dismissed && (
-        <ResultsModal
-          correct={summary.correct}
-          reps={summary.reps}
-          totalMs={totalMs}
+        <ScoreSummary
+          mode="play"
+          levelId={levelId}
+          levelName={levelLabel(levelId)}
+          goalSeconds={settings.goal?.medianSeconds}
+          timeoutSeconds={settings.timeoutSeconds}
+          plannedReps={reps}
+          results={results}
+          storage={storage}
           onClose={() => setDismissed(true)}
           onAgain={() => void start()}
-        >
-          {strays > 0 && <p>Wrong notes: {strays}</p>}
-        </ResultsModal>
+        ></ScoreSummary>
       )}
 
       <SettingsDrawer

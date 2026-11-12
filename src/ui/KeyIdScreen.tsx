@@ -3,7 +3,7 @@ import { ScriptedInput } from '../audio/inputs/ScriptedInput'
 import { KeyIdSession, type KeyIdAnswerMethod, type KeyIdSnapshot } from '../keyid/KeyIdSession'
 import { answerLabel } from '../keyid/labels'
 import { KEY_ID_LEVELS } from '../keyid/presets'
-import { formatFor, KeyIdGenerator, type KeyIdQuestion } from '../keyid/questions'
+import { formatFor, KeyIdGenerator, tonicMatches, type KeyIdQuestion } from '../keyid/questions'
 import {
   mergeKeyIdSettings,
   parseKeyIdSettings,
@@ -13,17 +13,23 @@ import {
 } from '../keyid/settings'
 import { FlashController } from '../notation/flash'
 import { renderStaff } from '../notation/renderStaff'
-import { confusions, summarize } from '../session/summary'
+import { summarize } from '../session/summary'
 import type { Presenter, RepResult } from '../session/types'
+import type { Storage } from '../storage'
 import { keySignature } from '../theory/keys'
 import { KeyAnswerInput, type AnswerFeedback, type AnswerView } from './KeyAnswerInput'
 import { SettingsDrawer } from './SettingsDrawer'
-import { ResultsModal } from './ResultsModal'
+import { levelLabel } from './levelLabel'
+import { ScoreSummary } from './ScoreSummary'
 import { useCountdown } from './useCountdown'
 import { useRemainingSeconds } from './useRemainingSeconds'
 
 /** A session is always this many questions. */
 const DEFAULT_QUESTIONS = 20
+
+/** The on-screen piano's range (G2 to F5, the MVP range). */
+const KEYBOARD_LOW = 43
+const KEYBOARD_HIGH = 77
 
 const STORAGE_KEY = 'piano-drill.keyid-settings'
 
@@ -32,7 +38,11 @@ function loadSettings(): { settings: KeyIdSettings; levelId: number | 'custom' }
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) {
       const parsed = parseKeyIdSettings(JSON.parse(raw))
-      if (parsed.ok) return { settings: parsed.settings, levelId: 'custom' }
+      if (parsed.ok) {
+        // Changing any option renames the settings "Custom", so a preset's own name means it is still that level.
+        const preset = KEY_ID_LEVELS.find((l) => l.settings.name === parsed.settings.name)
+        return { settings: parsed.settings, levelId: preset?.id ?? 'custom' }
+      }
     }
   } catch {
     // Storage unavailable or corrupt: fall back to the first level.
@@ -45,6 +55,8 @@ const drawEmptyStaff = (el: HTMLElement | null) => {
 }
 
 export type KeyIdScreenProps = {
+  /** For tests: where results are saved. Defaults to the app's database. */
+  storage?: Storage
   /** For tests only: a shorter session than the product's fixed 20 questions. */
   questions?: number
   /** For tests only: shorter waits than the product's fixed ones. */
@@ -61,6 +73,7 @@ export type KeyIdScreenProps = {
  */
 export function KeyIdScreen({
   timing,
+  storage,
   questions: QUESTIONS = DEFAULT_QUESTIONS,
 }: KeyIdScreenProps) {
   const [initial] = useState(loadSettings)
@@ -158,8 +171,8 @@ export function KeyIdScreen({
   }
   const pickLevel = (value: string) => {
     if (value === 'custom') return setLevelId('custom')
-    const level = KEY_ID_LEVELS.find((l) => l.id === Number(value))
-    if (level) changeSettings(level.settings, level.id)
+    const picked = KEY_ID_LEVELS.find((l) => l.id === Number(value))
+    if (picked) changeSettings(picked.settings, picked.id)
   }
 
   // ----- what the screen says -----
@@ -173,7 +186,11 @@ export function KeyIdScreen({
   const last = results.at(-1)
   const feedback: AnswerFeedback | null =
     finished && question && snap?.lastOutcome
-      ? { correct: question.answer, given: snap.given, ok: snap.lastOutcome === 'correct' }
+      ? {
+          correct: question.answer,
+          given: snap.given,
+          ok: snap.lastOutcome === 'correct' || snap.lastOutcome === 'correct_with_errors',
+        }
       : null
   const status =
     state === 'IDLE'
@@ -189,20 +206,26 @@ export function KeyIdScreen({
             : (question?.prompt ?? '')
   const message =
     finished && last && question
-      ? last.outcome === 'correct'
-        ? '' // a right answer is shown by the green mark alone
-        : `${last.outcome === 'timeout' ? "Time's up." : last.outcome === 'skipped' ? 'Skipped.' : 'Not quite.'} The answer is ${answerLabel(question.answer)}.`
+      ? last.outcome === 'timeout' || last.outcome === 'skipped'
+        ? `${last.outcome === 'timeout' ? "Time's up." : 'Skipped.'} The answer is ${answerLabel(question.answer)}.`
+        : '' // a right answer is shown by the green mark alone
       : ''
-  const playMark =
-    finished && snap?.playedMidi != null
-      ? { midi: snap.playedMidi, right: last?.outcome === 'correct' }
-      : null
+  // Wrong notes stay marked as you keep trying; the right one lights up when you get it.
+  const marking = state === 'FLASHED' || finished // not while getting ready for the next question
+  const unsolved = last?.outcome === 'timeout' || last?.outcome === 'skipped'
+  const playMarks: { midi: number; kind: 'right' | 'wrong' | 'target' }[] = marking
+    ? [
+        ...(snap?.wrongPlayed ?? []).map((midi) => ({ midi, kind: 'wrong' as const })),
+        ...(snap?.playedMidi != null ? [{ midi: snap.playedMidi, kind: 'right' as const }] : []),
+        // If time ran out, show where the tonic is (in every octave on the piano), the way Play shows its targets.
+        ...(finished && unsolved && question
+          ? Array.from({ length: KEYBOARD_HIGH - KEYBOARD_LOW + 1 }, (_, i) => KEYBOARD_LOW + i)
+              .filter((midi) => tonicMatches(question, midi))
+              .map((midi) => ({ midi, kind: 'target' as const }))
+          : []),
+      ]
+    : []
   const summary = state === 'ENDED' && results.length > 0 ? summarize(results) : null
-  const mistakes = confusions(results)
-  const totalMs = results.reduce(
-    (sum, r) => sum + (r.reactionMs ?? (settings.timeoutSeconds ?? 0) * 1000),
-    0,
-  )
   const format = formatFor(settings.modes)
 
   return (
@@ -262,7 +285,8 @@ export function KeyIdScreen({
         onAnswer={(a) => session.current?.answer(a)}
         disabled={state !== 'FLASHED'}
         feedback={feedback}
-        play={{ onNote: playNote, mark: playMark }}
+        wrong={marking ? (snap?.wrong ?? []) : []}
+        play={{ onNote: playNote, marks: playMarks }}
         onViewChange={onViewChange}
       />
 
@@ -271,27 +295,18 @@ export function KeyIdScreen({
       </div>
 
       {summary && !dismissed && (
-        <ResultsModal
-          correct={summary.correct}
-          reps={summary.reps}
-          totalMs={totalMs}
+        <ScoreSummary
+          mode="keyid"
+          levelId={levelId}
+          levelName={levelLabel(levelId)}
+          goalSeconds={settings.goal?.medianSeconds}
+          timeoutSeconds={settings.timeoutSeconds}
+          plannedReps={QUESTIONS}
+          results={results}
+          storage={storage}
           onClose={() => setDismissed(true)}
           onAgain={() => void start()}
-        >
-          {mistakes.length > 0 && (
-            <>
-              <h3>Mix-ups</h3>
-              <ul>
-                {mistakes.map((m) => (
-                  <li key={`${m.correct}-${m.given}`}>
-                    {m.correct}: you said {m.given}
-                    {m.count > 1 && ` (${m.count}×)`}
-                  </li>
-                ))}
-              </ul>
-            </>
-          )}
-        </ResultsModal>
+        ></ScoreSummary>
       )}
 
       <SettingsDrawer

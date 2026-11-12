@@ -4,7 +4,7 @@ import type { RepResult } from '../session/types'
 import { exportBackup, importBackup, parseBackup, BACKUP_VERSION } from './backup'
 import { PianoDrillDB } from './db'
 import { Storage } from './repositories'
-import type { SessionRecord } from './types'
+import type { ScoreRecord, SessionRecord } from './types'
 
 let n = 0
 let db: PianoDrillDB
@@ -32,6 +32,24 @@ const rep = (id: string, over: Partial<RepResult> = {}): RepResult => ({
   timestamp: '2026-01-01T10:00:00.000Z',
   ...over,
 })
+const scoreRec = (
+  id: string,
+  mode: 'play' | 'keyid',
+  level: string,
+  score: number,
+  initials = 'ABC',
+  achievedAt = '2026-01-01T10:00:00.000Z',
+): ScoreRecord => ({
+  id,
+  mode,
+  level,
+  initials,
+  score,
+  correct: 18,
+  reps: 20,
+  totalMs: 60000,
+  achievedAt,
+})
 const session = (id: string, over: Partial<SessionRecord> = {}): SessionRecord => ({
   id,
   mode: 'play',
@@ -57,18 +75,19 @@ describe('sessions and reps', () => {
   it('keeps every field of a rep, including key-ID detail', async () => {
     const r = rep('k', {
       mode: 'keyid',
-      outcome: 'incorrect',
-      completionMs: null,
+      outcome: 'correct_with_errors',
       keyId: {
         format: 'major',
         correct: { accidentals: 2, mode: 'major' },
-        given: { accidentals: 3, mode: 'major' },
+        given: { accidentals: 2, mode: 'major' },
+        wrong: [{ accidentals: 3, mode: 'major' }],
+        wrongPlayed: [],
         method: 'tap',
       },
     })
     await storage.saveSession(session('s1', { mode: 'keyid' }), [r])
     const [back] = await storage.getReps('s1')
-    expect(back).toMatchObject({ outcome: 'incorrect', completionMs: null, keyId: r.keyId })
+    expect(back).toMatchObject({ outcome: 'correct_with_errors', keyId: r.keyId })
   })
 
   it('saving a session again replaces it and its reps instead of doubling them', async () => {
@@ -200,6 +219,7 @@ describe('export and import', () => {
     )
     await s.savePreset({ id: 'p1', mode: 'play', name: 'Mine', settings: { hands: ['LH'] } })
     await s.setSetting('play.level', 4)
+    await s.addScore(scoreRec('sc1', 'play', '1', 2500, 'AAA'))
   }
   const snapshot = async (s: Storage) => {
     const b = await exportBackup(s)
@@ -215,7 +235,7 @@ describe('export and import', () => {
     const parsed = parseBackup(JSON.parse(text))
     if (!parsed.ok) throw new Error(parsed.errors.join(', '))
     const counts = await importBackup(storage, parsed.backup)
-    expect(counts).toEqual({ sessions: 2, reps: 3, presets: 1, settings: 1 })
+    expect(counts).toEqual({ sessions: 2, reps: 3, presets: 1, settings: 1, scores: 1 })
     expect(await snapshot(storage)).toEqual(before)
     expect((await storage.getReps('s1')).map((r) => r.targetId)).toEqual(['a', 'b'])
   })
@@ -237,7 +257,7 @@ describe('export and import', () => {
     await storage.setSetting('play.level', 9)
 
     const counts = await importBackup(storage, backup, 'merge')
-    expect(counts).toEqual({ sessions: 1, reps: 1, presets: 0, settings: 0 }) // only s2 was missing
+    expect(counts).toEqual({ sessions: 1, reps: 1, presets: 0, settings: 0, scores: 0 }) // only s2 was missing
     expect((await storage.listSessions()).map((x) => x.id).sort()).toEqual(['s1', 's2', 's9'])
     expect((await storage.getReps('s1')).map((r) => r.targetId)).toEqual(['a', 'b']) // not doubled
     expect((await storage.getReps('s2')).map((r) => r.targetId)).toEqual(['c'])
@@ -297,5 +317,85 @@ describe('reading a backup file', () => {
     const r = parseBackup(input)
     expect(r.ok).toBe(false)
     expect(!r.ok && r.errors.some((e) => pattern.test(e))).toBe(true)
+  })
+})
+
+describe('high-score boards', () => {
+  it('lists a level best first, and keeps modes and levels apart', async () => {
+    await storage.addScore(scoreRec('a', 'play', '1', 1000, 'LOW'))
+    await storage.addScore(scoreRec('b', 'play', '1', 3000, 'TOP'))
+    await storage.addScore(scoreRec('c', 'play', '1', 2000, 'MID'))
+    await storage.addScore(scoreRec('d', 'play', '2', 3999, 'OTH'))
+    await storage.addScore(scoreRec('e', 'keyid', '1', 3999, 'KEY'))
+    expect((await storage.topScores('play', '1')).map((x) => x.initials)).toEqual([
+      'TOP',
+      'MID',
+      'LOW',
+    ])
+    expect((await storage.topScores('play', '2')).map((x) => x.initials)).toEqual(['OTH'])
+    expect((await storage.topScores('keyid', '1')).map((x) => x.initials)).toEqual(['KEY'])
+    expect(await storage.topScores('keyid', '9')).toEqual([])
+  })
+
+  it('keeps only the top ten, dropping the lowest, and says what place a new score took', async () => {
+    for (let i = 1; i <= 10; i++) await storage.addScore(scoreRec(`s${i}`, 'play', '1', i * 100))
+    expect((await storage.topScores('play', '1')).length).toBe(10)
+    expect(await storage.addScore(scoreRec('new', 'play', '1', 550, 'NEW'))).toBe(6)
+    const board = await storage.topScores('play', '1')
+    expect(board).toHaveLength(10)
+    expect(board.map((x) => x.score)).toEqual([1000, 900, 800, 700, 600, 550, 500, 400, 300, 200])
+    expect(await db.scores.count()).toBe(10) // the 100 was deleted, not just hidden
+  })
+
+  it('a score too low for a full board is not saved, and gets no place', async () => {
+    for (let i = 1; i <= 10; i++) await storage.addScore(scoreRec(`s${i}`, 'play', '1', i * 100))
+    expect(await storage.prospectiveRank('play', '1', 50)).toBeNull()
+    expect(await storage.addScore(scoreRec('low', 'play', '1', 50))).toBeNull()
+    expect(await db.scores.get('low')).toBeUndefined()
+  })
+
+  it('predicts the place before saving, and a tie ranks below the score already there', async () => {
+    await storage.addScore(scoreRec('a', 'play', '1', 2000, 'ONE', '2026-01-01T00:00:00Z'))
+    await storage.addScore(scoreRec('b', 'play', '1', 1000, 'TWO', '2026-01-02T00:00:00Z'))
+    expect(await storage.prospectiveRank('play', '1', 3000)).toBe(1)
+    expect(await storage.prospectiveRank('play', '1', 2000)).toBe(2) // ties the first, which came earlier
+    expect(await storage.prospectiveRank('play', '1', 1500)).toBe(2)
+    expect(await storage.prospectiveRank('play', '1', 10)).toBe(3)
+    expect(await storage.prospectiveRank('play', '9', 10)).toBe(1) // an empty board
+  })
+
+  it('a tie with the tenth place does not make a full board', async () => {
+    for (let i = 1; i <= 10; i++) await storage.addScore(scoreRec(`s${i}`, 'play', '1', i * 100))
+    expect(await storage.prospectiveRank('play', '1', 100)).toBeNull()
+    expect(await storage.prospectiveRank('play', '1', 101)).toBe(10)
+  })
+
+  it('boards survive export and import, and an old backup with no boards still imports', async () => {
+    await storage.addScore(scoreRec('a', 'play', '1', 2000, 'ONE'))
+    const backup = await exportBackup(storage)
+    expect(backup.scores).toHaveLength(1)
+    await storage.wipe()
+    expect(await storage.topScores('play', '1')).toEqual([])
+    await importBackup(storage, backup)
+    expect((await storage.topScores('play', '1')).map((x) => x.initials)).toEqual(['ONE'])
+    const old = { ...backup, scores: undefined }
+    expect(parseBackup(JSON.parse(JSON.stringify(old))).ok).toBe(true)
+    await importBackup(
+      storage,
+      parseBackup(JSON.parse(JSON.stringify(old))).ok ? old : backup,
+      'replace',
+    )
+    expect(await storage.topScores('play', '1')).toEqual([])
+  })
+
+  it('wipe clears the boards, and merging a backup trims a board to ten', async () => {
+    for (let i = 1; i <= 10; i++) await storage.addScore(scoreRec(`s${i}`, 'play', '1', i * 100))
+    const backup = await exportBackup(storage)
+    await storage.wipe()
+    expect(await db.scores.count()).toBe(0)
+    for (let i = 11; i <= 15; i++) await storage.addScore(scoreRec(`s${i}`, 'play', '1', i * 100))
+    await importBackup(storage, backup, 'merge')
+    expect(await db.scores.count()).toBe(10)
+    expect((await storage.topScores('play', '1'))[0].score).toBe(1500)
   })
 })

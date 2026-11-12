@@ -748,6 +748,12 @@ fieldset {
   stroke-width: 2.5;
 }
 
+.wheel-key.reveal path {
+  fill: color-mix(in srgb, var(--accent) 40%, var(--surface));
+  stroke: var(--accent);
+  stroke-width: 2.5;
+}
+
 .wheel-key.wrong path {
   fill: color-mix(in srgb, var(--bad) 40%, var(--surface));
   stroke: var(--bad);
@@ -838,6 +844,11 @@ fieldset {
 .type-box.correct {
   border-color: var(--ok);
   background: color-mix(in srgb, var(--ok) 25%, var(--surface));
+}
+
+.type-box.reveal {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 25%, var(--surface));
 }
 
 .type-box.wrong {
@@ -1083,4 +1094,224 @@ button:disabled {
   .settings-modal small {
     display: none;
   }
+}
+
+/* Scores */
+.scores-screen {
+  max-width: 40rem;
+  margin: 0 auto;
+  text-align: center;
+}
+
+/* One width for the level picker in both modes, so the page does not change size when you switch. */
+.scores-screen select {
+  box-sizing: border-box;
+  width: min(100%, 22rem);
+  max-width: 100%;
+}
+
+/*
+ * Fixed column widths, as percentages, so the header sits in the same place whether the table is empty, partly filled
+ * or full, and the table shrinks with the screen instead of needing a scrollbar.
+ */
+.scores-screen .board {
+  width: 100%;
+  max-width: 38rem;
+  table-layout: fixed;
+}
+
+.board th:nth-child(1) {
+  width: 6%;
+}
+.board th:nth-child(2) {
+  width: 14%;
+}
+.board th:nth-child(3) {
+  width: 14%;
+}
+.board th:nth-child(4) {
+  width: 17%;
+}
+.board th:nth-child(5) {
+  width: 14%;
+}
+.board th:nth-child(6) {
+  width: 13%;
+}
+.board th:nth-child(7) {
+  width: 22%;
+}
+
+/* Phones: only the essentials (#, initials, score, date); tap the score for the rest. */
+.board.compact th:nth-child(1) {
+  width: 12%;
+}
+.board.compact th:nth-child(2) {
+  width: 24%;
+}
+.board.compact th:nth-child(3) {
+  width: 28%;
+}
+.board.compact th:nth-child(4) {
+  width: 36%;
+}
+
+.scores-screen table {
+  font-size: clamp(0.78rem, 3.6vw, 1rem); /* smaller as the screen gets smaller */
+}
+
+.scores-screen .results th,
+.scores-screen .results td {
+  padding: 0.35rem clamp(0.2rem, 1.5vw, 0.6rem);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scores-screen .results th {
+  text-overflow: clip;
+}
+
+.score-link {
+  padding: 0;
+  font: inherit;
+  font-weight: 700;
+  color: var(--accent);
+  background: none;
+  border: 0;
+  border-bottom: 1px dotted var(--accent);
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.score-detail p {
+  margin: 0.25rem 0;
+  text-align: center;
+}
+
+.scores-screen table {
+  margin: 0 auto;
+  text-align: left;
+}
+
+.board .initials {
+  font-family: ui-monospace, monospace;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: var(--accent);
+}
+
+.score-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+.modal-points {
+  margin: 0;
+  padding: 0.25rem 0.75rem;
+  font: inherit;
+  font-size: 2.75rem;
+  line-height: 1.1;
+  color: var(--accent);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+}
+
+.modal-points small {
+  font-size: 1rem;
+  color: var(--text-muted);
+}
+
+.modal-points .info {
+  margin-left: 0.25rem;
+  font-size: 1rem;
+  vertical-align: super;
+  color: var(--text-muted);
+}
+
+/* Floats over what is below, so showing it never moves anything. */
+.score-breakdown {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  z-index: 5;
+  width: max-content;
+  min-width: 14rem;
+  max-width: calc(100vw - 4rem);
+  padding: 0.5rem 1rem;
+  transform: translateX(-50%);
+  text-align: left;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 16px rgb(0 0 0 / 0.25);
+}
+
+.score-breakdown p {
+  margin: 0.25rem 0;
+}
+
+.score-breakdown ul {
+  margin: 0.25rem 0;
+  padding-left: 1.25rem;
+}
+
+.board-note {
+  min-height: 2.5rem;
+  margin: 0.5rem 0;
+}
+
+.initials-form {
+  display: grid;
+  justify-items: center;
+  gap: 0.25rem;
+  margin: 1rem 0 0.5rem;
+}
+
+.initials-form .new-high {
+  font-size: 1.25rem;
+  color: var(--accent);
+}
+
+.initials-form .board-level {
+  color: var(--text-muted);
+}
+
+.initials-form label {
+  margin-top: 0.75rem;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.initials-form button {
+  margin-top: 0.5rem;
+  min-width: 8rem;
+}
+
+.initials-input {
+  box-sizing: border-box;
+  width: 9rem;
+  height: 4rem;
+  padding: 0 0 0 0.2em; /* the spacing after each letter makes the text look pushed left; this balances it */
+  font-family: ui-monospace, monospace;
+  font-size: 2.25rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-align: center;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.initials-input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.4;
+}
+
+/* Blank board lines keep the same height as filled ones, so the table is always ten lines tall. */
+.board tr.blank td {
+  height: 1.75rem;
+  color: var(--text-muted);
 }

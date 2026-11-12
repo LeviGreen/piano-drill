@@ -51,7 +51,7 @@ Cross out a row (`~~text~~` in each cell) when its ticket is Done. Rows that are
 | 3 Input & Verification | PD-314 | MIDI-driven Play and Key ID |
 | ~~4 Drill Session (Play Mode)~~ | ~~PD-401~~ | ~~Session state machine & timing core~~ |
 | ~~4 Drill Session (Play Mode)~~ | ~~PD-402~~ | ~~Drill screen UI~~ |
-| 4 Drill Session (Play Mode) | PD-403 | Session summary screen |
+| ~~4 Drill Session (Play Mode)~~ | ~~PD-403~~ | ~~Session results & high scores~~ |
 | 4 Drill Session (Play Mode) | PD-404 | Level select & custom settings UI |
 | 4 Drill Session (Play Mode) | PD-405 | Level progression & unlocking |
 | 4 Drill Session (Play Mode) | PD-406 | Mic-driven play end-to-end integration (deferred) |
@@ -130,7 +130,7 @@ IndexedDB wrapper (Dexie or similar) with repositories for settings, custom pres
 **Acceptance:**
 - [x] CRUD tests pass; export → wipe → import restores data.
 
-**Notes:** `src/storage/`: `PianoDrillDB` (Dexie, schema version 1; later changes go in as a new `version(n)` with an upgrade step), a `Storage` object with sessions (saved together with their reps), custom presets and remembered settings, and `exportBackup` / `parseBackup` / `importBackup` (replace or merge; a checked, versioned JSON file). `getStorage()` gives the app's shared instance. The tests use `fake-indexeddb` (a dev dependency). Nothing in the screens uses it yet: the Play and Key ID settings still live in localStorage until PD-403/404/703 move them over, and finished sessions are not saved until PD-403.
+**Notes:** `src/storage/`: `PianoDrillDB` (Dexie, schema version 1; later changes go in as a new `version(n)` with an upgrade step), a `Storage` object with sessions (saved together with their reps), custom presets and remembered settings, and `exportBackup` / `parseBackup` / `importBackup` (replace or merge; a checked, versioned JSON file). `getStorage()` gives the app's shared instance. The tests use `fake-indexeddb` (a dev dependency). High scores are saved through it (PD-403; the session and rep tables exist but nothing writes to them for now); the Play and Key ID settings still live in localStorage until PD-404/703 move them over. Schema version 2 added the high-score `scores` table.
 
 ### PD-004: GitHub Pages deploy & routing
 
@@ -485,7 +485,7 @@ Use `MidiInput` in the drill loop. An input chooser on the Play screen (on-scree
 
 ## Epic 4 — Drill Session (Play Mode)
 
-Progress: 2/6 tickets done (1 deferred)
+Progress: 3/6 tickets done (1 deferred)
 
 ### PD-401: Session state machine & timing core
 
@@ -513,16 +513,19 @@ Main play screen: big staff, minimal chrome, optional timer visibility, success/
 
 **Notes:** `src/ui/PlayScreen.tsx`, laid out like the Key ID screen (centred column, settings in a drawer, fixed-height status/clock/notes lines so nothing shifts, 4 s countdown over the always-present empty grand staff, results modal at the end). A session is 20 targets. The drawer has the level plus the four options pulled forward from PD-404 (hands, notes per hand, sharps/flats, keys; shared `DifficultyFields` component, also used by the Generator preview). Picking a level fills them in; changing one makes it Custom, and it is remembered. Per-note green halos on the staff and keys, wrong notes marked ✕, "N / M notes" counter, reveal with note names on a timeout or skip. Not built: the "almost" state and the detected-notes strip, escalating hints for a stuck note and the input source selector (all need the microphone; moved to PD-406), and optional timer visibility and keyboard shortcuts (cut to keep the screen simple).
 
-### PD-403: Session summary screen
+### PD-403: Session results & high scores
 
 **Size:** M  
 **Deps:** PD-402, PD-003  
-**Status:** Todo
+**Status:** Done
 
-End-of-session stats: median/mean time, accuracy, slowest 5 targets, per-rep list, comparison to previous session at same level; save results.
+Changed from the original "stats screen" (2026-11-12): you care about score and total time, not per-target numbers, so the results are an arcade high-score system. **Score:** each target you get right is worth 100, plus a speed bonus of up to 100 (full within the level's goal time, fading to nothing at twice the goal time), minus 25 per wrong note; a timeout or skip scores 0 (in Key ID, wrong guesses cost 25 each like wrong notes, since the question carries on); a perfect fast 20-target session is 4000. **End-of-session modal:** score, correct count, total time, and (for a finished session on a preset level that makes the top ten) a 3-letter initials box, like an old arcade game. **High scores screen** (`/scores`): top ten per level, always ten lines, separately for Play and Key ID; on a phone it shows # / initials / score / date and tapping the score opens the breakdown. Only high scores are kept: sessions themselves are not saved, and there is no History screen (cut). Custom setups and sessions ended early are not scored for a board. Applies to both Play and Key ID.
 
 **Acceptance:**
-- [ ] Results persisted and viewable; comparison correct against seeded history.
+- [x] Results are saved and viewable (per-level boards).
+- [x] The score is correct for seeded results (unit tests), and boards keep only the top ten, with ties going to the earlier score.
+
+**Notes:** `src/scoring/score.ts` (the rules), `src/ui/ScoreSummary.tsx` (modal, saving, initials), `src/ui/ScoresScreen.tsx`, and a `scores` table in the database (schema version 2; included in backups). The per-level "goal time" comes from the level data. Initials are remembered for next time. The comparison with the previous session and the median/mean/slowest-5 lists from the original ticket were dropped.
 
 ### PD-404: Level select & custom settings UI
 
@@ -603,7 +606,7 @@ Flash → answer → timed result; reuse the rep session machine (4 s first get-
 **Acceptance:**
 - [x] Full session works; results stored with the same `RepResult` shape (mode flag).
 
-**Notes:** a session is always 20 questions. The staff has a 4 s countdown at the start, then a per-question countdown clock when a time limit is set. A wrong answer says what the right one was; a right one shows only the green mark. Results appear only at the end, in a modal: correct count, total time and mix-ups (no per-question times). See `src/keyid/KeyIdSession.ts` and `src/ui/KeyIdScreen.tsx`.
+**Notes:** a session is always 20 questions. The staff has a 4 s countdown at the start, then a per-question countdown clock when a time limit is set. A wrong guess is marked ✕ and the question carries on (you keep guessing, like Play); only a timeout or skip says what the right answer was, and a right answer shows only the green mark. Wrong guesses cost 25 points each and are listed as mix-ups at the end. Results appear only at the end, in a modal: correct count, total time and mix-ups (no per-question times). See `src/keyid/KeyIdSession.ts` and `src/ui/KeyIdScreen.tsx`.
 
 ### PD-504: Play-the-tonic answer option
 

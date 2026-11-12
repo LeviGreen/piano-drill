@@ -21,20 +21,25 @@ export type KeyIdSessionOptions = Omit<RepSessionOptions<KeyIdQuestion>, 'timeou
 
 export type KeyIdSnapshot = BaseSnapshot<KeyIdQuestion> & {
   question: KeyIdQuestion | null
-  /** What was answered (tapped or typed) once the rep has ended; null before that, and for a played note. */
+  /** The right answer as tapped or typed, once the question is solved; null before that, and for a played note. */
   given: KeyIdAnswer | null
-  /** For the play method: the note that answered. */
+  /** For the play method: the note that was right. */
   playedMidi: number | null
+  /** The wrong keys named so far for this question (tapped or typed), and the wrong notes played. */
+  wrong: KeyIdAnswer[]
+  wrongPlayed: number[]
   method: KeyIdAnswerMethod
 }
 
 /**
  * Key identification (design §7): a key signature is flashed and the player names the key. It shares the whole rep cycle
- * with play mode (RepSession); what is different is one answer per rep. A right answer finishes the rep as correct, a
- * wrong one as incorrect (and the right answer is revealed), and each result records answered versus right.
+ * with play mode (RepSession) and, like it, lets the player keep trying. A wrong guess is recorded (and costs points)
+ * but does not end the question or reveal the answer; the question ends when the player gets it (correct, or correct
+ * with errors if they guessed wrong first), when time runs out, or when they skip. Only a timeout or a skip reveals
+ * the answer.
  *
  * The player can answer in two ways and switch between them at any time: tapping or typing (`answer`), or playing the
- * tonic of the key on the piano (the first note struck after the question appears decides).
+ * tonic of the key on the piano (any note after the question appears is a guess; the tonic in any octave is right).
  */
 export class KeyIdSession extends RepSession<KeyIdQuestion, KeyIdSnapshot> {
   private readonly input: NoteInput | null
@@ -42,8 +47,12 @@ export class KeyIdSession extends RepSession<KeyIdQuestion, KeyIdSnapshot> {
   private unsubscribeInput: (() => void) | null = null
   private given: KeyIdAnswer | null = null
   private playedMidi: number | null = null
-  private answeredAt: number | null = null
-  private answeredBy: KeyIdAnswerMethod | null = null
+  private wrong: KeyIdAnswer[] = []
+  private wrongPlayed: number[] = []
+  private errors: { t: number; notes: number[] }[] = []
+  private firstGuessAt: number | null = null
+  private solvedAt: number | null = null
+  private solvedBy: KeyIdAnswerMethod | null = null
   private silentSince: number | null = null
   private active = false
 
@@ -61,6 +70,8 @@ export class KeyIdSession extends RepSession<KeyIdQuestion, KeyIdSnapshot> {
       question: this.item,
       given: this.given,
       playedMidi: this.playedMidi,
+      wrong: [...this.wrong],
+      wrongPlayed: [...this.wrongPlayed],
       method: this.method,
     }
   }
@@ -94,17 +105,36 @@ export class KeyIdSession extends RepSession<KeyIdQuestion, KeyIdSnapshot> {
   protected beginRep(): void {
     this.given = null
     this.playedMidi = null
-    this.answeredAt = null
-    this.answeredBy = null
+    this.wrong = []
+    this.wrongPlayed = []
+    this.errors = []
+    this.firstGuessAt = null
+    this.solvedAt = null
+    this.solvedBy = null
   }
 
-  /** The player answered by tapping or typing. */
+  private solved(): void {
+    this.finishRep(this.errors.length > 0 ? 'correct_with_errors' : 'correct')
+  }
+
+  /** The player answered by tapping or typing. A wrong answer is recorded and they can try again. */
   answer(given: KeyIdAnswer): void {
-    if (this.state !== 'FLASHED' || !this.item || this.method !== 'tap') return
-    this.given = given
-    this.answeredAt = this.clock.now()
-    this.answeredBy = 'tap'
-    this.finishRep(checkAnswer(this.item, given) ? 'correct' : 'incorrect')
+    if (this.state !== 'FLASHED' || !this.item || this.t0 === null || this.method !== 'tap') return
+    const now = this.clock.now()
+    if (checkAnswer(this.item, given)) {
+      this.given = given
+      this.firstGuessAt ??= now
+      this.solvedAt = now
+      this.solvedBy = 'tap'
+      this.solved()
+      return
+    }
+    // Naming the same wrong key again tells us nothing new.
+    if (this.wrong.some((w) => w.accidentals === given.accidentals && w.mode === given.mode)) return
+    this.wrong.push(given)
+    this.errors.push({ t: now - this.t0, notes: [] })
+    this.firstGuessAt ??= now
+    this.emit()
   }
 
   private onInput(update: NoteInputState): void {
@@ -119,13 +149,21 @@ export class KeyIdSession extends RepSession<KeyIdQuestion, KeyIdSnapshot> {
       return
     }
     if (this.state !== 'FLASHED' || this.t0 === null || !this.item) return
-    // The first note struck after the question appeared is the answer.
-    const onset = [...update.onsets].sort((a, b) => a.t - b.t).find((o) => o.t >= this.t0!)
-    if (!onset) return
-    this.playedMidi = onset.midi
-    this.answeredAt = onset.t
-    this.answeredBy = 'play'
-    this.finishRep(tonicMatches(this.item, onset.midi) ? 'correct' : 'incorrect')
+    // Every note struck after the question appeared is a guess, in order: the tonic ends the question.
+    const onsets = [...update.onsets].sort((a, b) => a.t - b.t).filter((o) => o.t >= this.t0!)
+    for (const onset of onsets) {
+      this.firstGuessAt ??= onset.t
+      if (tonicMatches(this.item, onset.midi)) {
+        this.playedMidi = onset.midi
+        this.solvedAt = onset.t
+        this.solvedBy = 'play'
+        this.solved()
+        return
+      }
+      this.wrongPlayed.push(onset.midi)
+      this.errors.push({ t: onset.t - this.t0, notes: [onset.midi] })
+    }
+    if (onsets.length > 0) this.emit()
   }
 
   protected buildResult(
@@ -134,15 +172,15 @@ export class KeyIdSession extends RepSession<KeyIdQuestion, KeyIdSnapshot> {
     t0: number,
     startedWithoutSilence: boolean,
   ): RepResult {
-    const ms = this.answeredAt !== null ? this.answeredAt - t0 : null
+    const solved = this.solvedAt !== null ? this.solvedAt - t0 : null
     return {
       sessionId: this.sessionId,
       mode: 'keyid',
       targetId: q.id,
       dims: { key: keyName(q.key), format: q.format, keyMode: q.key.mode },
-      reactionMs: ms,
-      completionMs: outcome === 'correct' ? ms : null,
-      errors: [],
+      reactionMs: this.firstGuessAt !== null ? this.firstGuessAt - t0 : null,
+      completionMs: solved,
+      errors: this.errors.map((e) => ({ ...e, notes: [...e.notes] })),
       heard: [],
       outcome,
       startedWithoutSilence,
@@ -150,7 +188,9 @@ export class KeyIdSession extends RepSession<KeyIdQuestion, KeyIdSnapshot> {
         format: q.format,
         correct: q.answer,
         given: this.given,
-        method: this.answeredBy ?? this.method,
+        wrong: [...this.wrong],
+        wrongPlayed: [...this.wrongPlayed],
+        method: this.solvedBy ?? this.method,
         ...(this.playedMidi !== null && { playedMidi: this.playedMidi }),
       },
       timestamp: new Date().toISOString(),

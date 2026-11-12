@@ -1,5 +1,5 @@
 import Dexie, { type EntityTable } from 'dexie'
-import type { PresetRecord, SessionRecord, SettingRecord, StoredRep } from './types'
+import type { PresetRecord, ScoreRecord, SessionRecord, SettingRecord, StoredRep } from './types'
 
 export const DB_NAME = 'piano-drill'
 
@@ -12,6 +12,7 @@ export class PianoDrillDB extends Dexie {
   reps!: EntityTable<StoredRep, 'id'>
   presets!: EntityTable<PresetRecord, 'id'>
   settings!: EntityTable<SettingRecord, 'key'>
+  scores!: EntityTable<ScoreRecord, 'id'>
 
   constructor(name = DB_NAME) {
     super(name)
@@ -21,5 +22,7 @@ export class PianoDrillDB extends Dexie {
       presets: 'id, mode, name',
       settings: 'key',
     })
+    // Version 2: high-score boards. Tables not listed here carry over unchanged.
+    this.version(2).stores({ scores: 'id, [mode+level]' })
   }
 }

@@ -47,6 +47,17 @@ const DEFAULTS = {
 
 const SUCCESS: RepOutcome[] = ['correct', 'correct_with_errors']
 
+let sessionCounter = 0
+
+/**
+ * A session id that is different every time: saved sessions and scores are keyed on it, so two sessions sharing one
+ * would overwrite each other. (The seeded `rng` is for target generation and must not be used for this: with the same
+ * seed it gives the same id every session.)
+ */
+export function newSessionId(): string {
+  return `s${Date.now().toString(36)}-${(++sessionCounter).toString(36)}-${Math.floor(Math.random() * 1e6).toString(36)}`
+}
+
 /**
  * The rep cycle every kind of session shares (design §9.3): get ready, flash an item, wait for the player to finish it
  * (or time out, skip), show feedback, repeat. No UI. What counts as finishing a rep is up to the subclass, which calls
@@ -95,7 +106,7 @@ export abstract class RepSession<Item, Snapshot extends BaseSnapshot<Item> = Bas
       revealMs: opts.revealMs ?? DEFAULTS.revealMs,
       timeoutSeconds: opts.timeoutSeconds,
     }
-    this.sessionId = opts.sessionId ?? `s${Math.floor(this.rng() * 1e9).toString(36)}`
+    this.sessionId = opts.sessionId ?? newSessionId()
   }
 
   // ---------- what a kind of session provides ----------

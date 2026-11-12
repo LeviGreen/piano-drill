@@ -16,10 +16,11 @@ const rep = (over: Partial<RepResult> & { outcome: RepOutcome }): RepResult => (
   ...over,
 })
 
+/** A key-ID rep where each of `wrong` was guessed (in order) before the question ended. */
 const keyIdRep = (
   correct: number,
-  given: number | null,
-  outcome: RepOutcome = 'incorrect',
+  wrong: number[],
+  outcome: RepOutcome = 'correct_with_errors',
 ): RepResult =>
   rep({
     mode: 'keyid',
@@ -27,7 +28,12 @@ const keyIdRep = (
     keyId: {
       format: 'major',
       correct: { accidentals: correct, mode: 'major' },
-      given: given === null ? null : { accidentals: given, mode: 'major' },
+      given:
+        outcome === 'timeout' || outcome === 'skipped'
+          ? null
+          : { accidentals: correct, mode: 'major' },
+      wrong: wrong.map((w) => ({ accidentals: w, mode: 'major' as const })),
+      wrongPlayed: [],
       method: 'tap',
     },
   })
@@ -81,14 +87,14 @@ describe('summarize', () => {
   })
 })
 
-describe('confusions (answered versus right)', () => {
-  it('counts each wrong answer, most frequent first, in plain words', () => {
+describe('confusions (guessed versus right)', () => {
+  it('counts each wrong guess, most frequent first, in plain words', () => {
     const list = confusions([
-      keyIdRep(-3, -4),
-      keyIdRep(-3, -4),
-      keyIdRep(-3, -2),
-      keyIdRep(2, 3),
-      keyIdRep(-3, -4),
+      keyIdRep(-3, [-4]),
+      keyIdRep(-3, [-4]),
+      keyIdRep(-3, [-2]),
+      keyIdRep(2, [3]),
+      keyIdRep(-3, [-4]),
     ])
     expect(list).toEqual([
       { correct: 'E♭ major', given: 'A♭ major', count: 3 },
@@ -97,14 +103,22 @@ describe('confusions (answered versus right)', () => {
     ])
   })
 
-  it('ignores right answers, timeouts, skips, play-mode reps and played-note answers', () => {
+  it('counts every wrong guess on a question that took several tries, including ones that then timed out', () => {
+    const list = confusions([keyIdRep(2, [3, 4, 3]), keyIdRep(-3, [-2], 'timeout')])
+    expect(list).toEqual([
+      { correct: 'D major', given: 'A major', count: 2 },
+      { correct: 'D major', given: 'E major', count: 1 },
+      { correct: 'E♭ major', given: 'B♭ major', count: 1 },
+    ])
+  })
+
+  it('ignores right first tries, plain timeouts and skips, and play-mode reps', () => {
     expect(
       confusions([
-        keyIdRep(-3, -3, 'correct'),
-        keyIdRep(-3, null, 'timeout'),
-        keyIdRep(-3, null, 'skipped'),
+        keyIdRep(-3, [], 'correct'),
+        keyIdRep(-3, [], 'timeout'),
+        keyIdRep(-3, [], 'skipped'),
         rep({ outcome: 'incorrect' }),
-        keyIdRep(-3, null),
       ]),
     ).toEqual([])
   })

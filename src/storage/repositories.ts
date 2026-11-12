@@ -1,6 +1,20 @@
 import type { RepResult } from '../session/types'
 import type { PianoDrillDB } from './db'
-import type { PresetRecord, SessionRecord, SettingRecord, StoredMode, StoredRep } from './types'
+import type {
+  PresetRecord,
+  ScoreRecord,
+  SessionRecord,
+  SettingRecord,
+  StoredMode,
+  StoredRep,
+} from './types'
+
+/** How many scores a level's board keeps. */
+export const BOARD_SIZE = 10
+
+/** Best first; of equal scores the earlier one ranks higher. */
+const byRank = (a: ScoreRecord, b: ScoreRecord) =>
+  b.score - a.score || a.achievedAt.localeCompare(b.achievedAt)
 
 export type SessionQuery = { mode?: StoredMode; level?: string; limit?: number }
 
@@ -115,15 +129,48 @@ export class Storage {
     return this.db.settings.delete(key)
   }
 
+  // ---------- high scores ----------
+
+  /** A level's board, best first (at most BOARD_SIZE lines). */
+  async topScores(mode: StoredMode, level: string): Promise<ScoreRecord[]> {
+    const rows = await this.db.scores.where('[mode+level]').equals([mode, level]).toArray()
+    return rows.sort(byRank).slice(0, BOARD_SIZE)
+  }
+
+  /**
+   * The place (1 to BOARD_SIZE) a score would take on the board, or null if it would not make it. A score equal to an
+   * existing one ranks below it, since the earlier score wins a tie.
+   */
+  async prospectiveRank(mode: StoredMode, level: string, score: number): Promise<number | null> {
+    const board = await this.topScores(mode, level)
+    const ahead = board.filter((s) => s.score >= score).length
+    return ahead < BOARD_SIZE ? ahead + 1 : null
+  }
+
+  /** Put a score on its board and drop whatever falls off the bottom. Returns its place, or null if it did not make it. */
+  async addScore(score: ScoreRecord): Promise<number | null> {
+    return this.db.transaction('rw', this.db.scores, async () => {
+      await this.db.scores.put(score)
+      const board = (
+        await this.db.scores.where('[mode+level]').equals([score.mode, score.level]).toArray()
+      ).sort(byRank)
+      const dropped = board.slice(BOARD_SIZE)
+      if (dropped.length > 0) await this.db.scores.bulkDelete(dropped.map((s) => s.id))
+      const place = board.findIndex((s) => s.id === score.id)
+      return place >= 0 && place < BOARD_SIZE ? place + 1 : null
+    })
+  }
+
   // ---------- everything ----------
 
   /** Delete all saved data. */
   async wipe(): Promise<void> {
     await this.db.transaction(
       'rw',
-      [this.db.sessions, this.db.reps, this.db.presets, this.db.settings],
+      [this.db.sessions, this.db.reps, this.db.presets, this.db.settings, this.db.scores],
       async () => {
         await Promise.all([
+          this.db.scores.clear(),
           this.db.sessions.clear(),
           this.db.reps.clear(),
           this.db.presets.clear(),

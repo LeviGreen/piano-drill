@@ -281,6 +281,8 @@ F♯ major and G♭ major sound the same but have different signatures; they are
 
 **Answering:** three views on the main screen, switchable at any time: the circle-of-fifths **wheel**, **typing** (a text box with no visual cue: a wheel lets you count around it, so typing is the harder, more direct test), and **playing the tonic** (on the piano, via the mic).
 
+**Gameplay (decided 2026-11-12):** modelled on Play. A wrong guess is marked ✕ and stays marked, but it does not end the question or reveal the answer: you keep guessing until you get it, time runs out, or you skip. Only a timeout or a skip shows the answer. Each wrong guess costs 25 points like a wrong note in Play; getting it after wrong guesses counts as correct with errors.
+
 **Settings** (kept small): level, up to how many sharps/flats, major only/minor only/both, questions per session, time limit. Treble clef, the question type, enharmonic strictness and the answer method are not settings.
 
 ---
@@ -304,13 +306,11 @@ type RepResult = {
 
 ### 8.2 Scoring
 
-- Primary metric: **median completion time** (robust to outliers) over the last N reps per dimension bucket.
-- Secondary: accuracy (% first-try correct), error rate, timeout rate.
-- Optionally normalize time by note count (a 5-note chord should be allowed more time than a single note) so levels compare fairly: "time per note" or level-specific targets.
+Arcade-style (decided 2026-11-12). Each target you get right earns 100 points plus a speed bonus of up to 100 (full if you finish within the level's goal time, fading to zero at twice the goal time), minus 25 per wrong note; a timeout, a skip or a wrong key-ID answer scores 0. A perfect, fast 20-target session is 4000. Each preset level has a top-ten board per mode, kept with three initials. Only finished sessions on preset levels are scored for a board. The level goals in §3.2 (median time, accuracy) still decide unlocking.
 
 ### 8.3 Session summary
 
-Shown at the end of a session (see §2.1). Charts, heatmaps and cross-session analytics are out of scope for v1.
+Shown at the end of a session as a modal: the score, how many were correct, total time, and (for a new top-ten score) an initials box. A High scores screen shows each level's board. Charts, heatmaps and per-target analytics are out of scope for v1.
 
 ### 8.4 Storage
 

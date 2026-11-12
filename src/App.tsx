@@ -7,6 +7,7 @@ import { GeneratorPreviewScreen } from './ui/GeneratorPreviewScreen'
 import { KeyIdScreen } from './ui/KeyIdScreen'
 import { PlayScreen } from './ui/PlayScreen'
 import { NotationGalleryScreen } from './ui/NotationGalleryScreen'
+import { ScoresScreen } from './ui/ScoresScreen'
 import { HomeScreen, NotFoundScreen, SettingsScreen } from './ui/screens'
 
 export default function App() {
@@ -16,6 +17,7 @@ export default function App() {
         <Route index element={<HomeScreen />} />
         <Route path="play" element={<PlayScreen />} />
         <Route path="key-id" element={<KeyIdScreen />} />
+        <Route path="scores" element={<ScoresScreen />} />
         <Route path="settings" element={<SettingsScreen />} />
         <Route path="settings/mic-test" element={<MicTestScreen />} />
         <Route path="settings/corpus-recorder" element={<CorpusRecorderScreen />} />
