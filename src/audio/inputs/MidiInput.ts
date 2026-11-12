@@ -11,6 +11,8 @@ export interface MidiPortLike {
   id: string
   name?: string | null
   state: string
+  /** 'open', 'closed' or 'pending': whether the browser has the port open (a port another program holds stays closed). */
+  connection?: string
   onmidimessage: ((event: { data: Uint8Array | null; timeStamp: number }) => void) | null
 }
 export interface MidiAccessLike {
@@ -20,7 +22,21 @@ export interface MidiAccessLike {
 export type RequestMidiAccess = () => Promise<MidiAccessLike>
 
 /** What the app can show for a connected MIDI input. */
-export type MidiDevice = { id: string; name: string; connected: boolean }
+export type MidiDevice = {
+  id: string
+  name: string
+  connected: boolean
+  /** Whether the browser has the port open, when it says. */
+  connection: string | null
+}
+
+/** The last message heard, for the diagnostics on the test screen: what it was and where it came from. */
+export type MidiDiagnostics = {
+  /** Every message that has arrived, and how many of them were only background chatter (clock, heartbeat). */
+  messages: number
+  background: number
+  last: { port: string; bytes: number[]; meaning: string } | null
+}
 
 export type MidiStatus =
   | 'idle' // not started
@@ -64,6 +80,26 @@ export function parseMidiMessage(data: ArrayLike<number> | null): ParsedMidi {
   return null
 }
 
+/** A short description of a raw message, in words. */
+export function describeMidiMessage(data: ArrayLike<number> | null): string {
+  if (!data || data.length === 0) return 'empty'
+  const status = data[0]
+  if (status === 0xfe) return 'heartbeat (active sensing)'
+  if (status === 0xf8) return 'clock'
+  if (status >= 0xf0) return 'system message'
+  const msg = parseMidiMessage(data)
+  if (msg?.type === 'on') return `note on ${msg.midi}, velocity ${msg.velocity}`
+  if (msg?.type === 'off') return `note off ${msg.midi}`
+  if (msg?.type === 'allOff') return 'all notes off'
+  const type = status & 0xf0
+  if (type === 0xb0)
+    return data[1] === 64 ? 'sustain pedal (ignored)' : `controller ${data[1]} (ignored)`
+  if (type === 0xc0) return 'program change (ignored)'
+  if (type === 0xe0) return 'pitch bend (ignored)'
+  if (type === 0xd0 || type === 0xa0) return 'pressure (ignored)'
+  return 'not a note (ignored)'
+}
+
 /** The browser's own MIDI request, or null where there is none. */
 function browserRequestAccess(): RequestMidiAccess | null {
   if (typeof navigator === 'undefined' || typeof navigator.requestMIDIAccess !== 'function')
@@ -96,6 +132,8 @@ export class MidiInput implements NoteInput {
   private _error = ''
   private _devices: MidiDevice[] = []
   private starting: Promise<void> | null = null
+  private stats = { messages: 0, background: 0, last: null as MidiDiagnostics['last'] }
+  private lastChangeAt = 0
 
   constructor(opts: MidiInputOptions = {}) {
     this.requestAccess =
@@ -112,6 +150,10 @@ export class MidiInput implements NoteInput {
   }
   get devices(): MidiDevice[] {
     return [...this._devices]
+  }
+  /** What has arrived so far, to check that a piano is really sending. */
+  get diagnostics(): MidiDiagnostics {
+    return { ...this.stats }
   }
   /** The device being listened to, or null for all of them. */
   get selectedDeviceId(): string | null {
@@ -176,6 +218,7 @@ export class MidiInput implements NoteInput {
     this.held.clear()
     this._devices = []
     this._error = ''
+    this.stats = { messages: 0, background: 0, last: null }
     this.setStatus('idle')
     if (hadNotes) this.emit([])
   }
@@ -193,11 +236,16 @@ export class MidiInput implements NoteInput {
     const live = new Set<string>()
     this.access.inputs.forEach((port) => {
       const connected = port.state === 'connected'
-      devices.push({ id: port.id, name: port.name?.trim() || 'MIDI device', connected })
+      devices.push({
+        id: port.id,
+        name: port.name?.trim() || 'MIDI device',
+        connected,
+        connection: port.connection ?? null,
+      })
       const wanted = connected && (this.selected === null || this.selected === port.id)
       if (wanted) {
         live.add(port.id)
-        port.onmidimessage = (e) => this.onMessage(port.id, e)
+        port.onmidimessage = (e) => this.onMessage(port, e)
       } else {
         port.onmidimessage = null
       }
@@ -215,7 +263,9 @@ export class MidiInput implements NoteInput {
     if (released) this.emit([])
   }
 
-  private onMessage(portId: string, e: { data: Uint8Array | null; timeStamp: number }): void {
+  private onMessage(port: MidiPortLike, e: { data: Uint8Array | null; timeStamp: number }): void {
+    const portId = port.id
+    this.record(port, e.data)
     const msg = parseMidiMessage(e.data)
     if (!msg) return
     const t = e.timeStamp > 0 ? e.timeStamp : this.now()
@@ -230,6 +280,23 @@ export class MidiInput implements NoteInput {
       const had = notes.size > 0
       notes.clear()
       if (had) this.emit([], t)
+    }
+  }
+
+  /** Count and remember a message, however little the app does with it. Background chatter updates screens only now and then. */
+  private record(port: MidiPortLike, data: Uint8Array | null): void {
+    const background = !!data && data.length > 0 && (data[0] === 0xfe || data[0] === 0xf8)
+    this.stats.messages++
+    if (background) this.stats.background++
+    this.stats.last = {
+      port: port.name?.trim() || port.id,
+      bytes: data ? Array.from(data) : [],
+      meaning: describeMidiMessage(data),
+    }
+    const t = this.now()
+    if (!background || t - this.lastChangeAt > 300) {
+      this.lastChangeAt = t
+      this.changed()
     }
   }
 

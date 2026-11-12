@@ -4,6 +4,7 @@ import type { MidiAccessLike, MidiPortLike } from '../audio/inputs/MidiInput'
 export class FakePort implements MidiPortLike {
   onmidimessage: MidiPortLike['onmidimessage'] = null
   state = 'connected'
+  connection = 'open'
   readonly id: string
   readonly name: string | null
   constructor(id: string, name: string | null = id) {

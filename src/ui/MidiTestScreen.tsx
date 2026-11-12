@@ -25,6 +25,52 @@ function saveDevice(id: string | null): void {
   }
 }
 
+/** What the browser can see of each piano and what has arrived from it: tells a silent piano from a broken screen. */
+function Diagnostics({ input }: { input: MidiInput }) {
+  const { messages, background, last } = input.diagnostics
+  const hex = (bytes: number[]) =>
+    bytes.map((b) => b.toString(16).toUpperCase().padStart(2, '0')).join(' ')
+  return (
+    <details open className="midi-diagnostics">
+      <summary>Diagnostics</summary>
+      <p>
+        Messages received: <strong>{messages}</strong> ({messages - background} real, {background}{' '}
+        background heartbeat or clock)
+      </p>
+      <p>
+        Last message:{' '}
+        {last ? (
+          <>
+            <code>{hex(last.bytes)}</code> from {last.port}: {last.meaning}
+          </>
+        ) : (
+          'none yet'
+        )}
+      </p>
+      {input.devices.length > 0 && (
+        <table className="results">
+          <thead>
+            <tr>
+              <th>Device</th>
+              <th>State</th>
+              <th>Port</th>
+            </tr>
+          </thead>
+          <tbody>
+            {input.devices.map((d) => (
+              <tr key={d.id}>
+                <td>{d.name}</td>
+                <td>{d.connected ? 'connected' : 'not connected'}</td>
+                <td>{d.connection ?? 'unknown'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </details>
+  )
+}
+
 type Played = { n: number; midi: number; velocity: number; gapMs: number | null; lateMs: number }
 
 /**
@@ -147,13 +193,15 @@ export function MidiTestScreen({ requestAccess }: { requestAccess?: RequestMidiA
         </p>
       )}
 
+      {status === 'ready' && <Diagnostics input={input} />}
+
       <PianoKeyboard marks={marks} labels={labels} showNames label="Notes you are holding" />
 
       <h2>Notes played</h2>
       {played.length === 0 ? (
         <p className="placeholder">None yet.</p>
       ) : (
-        <table className="results">
+        <table className="results" aria-label="Notes played">
           <thead>
             <tr>
               <th>#</th>

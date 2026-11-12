@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { FakeMidiAccess, FakePort } from '../../test-utils/fakeMidi'
-import { MidiInput, MidiUnavailableError, parseMidiMessage } from './MidiInput'
+import { describeMidiMessage, MidiInput, MidiUnavailableError, parseMidiMessage } from './MidiInput'
 import type { NoteInputState } from './NoteInput'
 
 async function rig(...ports: FakePort[]) {
@@ -134,12 +134,54 @@ describe('playing notes', () => {
   })
 })
 
+describe('diagnostics', () => {
+  it('describes raw messages in words', () => {
+    expect(describeMidiMessage([0x90, 60, 100])).toBe('note on 60, velocity 100')
+    expect(describeMidiMessage([0x80, 60, 0])).toBe('note off 60')
+    expect(describeMidiMessage([0xb0, 64, 127])).toBe('sustain pedal (ignored)')
+    expect(describeMidiMessage([0xb0, 7, 100])).toBe('controller 7 (ignored)')
+    expect(describeMidiMessage([0xfe])).toBe('heartbeat (active sensing)')
+    expect(describeMidiMessage([0xf8])).toBe('clock')
+    expect(describeMidiMessage([0xe0, 0, 64])).toBe('pitch bend (ignored)')
+    expect(describeMidiMessage([])).toBe('empty')
+  })
+
+  it('counts every message, separates background ones, and remembers the last, even ones that are ignored', async () => {
+    const piano = new FakePort('p', 'MM8 Port 1')
+    const { input } = await rig(piano)
+    expect(input.diagnostics).toEqual({ messages: 0, background: 0, last: null })
+    piano.send([0xfe], 1)
+    piano.noteOn(60, 2, 100)
+    piano.pedal(true, 3)
+    expect(input.diagnostics).toEqual({
+      messages: 3,
+      background: 1,
+      last: { port: 'MM8 Port 1', bytes: [0xb0, 64, 127], meaning: 'sustain pedal (ignored)' },
+    })
+  })
+
+  it('starts counting again from nothing after stopping', async () => {
+    const piano = new FakePort('p')
+    const { input } = await rig(piano)
+    piano.noteOn(60, 1)
+    input.stop()
+    expect(input.diagnostics.messages).toBe(0)
+  })
+
+  it('passes on whether the browser has each port open', async () => {
+    const piano = new FakePort('p')
+    piano.connection = 'closed'
+    const { input } = await rig(piano)
+    expect(input.devices[0].connection).toBe('closed')
+  })
+})
+
 describe('devices', () => {
   it('lists the connected devices by name, with a fallback name', async () => {
     const { input } = await rig(new FakePort('a', 'Yamaha P-125'), new FakePort('b', null))
     expect(input.devices).toEqual([
-      { id: 'a', name: 'Yamaha P-125', connected: true },
-      { id: 'b', name: 'MIDI device', connected: true },
+      { id: 'a', name: 'Yamaha P-125', connected: true, connection: 'open' },
+      { id: 'b', name: 'MIDI device', connected: true, connection: 'open' },
     ])
     expect(input.status).toBe('ready')
   })
@@ -178,7 +220,9 @@ describe('devices', () => {
     expect(input.devices).toEqual([])
     const piano = new FakePort('new', 'Roland FP-30')
     access.plugIn(piano)
-    expect(input.devices).toEqual([{ id: 'new', name: 'Roland FP-30', connected: true }])
+    expect(input.devices).toEqual([
+      { id: 'new', name: 'Roland FP-30', connected: true, connection: 'open' },
+    ])
     piano.noteOn(60, 1)
     expect(held(last())).toEqual([60])
   })
@@ -189,7 +233,9 @@ describe('devices', () => {
     piano.noteOn(60, 1)
     access.unplug(piano)
     expect(held(last())).toEqual([])
-    expect(input.devices).toEqual([{ id: 'p', name: 'Piano', connected: false }])
+    expect(input.devices).toEqual([
+      { id: 'p', name: 'Piano', connected: false, connection: 'open' },
+    ])
     piano.noteOn(62, 2) // a disconnected port is not listened to
     expect(held(last())).toEqual([])
     access.plugIn(piano)
