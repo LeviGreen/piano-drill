@@ -28,7 +28,7 @@ Cross out a row (`~~text~~` in each cell) when its ticket is Done. Rows that are
 | ~~1 Music Theory Engine~~ | ~~PD-104~~ | ~~Register, playability & readability constraints~~ |
 | ~~1 Music Theory Engine~~ | ~~PD-105~~ | ~~Target generator — single-hand content~~ |
 | ~~1 Music Theory Engine~~ | ~~PD-106~~ | ~~Two-hand voicing templates & generator~~ |
-| 1 Music Theory Engine | PD-107 | "Either hand, one at a time" & cross-clef options |
+| ~~1 Music Theory Engine~~ | ~~PD-107~~ | ~~Ledger-line register (notes above and below the staves)~~ |
 | ~~1 Music Theory Engine~~ | ~~PD-108~~ | ~~Level & preset schema~~ |
 | ~~2 Notation Rendering~~ | ~~PD-201~~ | ~~Single staff renderer (treble/bass) with key signature~~ |
 | ~~2 Notation Rendering~~ | ~~PD-202~~ | ~~Chords, intervals & accidentals~~ |
@@ -142,7 +142,7 @@ Publish the app as a GitHub Pages site. Set the Vite `base` for the repo subpath
 
 ## Epic 1 — Music Theory Engine
 
-Progress: 7/8 tickets done
+Progress: 8/8 tickets done
 
 ### PD-101: Core pitch & spelling primitives
 
@@ -218,7 +218,7 @@ Generator that picks one chord and splits it between the hands per §4.3 (left h
 
 **Size:** S  
 **Deps:** PD-105, PD-106  
-**Status:** In progress (built and tested; awaiting verification in the browser)
+**Status:** Done
 
 Reworked on 2026-11-12 (it was "either hand, one at a time & cross-clef options"; the either-hand part was already built in PD-105, and cross-clef reading was dropped). What it is now: the right hand reads treble clef and the left hand reads bass clef, and each clef offers a few notes above and below its staff using **ledger lines**, with no setting for it in Play. **Levels 1 and 2 allow up to 1 ledger line, levels 3 to 10 allow up to 2.** The playable range becomes **C2 to C6**, which is exactly two ledger lines past the outer ends (C6 sits on the second ledger line above the treble staff, C2 on the second below the bass staff). That replaces the mic-era range of G2 to F5.
 
@@ -227,7 +227,7 @@ Reworked on 2026-11-12 (it was "either hand, one at a time & cross-clef options"
 - [x] Levels 3 to 10 really do reach notes needing 2 ledger lines in the treble and in the bass clef.
 - [x] The grand staff leaves room for two ledger lines above, below and between the staves, at a fixed size so nothing shifts.
 - [x] The on-screen piano spans C2 to C6.
-- [ ] Checked by eye on the Play screen at desktop and phone width.
+- [x] Checked by eye on the Play screen (the piano is cramped on a phone; left as it is for now).
 
 **Notes:** `src/theory/constraints.ts` (`RANGE_LOW_MIDI` = 36, `RANGE_HIGH_MIDI` = 84, default 2 ledger lines), `src/levels/levels.json` (per-level ledger lines and range), `renderGrandStaff` (default `ledgerRoom` 2), `PianoKeyboard` (default range), and the two-hand search window (left hand up to F4, right hand down to G3).
 
