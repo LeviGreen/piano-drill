@@ -1315,3 +1315,8 @@ button:disabled {
   height: 1.75rem;
   color: var(--text-muted);
 }
+
+.midi-problem {
+  color: var(--bad);
+  font-weight: 600;
+}

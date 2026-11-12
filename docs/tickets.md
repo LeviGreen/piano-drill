@@ -385,14 +385,16 @@ Record and label a corpus (acoustic piano, various phones/positions/rooms, plus 
 
 **Size:** M  
 **Deps:** PD-301  
-**Status:** Todo
+**Status:** In progress (built and tested with a fake piano; awaiting a check with a real one)
 
 The MVP's real input: a digital piano connected to the laptop (USB or Bluetooth MIDI), read with the Web MIDI API as a `NoteInput`. Note-on (velocity above 0) is an onset, stamped on the drill clock (a MIDI message's timestamp is on the same `performance.now()` clock); note-off (or note-on with velocity 0) releases; the sustain pedal and other controllers are ignored. List the devices, choose one, remember the choice, and handle hot-plug and disconnects. Clear states for permission denied and for browsers without Web MIDI (Safari and iPhone/iPad; Firefox needs extra setup). Plus a test screen under Settings (the old mic test's replacement) that lists devices and shows the notes you play on the keyboard strip as they arrive.
 
 **Acceptance:**
 - [ ] Notes played on a real digital piano show with the right pitch and timing on the test screen.
-- [ ] Tests with a fake MIDI access cover note-on/off, velocity 0 as note-off, pedal ignored, device hot-plug, permission denied and an unsupported browser.
-- [ ] Supported browsers are documented (Chrome, Edge and Opera on desktop).
+- [x] Tests with a fake MIDI access cover note-on/off, velocity 0 as note-off, pedal ignored, device hot-plug, permission denied and an unsupported browser.
+- [x] Supported browsers are documented (Chrome, Edge and Opera on desktop).
+
+**Notes:** `src/audio/inputs/MidiInput.ts` (a `NoteInput`; `parseMidiMessage` for the raw messages), the test screen `src/ui/MidiTestScreen.tsx` at Settings > MIDI test, and a fake piano for tests in `src/test-utils/fakeMidi.ts`. Listens to all devices or one chosen device, which is remembered. Browsers and troubleshooting are in docs/midi.md.
 
 ### PD-314: MIDI-driven Play and Key ID
 

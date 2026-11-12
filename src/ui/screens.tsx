@@ -39,7 +39,10 @@ export function SettingsScreen() {
     <>
       <Placeholder title="Settings" ticket="PD-703" />
       <p>
-        <Link to="/settings/mic-test">Mic test</Link>
+        <Link to="/settings/midi-test">MIDI test</Link>
+      </p>
+      <p>
+        <Link to="/settings/mic-test">Mic test (shelved)</Link>
       </p>
       <p>
         <Link to="/settings/corpus-recorder">Corpus recorder</Link>
