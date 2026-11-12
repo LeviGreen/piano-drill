@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { ScriptedInput } from '../audio/inputs/ScriptedInput'
+import type { RequestMidiAccess } from '../audio/inputs/MidiInput'
+import type { OnScreenKeyboardInput } from '../audio/inputs/OnScreenKeyboardInput'
 import { KeyIdSession, type KeyIdAnswerMethod, type KeyIdSnapshot } from '../keyid/KeyIdSession'
 import { answerLabel } from '../keyid/labels'
 import { KEY_ID_LEVELS } from '../keyid/presets'
@@ -21,7 +22,9 @@ import { KeyAnswerInput, type AnswerFeedback, type AnswerView } from './KeyAnswe
 import { SettingsDrawer } from './SettingsDrawer'
 import { levelLabel } from './levelLabel'
 import { ScoreSummary } from './ScoreSummary'
+import { InputChoiceField } from './InputChoiceField'
 import { useCountdown } from './useCountdown'
+import { usePianoInput } from './usePianoInput'
 import { useRemainingSeconds } from './useRemainingSeconds'
 
 /** A session is always this many questions. */
@@ -59,6 +62,8 @@ export type KeyIdScreenProps = {
   storage?: Storage
   /** For tests only: a shorter session than the product's fixed 20 questions. */
   questions?: number
+  /** For tests: stands in for the browser's MIDI request (null = a browser with no MIDI). */
+  midiAccess?: RequestMidiAccess | null
   /** For tests only: shorter waits than the product's fixed ones. */
   timing?: {
     getReadyMs?: { first: number; between: number }
@@ -74,6 +79,7 @@ export type KeyIdScreenProps = {
 export function KeyIdScreen({
   timing,
   storage,
+  midiAccess,
   questions: QUESTIONS = DEFAULT_QUESTIONS,
 }: KeyIdScreenProps) {
   const [initial] = useState(loadSettings)
@@ -84,10 +90,14 @@ export function KeyIdScreen({
   const [method, setMethod] = useState<KeyIdAnswerMethod>('tap')
   const stage = useRef<HTMLDivElement>(null)
   const session = useRef<KeyIdSession | null>(null)
-  const input = useRef<ScriptedInput | null>(null)
+  const input = useRef<OnScreenKeyboardInput | null>(null)
   const [snap, setSnap] = useState<KeyIdSnapshot | null>(null)
   const [results, setResults] = useState<RepResult[]>([])
   const count = useCountdown(snap?.ready ?? null)
+  const piano = usePianoInput({
+    requestAccess: midiAccess,
+    onLost: () => session.current?.pause(), // the piano went away: stop, and say so
+  })
 
   useEffect(() => {
     drawEmptyStaff(stage.current)
@@ -96,6 +106,10 @@ export function KeyIdScreen({
 
   const state = snap?.state ?? 'IDLE'
   const running = state !== 'IDLE' && state !== 'ENDED'
+  useEffect(() => {
+    if (state === 'ENDED') piano.release()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state])
 
   const remaining = useRemainingSeconds(
     state === 'FLASHED',
@@ -109,6 +123,9 @@ export function KeyIdScreen({
     setResults([])
     setSnap(null)
     setDismissed(false)
+    const drill = await piano.open() // a missing MIDI piano is reported here, before anything starts
+    if (!drill) return
+    input.current = drill.screen
     const flash = new FlashController<KeyIdQuestion>({
       container: stage.current!,
       render: (into, q) =>
@@ -120,14 +137,11 @@ export function KeyIdScreen({
       reveal: () => {}, // the answer input marks the right answer and the message says what it was
       clear: () => drawEmptyStaff(stage.current),
     }
-    // On-screen keys stand in for the piano (and for the microphone, until it can verify notes).
-    const scripted = new ScriptedInput()
-    input.current = scripted
     const s = new KeyIdSession({
       settings: toSessionSettings(settings),
       generator: new KeyIdGenerator(toQuestionConfig(settings), Math.floor(Math.random() * 1e6)),
       presenter,
-      input: scripted,
+      input: drill.input,
       method,
       totalReps: QUESTIONS,
       ...timing,
@@ -151,8 +165,8 @@ export function KeyIdScreen({
   const playNote = (midi: number) => {
     const i = input.current
     if (!i) return
-    i.noteOn(midi, performance.now())
-    window.setTimeout(() => i.noteOff(midi, performance.now()), 120)
+    i.press(midi)
+    window.setTimeout(() => i.release(midi), 120)
   }
 
   // ----- settings -----
@@ -232,11 +246,18 @@ export function KeyIdScreen({
     <div className="keyid-screen">
       <h1>Key ID</h1>
       <div className="keyid-bar">
-        <button type="button" onClick={() => void start()} disabled={running}>
+        <button type="button" onClick={() => void start()} disabled={running || piano.starting}>
           Start
         </button>
         {state === 'PAUSED' ? (
-          <button type="button" onClick={() => session.current?.resume()}>
+          <button
+            type="button"
+            disabled={piano.lost}
+            onClick={() => {
+              piano.acknowledge()
+              session.current?.resume()
+            }}
+          >
             Resume
           </button>
         ) : (
@@ -290,8 +311,8 @@ export function KeyIdScreen({
         onViewChange={onViewChange}
       />
 
-      <div className="result-slot" role="status">
-        {message}
+      <div className={`result-slot${piano.notice ? ' midi-problem' : ''}`} role="status">
+        {piano.notice ?? message}
       </div>
 
       {summary && !dismissed && (
@@ -332,6 +353,7 @@ export function KeyIdScreen({
             {KEY_ID_LEVELS.find((l) => l.id === levelId)?.description}
           </small>
         )}
+        <InputChoiceField value={piano.choice} onChange={piano.setChoice} disabled={running} />
         <label>
           Up to this many sharps or flats
           <select

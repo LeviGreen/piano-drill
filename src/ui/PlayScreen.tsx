@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { OnScreenKeyboardInput } from '../audio/inputs/OnScreenKeyboardInput'
+import type { RequestMidiAccess } from '../audio/inputs/MidiInput'
+import type { OnScreenKeyboardInput } from '../audio/inputs/OnScreenKeyboardInput'
 import { createLevelGenerator } from '../levels/levelGenerator'
 import { PRESET_LEVELS } from '../levels/presets'
 import { mergeSettings, parseSettings, type DifficultySettings } from '../levels/settings'
@@ -14,10 +15,12 @@ import { keySignature } from '../theory/keys'
 import { formatPitch } from '../theory/pitch'
 import type { Target } from '../theory/target'
 import { DifficultyFields } from './DifficultyFields'
+import { InputChoiceField } from './InputChoiceField'
 import { levelLabel } from './levelLabel'
 import { ScoreSummary } from './ScoreSummary'
 import { SettingsDrawer } from './SettingsDrawer'
 import { useCountdown } from './useCountdown'
+import { usePianoInput } from './usePianoInput'
 import { useRemainingSeconds } from './useRemainingSeconds'
 
 /** A session is always this many targets. */
@@ -57,6 +60,8 @@ function loadSettings(): Loaded {
 export type PlayScreenProps = {
   /** For tests: where results are saved. Defaults to the app's database. */
   storage?: Storage
+  /** For tests: stands in for the browser's MIDI request (null = a browser with no MIDI). */
+  midiAccess?: RequestMidiAccess | null
   /** For tests only: a shorter session than the product's fixed 20 targets. */
   reps?: number
   /** For tests only: shorter waits than the product's fixed ones. */
@@ -73,7 +78,7 @@ export type PlayScreenProps = {
  * turns green on the staff and the keyboard, in any order, and the rep ends when all of them have been heard. The
  * on-screen piano stands in for a real piano until the microphone can listen.
  */
-export function PlayScreen({ reps = DEFAULT_REPS, timing, storage }: PlayScreenProps) {
+export function PlayScreen({ reps = DEFAULT_REPS, timing, storage, midiAccess }: PlayScreenProps) {
   const [initial] = useState(loadSettings)
   const [settings, setSettings] = useState<DifficultySettings>(initial.settings)
   const [levelId, setLevelId] = useState<number | 'custom'>(initial.levelId)
@@ -86,6 +91,10 @@ export function PlayScreen({ reps = DEFAULT_REPS, timing, storage }: PlayScreenP
   const [snap, setSnap] = useState<SessionSnapshot | null>(null)
   const [results, setResults] = useState<RepResult[]>([])
   const count = useCountdown(snap?.ready ?? null)
+  const piano = usePianoInput({
+    requestAccess: midiAccess,
+    onLost: () => session.current?.pause(), // the piano went away: stop, and say so
+  })
 
   useEffect(() => {
     drawEmptyStaff(stage.current)
@@ -94,6 +103,10 @@ export function PlayScreen({ reps = DEFAULT_REPS, timing, storage }: PlayScreenP
 
   const state = snap?.state ?? 'IDLE'
   const running = state !== 'IDLE' && state !== 'ENDED'
+  useEffect(() => {
+    if (state === 'ENDED') piano.release()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state])
   const remaining = useRemainingSeconds(
     state === 'FLASHED',
     snap?.t0 ?? null,
@@ -106,8 +119,9 @@ export function PlayScreen({ reps = DEFAULT_REPS, timing, storage }: PlayScreenP
     setResults([])
     setSnap(null)
     setDismissed(false)
-    const keys = new OnScreenKeyboardInput()
-    setInput(keys)
+    const drill = await piano.open() // a missing MIDI piano is reported here, before anything starts
+    if (!drill) return
+    setInput(drill.screen)
     const flash = new FlashController<Target>({
       container: stage.current!,
       render: (into, t) => renderGrandStaff(into, { key: t.key, ...hands(t) }),
@@ -121,7 +135,7 @@ export function PlayScreen({ reps = DEFAULT_REPS, timing, storage }: PlayScreenP
     const s = new DrillSession({
       settings,
       generator: createLevelGenerator(settings, Math.floor(Math.random() * 1e6)),
-      input: keys,
+      input: drill.input,
       presenter,
       totalReps: reps,
       ...timing,
@@ -206,11 +220,18 @@ export function PlayScreen({ reps = DEFAULT_REPS, timing, storage }: PlayScreenP
     <div className="keyid-screen play-screen">
       <h1>Play</h1>
       <div className="keyid-bar">
-        <button type="button" onClick={() => void start()} disabled={running}>
+        <button type="button" onClick={() => void start()} disabled={running || piano.starting}>
           Start
         </button>
         {state === 'PAUSED' ? (
-          <button type="button" onClick={() => session.current?.resume()}>
+          <button
+            type="button"
+            disabled={piano.lost}
+            onClick={() => {
+              piano.acknowledge()
+              session.current?.resume()
+            }}
+          >
             Resume
           </button>
         ) : (
@@ -267,8 +288,8 @@ export function PlayScreen({ reps = DEFAULT_REPS, timing, storage }: PlayScreenP
         label="On-screen piano"
       />
 
-      <div className="result-slot" role="status">
-        {message}
+      <div className={`result-slot${piano.notice ? ' midi-problem' : ''}`} role="status">
+        {piano.notice ?? message}
       </div>
 
       {summary && !dismissed && (
@@ -304,6 +325,7 @@ export function PlayScreen({ reps = DEFAULT_REPS, timing, storage }: PlayScreenP
           </select>
         </label>
         {level && <small className="placeholder">{level.description}</small>}
+        <InputChoiceField value={piano.choice} onChange={piano.setChoice} disabled={running} />
         <DifficultyFields
           settings={settings}
           onEdit={edit}

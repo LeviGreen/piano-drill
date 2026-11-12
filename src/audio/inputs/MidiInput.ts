@@ -112,6 +112,8 @@ export type MidiInputOptions = {
   requestAccess?: RequestMidiAccess | null
   /** For tests: the time to use for a message that has no timestamp. */
   now?: () => number
+  /** Listen to just this device from the start (an id remembered from last time), or to all with null. */
+  deviceId?: string | null
 }
 
 /**
@@ -139,6 +141,7 @@ export class MidiInput implements NoteInput {
     this.requestAccess =
       opts.requestAccess === undefined ? browserRequestAccess() : opts.requestAccess
     this.now = opts.now ?? (() => performance.now())
+    this.selected = opts.deviceId ?? null
   }
 
   get status(): MidiStatus {

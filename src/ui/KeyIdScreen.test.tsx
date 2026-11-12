@@ -280,16 +280,25 @@ describe('the settings drawer', () => {
     })
   })
 
-  it('has only the simple options: level, sharps and flats, keys, time limit', async () => {
+  it('has only the simple options: level, input, sharps and flats, keys, time limit', async () => {
     show()
     await userEvent.click(button('Settings'))
     const dialog = screen.getByRole('dialog')
     const labels = [...dialog.querySelectorAll('label')].map((l) => l.textContent!.split('\n')[0])
     expect(
       labels.map((l) =>
-        l.replace(/(Level|Keys|Time limit per question|Up to this many sharps or flats).*/, '$1'),
+        l.replace(
+          /(Level|Input|Keys|Time limit per question|Up to this many sharps or flats).*/,
+          '$1',
+        ),
       ),
-    ).toEqual(['Level', 'Up to this many sharps or flats', 'Keys', 'Time limit per question'])
+    ).toEqual([
+      'Level',
+      'Input',
+      'Up to this many sharps or flats',
+      'Keys',
+      'Time limit per question',
+    ])
     for (const gone of ['Question type', 'Answer by', 'Clef', /F♯/]) {
       expect(within(dialog).queryByLabelText(gone)).toBeNull()
     }

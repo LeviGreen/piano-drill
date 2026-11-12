@@ -44,7 +44,8 @@ once for permission to use MIDI devices; if you say no, you can allow it in the 
 - *"MIDI access was blocked"*: click the lock icon next to the address, allow MIDI devices, then press Connect again.
 - *"No MIDI device was found"*: check the cable and that the piano is switched on. Some pianos need "USB MIDI" turned
   on in their settings. Another program that has the piano open (some music software) can stop the browser from using it.
-- *Notes show in the table but not in a drill*: the drill screens do not read MIDI yet (PD-314).
+- *Notes show on the MIDI test page but not in a drill*: open the Play or Key ID settings and set **Input** to "MIDI piano" (the on-screen piano is the default). The piano is connected when you press Start; if it says no piano was found, plug it in and press Start again.
+- *The drill paused by itself*: the piano was disconnected (a loose cable, or it went to sleep). Plug it back in and press Resume.
 
 ## A piano that needs a driver
 

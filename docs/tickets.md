@@ -400,14 +400,16 @@ The MVP's real input: a digital piano connected to the laptop (USB or Bluetooth 
 
 **Size:** M  
 **Deps:** PD-313, PD-402, PD-503  
-**Status:** Todo
+**Status:** In progress (built and tested with a fake piano; awaiting a check with a real one)
 
 Use `MidiInput` in the drill loop. An input chooser on the Play screen (on-screen piano or MIDI piano), remembered; the on-screen piano stays as the fallback and demo. Key ID's Play view (answer by playing the tonic) uses the same input. If the piano is unplugged mid-session, pause with a clear message. Anything from the mic-era Play design that only made sense for a microphone (the "almost" state, the detected-notes strip, escalating hints) is dropped; wrong notes and the per-note halos already work.
 
 **Acceptance:**
 - [ ] Complete a 20-rep Play session on a real digital piano over MIDI.
 - [ ] Key ID's Play view works with MIDI.
-- [ ] Unplugging the piano mid-session pauses with a clear message, and plugging it back in lets you resume.
+- [x] Unplugging the piano mid-session pauses with a clear message, and plugging it back in lets you resume (tested with a fake piano).
+
+**Notes:** an "Input" option in both the Play and Key ID settings (on-screen piano or MIDI piano), remembered and shared, the on-screen piano by default. With MIDI chosen, the real piano and the on-screen piano both work at once (`MergedInput`). The piano is connected when you press Start, so no piano, a blocked permission or a browser without MIDI is reported in words and nothing starts. Unplugging pauses the drill with a message and Resume stays off until the piano is back. The piano picked on the MIDI test screen is the one used. Code: `src/audio/inputs/drillInput.ts`, `MergedInput.ts`, `src/ui/usePianoInput.ts`, `InputChoiceField.tsx`.
 
 ## Epic 4 — Drill Session (Play Mode)
 
