@@ -45,3 +45,7 @@ once for permission to use MIDI devices; if you say no, you can allow it in the 
 - *"No MIDI device was found"*: check the cable and that the piano is switched on. Some pianos need "USB MIDI" turned
   on in their settings. Another program that has the piano open (some music software) can stop the browser from using it.
 - *Notes show in the table but not in a drill*: the drill screens do not read MIDI yet (PD-314).
+
+## A piano that needs a driver
+
+Most digital pianos are "class compliant": plug in, and the computer sees a MIDI device with nothing to install. Some older Yamaha instruments are not. The Yamaha MM8 was seen by macOS as a USB device but never appeared as a MIDI device (not in Audio MIDI Setup's MIDI Studio, so the browser's list was empty) until Yamaha's **USB-MIDI Driver** for Mac was installed. If a piano shows in System Information → USB but not in MIDI Studio, look for the maker's USB-MIDI driver for it.

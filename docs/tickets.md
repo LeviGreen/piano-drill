@@ -40,7 +40,7 @@ Cross out a row (`~~text~~` in each cell) when its ticket is Done. Rows that are
 | ~~3 Input & Verification~~ | ~~PD-304~~ | ~~Mic capture pipeline~~ |
 | ~~3 Input & Verification~~ | ~~PD-305~~ | ~~Spectral analysis core~~ |
 | ~~3 Input & Verification~~ | ~~PD-306~~ | ~~Test corpus & benchmark harness~~ |
-| 3 Input & Verification | PD-313 | MIDI keyboard input (`MidiInput`) & test screen |
+| ~~3 Input & Verification~~ | ~~PD-313~~ | ~~MIDI keyboard input (`MidiInput`) & test screen~~ |
 | 3 Input & Verification | PD-314 | MIDI-driven Play and Key ID |
 | ~~4 Drill Session (Play Mode)~~ | ~~PD-401~~ | ~~Session state machine & timing core~~ |
 | ~~4 Drill Session (Play Mode)~~ | ~~PD-402~~ | ~~Drill screen UI~~ |
@@ -315,7 +315,7 @@ Optional note-name labels on notes; piano keyboard component highlighting target
 
 ## Epic 3 — Input & Verification
 
-Progress: 5/7 tickets done
+Progress: 6/7 tickets done
 
 > **Direction change (2026-11-12).** The mic spike did not reach the bar for the MVP: on a laptop mic with a digital piano through its speakers, the middle of the range was verified well, but low notes lost their fundamental (heard only as overtones) and the top note was too faint. The stand-in verifier accepted about 50% of 32 real clips (target: 90%), with every wrong, extra, silent and noisy clip correctly rejected; note starts were found in all of them within about 1 ms. Rather than gamble the MVP on the hardest problem, the MVP takes its notes from **a digital piano over MIDI** (PD-313, PD-314), on desktop Chromium. The mic tickets (PD-307–PD-312, PD-406) are Deferred, not cut: they moved to Epic 8 (Post-MVP) with their IDs unchanged, and the capture, analysis and corpus tools stay in the repo.
 
@@ -385,16 +385,16 @@ Record and label a corpus (acoustic piano, various phones/positions/rooms, plus 
 
 **Size:** M  
 **Deps:** PD-301  
-**Status:** In progress (built and tested with a fake piano; awaiting a check with a real one)
+**Status:** Done
 
 The MVP's real input: a digital piano connected to the laptop (USB or Bluetooth MIDI), read with the Web MIDI API as a `NoteInput`. Note-on (velocity above 0) is an onset, stamped on the drill clock (a MIDI message's timestamp is on the same `performance.now()` clock); note-off (or note-on with velocity 0) releases; the sustain pedal and other controllers are ignored. List the devices, choose one, remember the choice, and handle hot-plug and disconnects. Clear states for permission denied and for browsers without Web MIDI (Safari and iPhone/iPad; Firefox needs extra setup). Plus a test screen under Settings (the old mic test's replacement) that lists devices and shows the notes you play on the keyboard strip as they arrive.
 
 **Acceptance:**
-- [ ] Notes played on a real digital piano show with the right pitch and timing on the test screen.
+- [x] Notes played on a real digital piano show with the right pitch and timing on the test screen (checked on a Yamaha MM8, which needed Yamaha's USB-MIDI driver on the Mac).
 - [x] Tests with a fake MIDI access cover note-on/off, velocity 0 as note-off, pedal ignored, device hot-plug, permission denied and an unsupported browser.
 - [x] Supported browsers are documented (Chrome, Edge and Opera on desktop).
 
-**Notes:** `src/audio/inputs/MidiInput.ts` (a `NoteInput`; `parseMidiMessage` for the raw messages), the test screen `src/ui/MidiTestScreen.tsx` at Settings > MIDI test, and a fake piano for tests in `src/test-utils/fakeMidi.ts`. Listens to all devices or one chosen device, which is remembered. Browsers and troubleshooting are in docs/midi.md.
+**Notes:** `src/audio/inputs/MidiInput.ts` (a `NoteInput`; `parseMidiMessage` for the raw messages), the test screen `src/ui/MidiTestScreen.tsx` at Settings > MIDI test, and a fake piano for tests in `src/test-utils/fakeMidi.ts`. Listens to all devices or one chosen device, which is remembered. Browsers and troubleshooting are in docs/midi.md. The test screen also has a Diagnostics panel (each port's state, a count of messages, and the last raw message), which is how a silent piano is told from a screen that drops notes.
 
 ### PD-314: MIDI-driven Play and Key ID
 
