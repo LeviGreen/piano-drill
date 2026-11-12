@@ -34,3 +34,15 @@ Each `.json` is one entry:
 - Optional `onsetSec` if you know the true onset time.
 
 Play the note about one second after pressing Record, and leave about a second of room tone before and after.
+
+## Recording a whole range in one take (sequences)
+
+To save time, play several single notes one after another in one take, with a rest of **at least 3 seconds**
+(4 to 5 is comfortable) between notes. In the recorder set Category to `single` and list the notes in the order
+you will play them, separated by spaces: `G2 B2 D3 F#3`. For intervals, triads and chords, join the notes of each step with `+` (`C4+E4 D3+A3`) and set Category to what they are (`interval`, `triad`, `two-hand`). Add a remark after `@` to a step, e.g. `C4@soft` or
+`C4@loud` (it goes into that clip's `position`). Save the take and move the files into `corpus/recorded/` as usual.
+
+Then run `npm run corpus:split`. It finds where each note starts, cuts one clip per note (`<id>-<n>-<note>.wav` and
+`.json`, with the true onset time filled in), and moves the original into `corpus/recorded/sequences/` so the
+benchmark doesn't count it twice. If it finds a different number of notes than the label lists, or two notes too
+close together, it changes nothing and says where it found notes.

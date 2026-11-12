@@ -1,0 +1,15 @@
+{
+  "id": "single-G2B2D3F#3A3D#4F4A4B4F5C4-softC4-loud-mwdlvh3j-1-8-A4",
+  "file": "single-G2B2D3F#3A3D#4F4A4B4F5C4-softC4-loud-mwdlvh3j-1-8-A4.wav",
+  "source": "digital-speaker",
+  "category": "single",
+  "played": [
+    "A4"
+  ],
+  "expected": [
+    "A4"
+  ],
+  "room": "living room",
+  "device": "Mac Book Pro",
+  "onsetSec": 1.5
+}

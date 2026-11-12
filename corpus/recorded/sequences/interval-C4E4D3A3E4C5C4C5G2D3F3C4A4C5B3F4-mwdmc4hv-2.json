@@ -1,0 +1,28 @@
+{
+  "id": "interval-C4E4D3A3E4C5C4C5G2D3F3C4A4C5B3F4-mwdmc4hv-2",
+  "file": "interval-C4E4D3A3E4C5C4C5G2D3F3C4A4C5B3F4-mwdmc4hv-2.wav",
+  "source": "digital-speaker",
+  "category": "interval",
+  "played": [
+    "C4+E4",
+    "D3+A3",
+    "E4+C5",
+    "C4+C5",
+    "G2+D3",
+    "F3+C4",
+    "A4+C5",
+    "B3+F4"
+  ],
+  "expected": [
+    "C4+E4",
+    "D3+A3",
+    "E4+C5",
+    "C4+C5",
+    "G2+D3",
+    "F3+C4",
+    "A4+C5",
+    "B3+F4"
+  ],
+  "room": "living room",
+  "device": "Mac Book Pro"
+}

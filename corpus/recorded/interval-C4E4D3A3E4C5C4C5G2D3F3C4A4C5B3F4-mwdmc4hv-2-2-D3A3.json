@@ -1,0 +1,17 @@
+{
+  "id": "interval-C4E4D3A3E4C5C4C5G2D3F3C4A4C5B3F4-mwdmc4hv-2-2-D3A3",
+  "file": "interval-C4E4D3A3E4C5C4C5G2D3F3C4A4C5B3F4-mwdmc4hv-2-2-D3A3.wav",
+  "source": "digital-speaker",
+  "category": "interval",
+  "played": [
+    "D3",
+    "A3"
+  ],
+  "expected": [
+    "D3",
+    "A3"
+  ],
+  "room": "living room",
+  "device": "Mac Book Pro",
+  "onsetSec": 1.5
+}

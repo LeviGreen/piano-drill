@@ -1,0 +1,36 @@
+{
+  "id": "single-G2B2D3F#3A3D#4F4A4B4F5C4-softC4-loud-mwdlvh3j-1",
+  "file": "single-G2B2D3F#3A3D#4F4A4B4F5C4-softC4-loud-mwdlvh3j-1.wav",
+  "source": "digital-speaker",
+  "category": "single",
+  "played": [
+    "G2",
+    "B2",
+    "D3",
+    "F#3",
+    "A3",
+    "D#4",
+    "F4",
+    "A4",
+    "B4",
+    "F5",
+    "C4@soft",
+    "C4@loud"
+  ],
+  "expected": [
+    "G2",
+    "B2",
+    "D3",
+    "F#3",
+    "A3",
+    "D#4",
+    "F4",
+    "A4",
+    "B4",
+    "F5",
+    "C4@soft",
+    "C4@loud"
+  ],
+  "room": "living room",
+  "device": "Mac Book Pro"
+}

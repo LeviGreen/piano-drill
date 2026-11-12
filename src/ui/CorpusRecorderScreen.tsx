@@ -16,13 +16,19 @@ const CATEGORIES: Category[] = [
   'room-noise',
   'transient',
 ]
-const MAX_SECONDS = 10
+/** Long enough for a sequence take: a dozen notes with rests of 4 to 5 seconds between them. */
+const MAX_SECONDS = 180
 
 type Take = { entry: ManifestEntry; wav: Uint8Array }
 
 function parseNotes(text: string): string[] {
   const names = text.split(/[\s,]+/).filter(Boolean)
-  names.forEach((n) => parsePitch(n)) // throws on typos like "H4"
+  names.forEach((n) =>
+    n
+      .split('@')[0]
+      .split('+')
+      .forEach((note) => parsePitch(note)),
+  ) // throws on typos like "H4"; "C4@soft" is a note with a remark (see corpus/README.md)
   return names
 }
 
@@ -102,7 +108,7 @@ export function CorpusRecorderScreen() {
       at += c.length
     }
     const playedNames = parseNotes(played)
-    const id = `${category}-${playedNames.join('') || 'none'}-${Date.now().toString(36)}-${counter.current++}`
+    const id = `${category}-${playedNames.join('').replaceAll('@', '-').replaceAll('+', '') || 'none'}-${Date.now().toString(36)}-${counter.current++}`
     setTake({
       wav: encodeWav(samples, m.sampleRate),
       entry: {
