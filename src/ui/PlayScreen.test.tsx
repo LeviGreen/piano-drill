@@ -88,7 +88,7 @@ describe('before starting', () => {
     expect((screen.getByLabelText('Level') as HTMLSelectElement).value).toBe('4')
   })
 
-  it('the drawer has the level, hands, notes per hand, sharps/flats and keys', async () => {
+  it('the settings have the level, hands, notes per hand, sharps/flats and a time limit, but not the keys', async () => {
     show()
     await userEvent.click(button('Settings'))
     const dialog = screen.getByRole('dialog', { name: 'Play settings' })
@@ -96,7 +96,8 @@ describe('before starting', () => {
     expect(within(dialog).getByRole('group', { name: 'Hands' })).toBeTruthy()
     expect(within(dialog).getByRole('group', { name: 'Notes per hand' })).toBeTruthy()
     expect(within(dialog).getByLabelText(/Up to this many sharps/)).toBeTruthy()
-    expect(within(dialog).getByLabelText('Keys')).toBeTruthy()
+    expect(within(dialog).getByLabelText('Time limit per target')).toBeTruthy()
+    expect(within(dialog).queryByLabelText('Keys')).toBeNull() // a level keeps the keys it was made with
   })
 
   it('picking a level fills the options in; changing one makes it Custom and keeps it next time', async () => {
@@ -120,13 +121,14 @@ describe('before starting', () => {
         .getAttribute('aria-pressed'),
     ).toBe('false')
     await userEvent.selectOptions(within(dialog).getByLabelText(/Up to this many sharps/), '5')
-    await userEvent.selectOptions(within(dialog).getByLabelText('Keys'), 'minor')
+    await userEvent.selectOptions(within(dialog).getByLabelText('Time limit per target'), '20')
     expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!)).toMatchObject({
       levelId: 'custom',
       settings: {
         name: 'Custom',
         hands: ['RH'],
-        keys: { maxAccidentals: 5, modes: 'minor' },
+        keys: { maxAccidentals: 5, modes: 'both' }, // unchanged: the keys are not an option here
+        timeoutSeconds: 20,
       },
     })
     cleanup()
@@ -134,7 +136,23 @@ describe('before starting', () => {
     await userEvent.click(button('Settings'))
     dialog = screen.getByRole('dialog')
     expect((within(dialog).getByLabelText('Level') as HTMLSelectElement).value).toBe('custom')
-    expect((within(dialog).getByLabelText('Keys') as HTMLSelectElement).value).toBe('minor')
+    expect(
+      (within(dialog).getByLabelText('Time limit per target') as HTMLSelectElement).value,
+    ).toBe('20')
+  })
+
+  it('a time limit can be set to none, and a session then has no countdown clock', async () => {
+    show({ timing: FAST, reps: 1 })
+    await userEvent.click(button('Settings'))
+    await userEvent.selectOptions(
+      within(screen.getByRole('dialog')).getByLabelText('Time limit per target'),
+      'none',
+    )
+    await userEvent.keyboard('{Escape}')
+    await userEvent.click(button('Start'))
+    await waitForTarget()
+    expect(document.querySelector('.keyid-clock')!.textContent).toBe('')
+    await userEvent.click(button('End'))
   })
 
   it('you cannot untick the last hand or the last note count', async () => {
@@ -168,7 +186,9 @@ describe('before starting', () => {
     await userEvent.click(button('Settings'))
     const dialog = screen.getByRole('dialog')
     expect((within(dialog).getByLabelText('Level') as HTMLSelectElement).disabled).toBe(true)
-    expect((within(dialog).getByLabelText('Keys') as HTMLSelectElement).disabled).toBe(true)
+    expect(
+      (within(dialog).getByLabelText('Time limit per target') as HTMLSelectElement).disabled,
+    ).toBe(true)
     expect(within(dialog).getByRole('group', { name: 'Hands' }).hasAttribute('disabled')).toBe(true)
     expect(within(dialog).getByText(/locked during a session/i)).toBeTruthy()
     await userEvent.keyboard('{Escape}')

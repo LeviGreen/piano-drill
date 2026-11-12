@@ -25,11 +25,24 @@ export function DifficultyFields({
   settings,
   onEdit,
   disabled = false,
+  showKeys = true,
+  showTimeLimit = false,
 }: {
   settings: DifficultySettings
   onEdit: (patch: Record<string, unknown>) => void
   disabled?: boolean
+  /** The major/minor choice. The Play screen leaves it out: a level keeps the keys it was made with. */
+  showKeys?: boolean
+  /** The time limit per target. */
+  showTimeLimit?: boolean
 }) {
+  const limits = [5, 10, 20]
+  const current = settings.timeoutSeconds
+  // A limit that is not one of the usual choices (from a custom file) still shows, rather than a blank box.
+  const options =
+    current !== null && !limits.includes(current)
+      ? [...limits, current].sort((a, b) => a - b)
+      : limits
   const handTile = (mode: HandMode, label: string, pic: 'left' | 'right' | 'both') => (
     <ToggleTile
       label={label}
@@ -97,18 +110,39 @@ export function DifficultyFields({
           ))}
         </select>
       </label>
-      <label>
-        Keys
-        <select
-          value={settings.keys.modes}
-          disabled={disabled}
-          onChange={(e) => onEdit({ keys: { modes: e.target.value as 'both' | Mode } })}
-        >
-          <option value="both">Major and minor</option>
-          <option value="major">Major only</option>
-          <option value="minor">Minor only</option>
-        </select>
-      </label>
+      {showKeys && (
+        <label>
+          Keys
+          <select
+            value={settings.keys.modes}
+            disabled={disabled}
+            onChange={(e) => onEdit({ keys: { modes: e.target.value as 'both' | Mode } })}
+          >
+            <option value="both">Major and minor</option>
+            <option value="major">Major only</option>
+            <option value="minor">Minor only</option>
+          </select>
+        </label>
+      )}
+      {showTimeLimit && (
+        <label>
+          Time limit per target
+          <select
+            value={current ?? 'none'}
+            disabled={disabled}
+            onChange={(e) =>
+              onEdit({ timeoutSeconds: e.target.value === 'none' ? null : Number(e.target.value) })
+            }
+          >
+            <option value="none">No limit</option>
+            {options.map((n) => (
+              <option key={n} value={n}>
+                {n} seconds
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
     </>
   )
 }

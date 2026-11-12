@@ -102,5 +102,5 @@ describe('a whole sequence take, end to end', () => {
     found.forEach((t, i) => expect(Math.abs(t - starts[i])).toBeLessThan(0.1))
     const plan = planSegments(found, 4, 19)
     expect(plan.ok).toBe(true)
-  })
+  }, 20_000) // renders 19 s of audio: about 2 s normally, but over the 5 s default on a busy machine
 })

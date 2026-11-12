@@ -304,7 +304,13 @@ export function PlayScreen({ reps = DEFAULT_REPS, timing, storage }: PlayScreenP
           </select>
         </label>
         {level && <small className="placeholder">{level.description}</small>}
-        <DifficultyFields settings={settings} onEdit={edit} disabled={running} />
+        <DifficultyFields
+          settings={settings}
+          onEdit={edit}
+          disabled={running}
+          showKeys={false}
+          showTimeLimit
+        />
         {running && <small className="placeholder">Settings are locked during a session.</small>}
       </SettingsDrawer>
     </div>

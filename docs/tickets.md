@@ -52,8 +52,8 @@ Cross out a row (`~~text~~` in each cell) when its ticket is Done. Rows that are
 | ~~4 Drill Session (Play Mode)~~ | ~~PD-401~~ | ~~Session state machine & timing core~~ |
 | ~~4 Drill Session (Play Mode)~~ | ~~PD-402~~ | ~~Drill screen UI~~ |
 | ~~4 Drill Session (Play Mode)~~ | ~~PD-403~~ | ~~Session results & high scores~~ |
-| 4 Drill Session (Play Mode) | PD-404 | Level select & custom settings UI |
-| 4 Drill Session (Play Mode) | PD-405 | Level progression & unlocking |
+| ~~4 Drill Session (Play Mode)~~ | ~~PD-404~~ | ~~Level select & custom settings UI~~ |
+| 4 Drill Session (Play Mode) | PD-405 | Level progression & unlocking (deferred) |
 | 4 Drill Session (Play Mode) | PD-406 | Mic-driven play end-to-end integration (deferred) |
 | ~~5 Key Identification Mode~~ | ~~PD-501~~ | ~~Key-ID question generator~~ |
 | ~~5 Key Identification Mode~~ | ~~PD-502~~ | ~~Answer UI (circle-of-fifths wheel / typing)~~ |
@@ -75,7 +75,7 @@ Cross out a row (`~~text~~` in each cell) when its ticket is Done. Rows that are
    - **Notation:** PD-201 → PD-202 → PD-204
    - **Mic risk spike (done as far as it went):** PD-301 → PD-304 → PD-305 → PD-306 → PD-307
 3. **M0 gate (decided 2026-11-12):** the mic is deferred; the MVP uses MIDI input (PD-313). Mic tickets PD-307–PD-312 and PD-406 are Deferred.
-4. **M1:** PD-302, PD-401 → PD-403, PD-313 → PD-314, PD-404
+4. **M1:** PD-302, PD-401 → PD-403, PD-313 → PD-314, PD-404 (PD-405 is post-MVP)
 5. **M2:** PD-106, PD-107, PD-203, then Epic 5
 6. **M3:** Epic 7 (the mic tickets PD-310, PD-311, PD-312 are deferred)
 
@@ -485,7 +485,7 @@ Use `MidiInput` in the drill loop. An input chooser on the Play screen (on-scree
 
 ## Epic 4 — Drill Session (Play Mode)
 
-Progress: 3/6 tickets done (1 deferred)
+Progress: 4/6 tickets done (2 deferred)
 
 ### PD-401: Session state machine & timing core
 
@@ -531,21 +531,21 @@ Changed from the original "stats screen" (2026-11-12): you care about score and 
 
 **Size:** L  
 **Deps:** PD-108, PD-002  
-**Status:** Todo
+**Status:** Done
 
-Level list with targets/locks, custom preset editor for all dimensions in §3, live preview of sample targets, save/load/delete presets, "free play" unlock toggle. **Hand options are checkboxes:** "Left hand only", "Right hand only", "Both hands" (several checked = random per target). **Notes per hand** are checkboxes too: 1 (single note), 2 (interval), 3 and above (chords). The Generator preview screen shows this layout.
+Scope cut down on 2026-11-12 to keep settings simple: no level locks, no saved custom setups, no live preview, and only a few options. **Level select** is the Level dropdown in each mode's settings (Play and Key ID), with "Custom" once you change something. **Play's custom options:** hands (checkboxes: left, right, both; several checked = random per target), notes per hand (1 note, 2 interval, 3 triad, 4 seventh chord), up to N sharps/flats and a time limit per target (none, 5, 10, 20 s). **Key ID's options:** up to N sharps/flats, keys (major, minor or both) and a time limit. The keys option is not offered in Play: a level keeps the keys it was made with.
 
 **Acceptance:**
-- [ ] Any valid configuration can be created, previewed, saved, and launched.
+- [x] A valid custom configuration can be created and launched, and is remembered.
+- [x] Key-ID levels are selectable too (moved from PD-505).
 
-**Notes:** the Play drawer already has the level picker plus hands, notes per hand, sharps/flats and keys (done under PD-402). Still to do here: the full level list with targets/locks, the editor for the remaining dimensions, live preview of samples, save/load/delete presets, and the free-play toggle.
-- [ ] Key-ID levels are selectable from the level screen too (moved from PD-505).
+**Notes:** the Play settings are a centred modal (`src/ui/PlayScreen.tsx`, shared `DifficultyFields`); Key ID's are the same modal, narrower. Cut from the original ticket: the full level list with targets and locks (see PD-405, deferred), save/load/delete of presets (the storage for it exists but is unused), live preview of sample targets, the "free play" toggle, and the remaining dimensions of design §3 (clef, content type, inversions, chromatic notes, ledger lines, octave strictness).
 
 ### PD-405: Level progression & unlocking
 
 **Size:** S  
 **Deps:** PD-403, PD-404  
-**Status:** Todo
+**Status:** Deferred (2026-11-12: post-MVP. Every level is open from the start. The idea: when a session meets a level's goal in its data (accuracy and median time), unlock the next level, with a "free play" switch to open everything.)
 
 Evaluate level targets from §3.2 after each session; unlock next level; surface progress.
 

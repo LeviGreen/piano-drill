@@ -87,7 +87,7 @@ describe.each(CONFIGS)('10,000 two-hand targets: %s', (_n, cfg) => {
         )
       }
     }
-  })
+  }, 20_000) // 10,000 targets: about 1 to 2 s normally, but over the 5 s default on a busy machine
 
   it('uses sevenths only when a hand has 4 notes', () => {
     for (const t of targets) {

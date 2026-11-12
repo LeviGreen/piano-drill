@@ -108,7 +108,7 @@ Levels are data (JSON), not code, so they can be tuned without a release.
 
 ### 3.2 Unlocking / progression
 
-Each level has a **target** (e.g. "median < 2.0 s, ≥ 90% accuracy over 20 reps"). Meeting it unlocks the next level; all levels remain accessible via a "free play" toggle so users are never gated.
+Each level has a **target** (e.g. "median < 2.0 s, ≥ 90% accuracy over 20 reps"). Meeting it unlocks the next level; all levels remain accessible via a "free play" toggle so users are never gated. **Post-MVP (decided 2026-11-12):** for the MVP every level is open from the start; the targets stay in the level data.
 
 ---
 
