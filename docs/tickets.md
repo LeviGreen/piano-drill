@@ -41,20 +41,12 @@ Cross out a row (`~~text~~` in each cell) when its ticket is Done. Rows that are
 | ~~3 Input & Verification~~ | ~~PD-304~~ | ~~Mic capture pipeline~~ |
 | ~~3 Input & Verification~~ | ~~PD-305~~ | ~~Spectral analysis core~~ |
 | ~~3 Input & Verification~~ | ~~PD-306~~ | ~~Test corpus & benchmark harness~~ |
-| 3 Input & Verification | PD-307 | SPIKE — Target-aware note verifier (deferred) |
-| 3 Input & Verification | PD-308 | Mic input implementation (`MicInput`) (deferred) |
-| 3 Input & Verification | PD-309 | Onset-based timing & latency compensation (deferred) |
-| 3 Input & Verification | PD-310 | Low-register & octave robustness (deferred) |
-| 3 Input & Verification | PD-311 | Calibration wizard (deferred) |
-| 3 Input & Verification | PD-312 | Per-note tuning profile (out-of-tune piano) (deferred) |
 | 3 Input & Verification | PD-313 | MIDI keyboard input (`MidiInput`) & test screen |
 | 3 Input & Verification | PD-314 | MIDI-driven Play and Key ID |
 | ~~4 Drill Session (Play Mode)~~ | ~~PD-401~~ | ~~Session state machine & timing core~~ |
 | ~~4 Drill Session (Play Mode)~~ | ~~PD-402~~ | ~~Drill screen UI~~ |
 | ~~4 Drill Session (Play Mode)~~ | ~~PD-403~~ | ~~Session results & high scores~~ |
 | ~~4 Drill Session (Play Mode)~~ | ~~PD-404~~ | ~~Level select & custom settings UI~~ |
-| 4 Drill Session (Play Mode) | PD-405 | Level progression & unlocking (deferred) |
-| 4 Drill Session (Play Mode) | PD-406 | Mic-driven play end-to-end integration (deferred) |
 | ~~5 Key Identification Mode~~ | ~~PD-501~~ | ~~Key-ID question generator~~ |
 | ~~5 Key Identification Mode~~ | ~~PD-502~~ | ~~Answer UI (circle-of-fifths wheel / typing)~~ |
 | ~~5 Key Identification Mode~~ | ~~PD-503~~ | ~~Key-ID session screen & scoring~~ |
@@ -66,23 +58,38 @@ Cross out a row (`~~text~~` in each cell) when its ticket is Done. Rows that are
 | 7 Polish, Quality & Release | PD-704 | Cross-device/browser QA & fixes |
 | 7 Polish, Quality & Release | PD-705 | Performance & battery pass |
 | 7 Polish, Quality & Release | PD-706 | Documentation & help content |
+| 8 Post-MVP | PD-307 | SPIKE — Target-aware note verifier |
+| 8 Post-MVP | PD-308 | Mic input implementation (`MicInput`) |
+| 8 Post-MVP | PD-309 | Onset-based timing & latency compensation |
+| 8 Post-MVP | PD-310 | Low-register & octave robustness |
+| 8 Post-MVP | PD-311 | Calibration wizard |
+| 8 Post-MVP | PD-312 | Per-note tuning profile (out-of-tune piano) |
+| 8 Post-MVP | PD-405 | Level progression & unlocking |
+| 8 Post-MVP | PD-406 | Mic-driven play end-to-end integration |
 
 ## Suggested Build Order
 
-1. **PD-001 → PD-003** (foundations)
-2. In parallel:
-   - **Theory:** PD-101 → PD-105 → PD-108
-   - **Notation:** PD-201 → PD-202 → PD-204
-   - **Mic risk spike (done as far as it went):** PD-301 → PD-304 → PD-305 → PD-306 → PD-307
-3. **M0 gate (decided 2026-11-12):** the mic is deferred; the MVP uses MIDI input (PD-313). Mic tickets PD-307–PD-312 and PD-406 are Deferred.
-4. **M1:** PD-302, PD-401 → PD-403, PD-313 → PD-314, PD-404 (PD-405 is post-MVP)
-5. **M2:** PD-106, PD-107, PD-203, then Epic 5
-6. **M3:** Epic 7 (the mic tickets PD-310, PD-311, PD-312 are deferred)
+1. **PD-001 → PD-003** (foundations; PD-004, the Pages deploy, comes last of all)
+2. **Theory and notation:** PD-101 → PD-108, PD-201 → PD-206
+3. **Input:** PD-301, PD-302 (on-screen piano), PD-304 → PD-306 (mic capture, analysis and benchmark, built before the mic was shelved), then **PD-313 → PD-314 (MIDI, the MVP's input)**
+4. **Play and Key ID screens:** PD-401 → PD-404, Epic 5
+5. **Polish:** Epic 7
+6. **After the MVP:** Epic 8 (the mic verifier and calibration, mic-driven play, level unlocking)
 
 ## Ticket Index
 
 | Epic | Tickets |
 |---|---|
+| 0 Foundations | PD-001 – PD-004 |
+| 1 Theory Engine | PD-101 – PD-108 |
+| 2 Notation | PD-201 – PD-206 |
+| 3 Input & Verification | PD-301, PD-302, PD-304 – PD-306, PD-313, PD-314 (PD-303 cut) |
+| 4 Drill Session | PD-401 – PD-404 |
+| 5 Key ID Mode | PD-501 – PD-505 |
+| 7 Polish & Release | PD-701 – PD-706 |
+| 8 Post-MVP | PD-307 – PD-312, PD-405, PD-406 |
+
+---|---|
 | 0 Foundations | PD-001 – PD-004 |
 | 1 Theory Engine | PD-101 – PD-108 |
 | 2 Notation | PD-201 – PD-206 |
@@ -323,9 +330,9 @@ Staff size setting, high-contrast mode, non-color-only feedback styles.
 
 ## Epic 3 — Input & Verification
 
-Progress: 5/13 tickets done (6 deferred)
+Progress: 5/7 tickets done
 
-> **Direction change (2026-11-12).** The mic spike did not reach the bar for the MVP: on a laptop mic with a digital piano through its speakers, the middle of the range was verified well, but low notes lost their fundamental (heard only as overtones) and the top note was too faint. The stand-in verifier accepted about 50% of 32 real clips (target: 90%), with every wrong, extra, silent and noisy clip correctly rejected; note starts were found in all of them within about 1 ms. Rather than gamble the MVP on the hardest problem, the MVP takes its notes from **a digital piano over MIDI** (PD-313, PD-314), on desktop Chromium. The mic tickets (PD-307–PD-312, PD-406) are Deferred, not cut: the capture, analysis and corpus tools stay in the repo, and mic input can come back after the MVP.
+> **Direction change (2026-11-12).** The mic spike did not reach the bar for the MVP: on a laptop mic with a digital piano through its speakers, the middle of the range was verified well, but low notes lost their fundamental (heard only as overtones) and the top note was too faint. The stand-in verifier accepted about 50% of 32 real clips (target: 90%), with every wrong, extra, silent and noisy clip correctly rejected; note starts were found in all of them within about 1 ms. Rather than gamble the MVP on the hardest problem, the MVP takes its notes from **a digital piano over MIDI** (PD-313, PD-314), on desktop Chromium. The mic tickets (PD-307–PD-312, PD-406) are Deferred, not cut: they moved to Epic 8 (Post-MVP) with their IDs unchanged, and the capture, analysis and corpus tools stay in the repo.
 
 ### PD-301: `NoteInput` interface & `ScriptedInput`
 
@@ -389,74 +396,6 @@ Record and label a corpus (acoustic piano, various phones/positions/rooms, plus 
 **Acceptance:**
 - [x] One command produces a report; baseline numbers committed.
 
-### PD-307: SPIKE — Target-aware note verifier
-
-**Size:** XL  
-**Deps:** PD-305, PD-306  
-**Status:** Deferred (2026-11-12: the MVP takes notes from a digital piano over MIDI instead of listening through the mic; see PD-313. The mic work is shelved, not cut: the capture, analysis and benchmark corpus (PD-304 to PD-306) stay in the repo.)
-
-Implement the verifier of §6.2: expected-note presence scoring with harmonic templates, explaining-away residual for unexpected notes, temporal consistency (K frames), octave disambiguation, inharmonicity tolerance. Compare against alternatives (chromagram, Basic Pitch) on the corpus; write up a decision. **Verification is per-note and cumulative (design §6.2):** each expected pitch is latched once heard (with an onset after t₀) and stays heard for the attempt; the target is satisfied when all are latched, not when all sound together. The "≥ 90% correct" criterion is measured at the attempt level on the corpus.
-
-**Acceptance:**
-- [ ] Meets the M0 exit criterion (≥ 90% correct verification on single notes + triads in a quiet room), < 100 ms detection latency, false-accept rate on wrong-note cases < 5%. Written findings and recommended thresholds.
-
-### PD-308: Mic input implementation (`MicInput`)
-
-**Size:** M  
-**Deps:** PD-307  
-**Status:** Deferred (2026-11-12: the MVP takes notes from a digital piano over MIDI instead of listening through the mic; see PD-313. The mic work is shelved, not cut: the capture, analysis and benchmark corpus (PD-304 to PD-306) stay in the repo.)
-
-Wrap capture + verifier as a `NoteInput`; support "expected set" being supplied to the verifier; emit satisfied/unexpected-note events with onset timestamps; "wait for silence" signal. Emit per-note events (a note became heard; an unexpected note was detected), not only an all-satisfied event, so the UI can show which notes are still missing.
-
-**Acceptance:**
-- [ ] End-to-end: playing a target on a piano triggers success events with correct onset timing.
-
-### PD-309: Onset-based timing & latency compensation
-
-**Size:** M  
-**Deps:** PD-308  
-**Status:** Deferred (2026-11-12: the MVP takes notes from a digital piano over MIDI instead of listening through the mic; see PD-313. The mic work is shelved, not cut: the capture, analysis and benchmark corpus (PD-304 to PD-306) stay in the repo.)
-
-Compute reaction and completion times from onset estimates (not verifier fire time); subtract calibrated device latency; handle rolled chords and re-struck notes. Completion time is the onset of the note that completed the set (the last expected note heard).
-
-**Acceptance:**
-- [ ] Timing error vs. ground truth (MIDI-synced recordings) within ±50 ms on corpus.
-
-### PD-310: Low-register & octave robustness
-
-**Size:** L  
-**Deps:** PD-307  
-**Status:** Deferred (2026-11-12: the MVP takes notes from a digital piano over MIDI instead of listening through the mic; see PD-313. The mic work is shelved, not cut: the capture, analysis and benchmark corpus (PD-304 to PD-306) stay in the repo.)
-
-Improvements for bass notes and octave confusion: low-band long windows, octave-ambiguity checks, per-note confidence, configurable range cap and strict/relaxed octave modes. **MVP supported range is G2–F5** (about 98–698 Hz); notes outside it are out of scope.
-
-**Acceptance:**
-- [ ] Octave-error rate on corpus < 3%; bass-clef notes down to the supported range pass benchmark thresholds; documented supported range.
-
-### PD-311: Calibration wizard
-
-**Size:** M  
-**Deps:** PD-308  
-**Status:** Deferred (2026-11-12: the MVP takes notes from a digital piano over MIDI instead of listening through the mic; see PD-313. The mic work is shelved, not cut: the capture, analysis and benchmark corpus (PD-304 to PD-306) stay in the repo.)
-
-Flow from §6.7: permission, level, noise floor, tuning offset, range check, optional latency test; per-device storage of results; "recalibrate" entry point.
-
-**Acceptance:**
-- [ ] A new user finishes calibration in < 90 s; results measurably reduce false rejects on a detuned test piano.
-
-### PD-312: Per-note tuning profile (out-of-tune piano)
-
-**Size:** L  
-**Deps:** PD-311, PD-307  
-**Status:** Deferred (2026-11-12: the MVP takes notes from a digital piano over MIDI instead of listening through the mic; see PD-313. The mic work is shelved, not cut: the capture, analysis and benchmark corpus (PD-304 to PD-306) stay in the repo.)
-
-A calibration mode so the app works with an acoustic piano that is not perfectly in tune. Beyond the single global offset in PD-311, the user plays a guided set of notes across the range and the app measures each note's actual pitch deviation from equal temperament (including stretch in the extremes), building a per-note tuning profile. The verifier uses the profile to shift its expected fundamental and harmonic bins. Notes between sampled ones are interpolated; the user can re-run calibration for part of the range, and a quick "global offset only" mode remains available.
-
-**Acceptance:**
-- [ ] Tuning profile is saved per device/piano and applied automatically by the verifier.
-- [ ] On a test piano detuned by ≥ 30 cents on some notes, the false-reject rate is measurably lower than with the global offset alone.
-- [ ] A full-range calibration completes in a reasonable time (target to be set after the PD-307 spike).
-
 ### PD-313: MIDI keyboard input (`MidiInput`) & test screen
 
 **Size:** M  
@@ -485,7 +424,7 @@ Use `MidiInput` in the drill loop. An input chooser on the Play screen (on-scree
 
 ## Epic 4 — Drill Session (Play Mode)
 
-Progress: 4/6 tickets done (2 deferred)
+Progress: 4/4 tickets done
 
 ### PD-401: Session state machine & timing core
 
@@ -540,30 +479,6 @@ Scope cut down on 2026-11-12 to keep settings simple: no level locks, no saved c
 - [x] Key-ID levels are selectable too (moved from PD-505).
 
 **Notes:** the Play settings are a centred modal (`src/ui/PlayScreen.tsx`, shared `DifficultyFields`); Key ID's are the same modal, narrower. Cut from the original ticket: the full level list with targets and locks (see PD-405, deferred), save/load/delete of presets (the storage for it exists but is unused), live preview of sample targets, the "free play" toggle, and the remaining dimensions of design §3 (clef, content type, inversions, chromatic notes, ledger lines, octave strictness).
-
-### PD-405: Level progression & unlocking
-
-**Size:** S  
-**Deps:** PD-403, PD-404  
-**Status:** Deferred (2026-11-12: post-MVP. Every level is open from the start. The idea: when a session meets a level's goal in its data (accuracy and median time), unlock the next level, with a "free play" switch to open everything.)
-
-Evaluate level targets from §3.2 after each session; unlock next level; surface progress.
-
-**Acceptance:**
-- [ ] Seeded session data unlocks as expected; free-play bypass works.
-
-### PD-406: Mic-driven play end-to-end integration
-
-**Size:** M  
-**Deps:** PD-308, PD-309, PD-402  
-**Status:** Deferred (2026-11-12: the MVP takes notes from a digital piano over MIDI instead of listening through the mic; see PD-313. The mic work is shelved, not cut: the capture, analysis and benchmark corpus (PD-304 to PD-306) stay in the repo.)
-
-Wire `MicInput` into drill loop; handle permission-denied, mic loss, noisy environment warnings, input switching mid-session.
-
-**Acceptance:**
-- [ ] Complete a 20-rep session on a real piano using only the mic.
-- [ ] The Play screen shows the "almost" state and a detected-notes strip, gives escalating hints for a stuck note, and has an input source selector (moved from PD-402).
-- [ ] Key ID's Play view (answer by playing the tonic) works with the mic (moved from PD-504).
 
 ## Epic 5 — Key Identification Mode
 
@@ -706,3 +621,101 @@ In-app help (mic placement, pedal advice, troubleshooting) and developer README 
 
 **Acceptance:**
 - [ ] Docs reviewed; troubleshooting covers each calibration failure mode.
+
+## Epic 8 — Post-MVP
+
+Progress: 0/8 tickets done (all deferred until after the MVP)
+
+Everything here is **deferred, not cut**: it moved out of the MVP on 2026-11-12 so the remaining epics show only what the MVP needs. Ticket IDs are unchanged, so references elsewhere (and the git history) still work. The mic tickets come back if microphone input returns after the MVP (see the direction-change note at the top of Epic 3); PD-405 (level unlocking) comes back when the app has more levels worth gating.
+
+### PD-307: SPIKE — Target-aware note verifier
+
+**Size:** XL  
+**Deps:** PD-305, PD-306  
+**Status:** Deferred (2026-11-12: the MVP takes notes from a digital piano over MIDI instead of listening through the mic; see PD-313. The mic work is shelved, not cut: the capture, analysis and benchmark corpus (PD-304 to PD-306) stay in the repo.)
+
+Implement the verifier of §6.2: expected-note presence scoring with harmonic templates, explaining-away residual for unexpected notes, temporal consistency (K frames), octave disambiguation, inharmonicity tolerance. Compare against alternatives (chromagram, Basic Pitch) on the corpus; write up a decision. **Verification is per-note and cumulative (design §6.2):** each expected pitch is latched once heard (with an onset after t₀) and stays heard for the attempt; the target is satisfied when all are latched, not when all sound together. The "≥ 90% correct" criterion is measured at the attempt level on the corpus.
+
+**Acceptance:**
+- [ ] Meets the M0 exit criterion (≥ 90% correct verification on single notes + triads in a quiet room), < 100 ms detection latency, false-accept rate on wrong-note cases < 5%. Written findings and recommended thresholds.
+
+### PD-308: Mic input implementation (`MicInput`)
+
+**Size:** M  
+**Deps:** PD-307  
+**Status:** Deferred (2026-11-12: the MVP takes notes from a digital piano over MIDI instead of listening through the mic; see PD-313. The mic work is shelved, not cut: the capture, analysis and benchmark corpus (PD-304 to PD-306) stay in the repo.)
+
+Wrap capture + verifier as a `NoteInput`; support "expected set" being supplied to the verifier; emit satisfied/unexpected-note events with onset timestamps; "wait for silence" signal. Emit per-note events (a note became heard; an unexpected note was detected), not only an all-satisfied event, so the UI can show which notes are still missing.
+
+**Acceptance:**
+- [ ] End-to-end: playing a target on a piano triggers success events with correct onset timing.
+
+### PD-309: Onset-based timing & latency compensation
+
+**Size:** M  
+**Deps:** PD-308  
+**Status:** Deferred (2026-11-12: the MVP takes notes from a digital piano over MIDI instead of listening through the mic; see PD-313. The mic work is shelved, not cut: the capture, analysis and benchmark corpus (PD-304 to PD-306) stay in the repo.)
+
+Compute reaction and completion times from onset estimates (not verifier fire time); subtract calibrated device latency; handle rolled chords and re-struck notes. Completion time is the onset of the note that completed the set (the last expected note heard).
+
+**Acceptance:**
+- [ ] Timing error vs. ground truth (MIDI-synced recordings) within ±50 ms on corpus.
+
+### PD-310: Low-register & octave robustness
+
+**Size:** L  
+**Deps:** PD-307  
+**Status:** Deferred (2026-11-12: the MVP takes notes from a digital piano over MIDI instead of listening through the mic; see PD-313. The mic work is shelved, not cut: the capture, analysis and benchmark corpus (PD-304 to PD-306) stay in the repo.)
+
+Improvements for bass notes and octave confusion: low-band long windows, octave-ambiguity checks, per-note confidence, configurable range cap and strict/relaxed octave modes. **MVP supported range is G2–F5** (about 98–698 Hz); notes outside it are out of scope.
+
+**Acceptance:**
+- [ ] Octave-error rate on corpus < 3%; bass-clef notes down to the supported range pass benchmark thresholds; documented supported range.
+
+### PD-311: Calibration wizard
+
+**Size:** M  
+**Deps:** PD-308  
+**Status:** Deferred (2026-11-12: the MVP takes notes from a digital piano over MIDI instead of listening through the mic; see PD-313. The mic work is shelved, not cut: the capture, analysis and benchmark corpus (PD-304 to PD-306) stay in the repo.)
+
+Flow from §6.7: permission, level, noise floor, tuning offset, range check, optional latency test; per-device storage of results; "recalibrate" entry point.
+
+**Acceptance:**
+- [ ] A new user finishes calibration in < 90 s; results measurably reduce false rejects on a detuned test piano.
+
+### PD-312: Per-note tuning profile (out-of-tune piano)
+
+**Size:** L  
+**Deps:** PD-311, PD-307  
+**Status:** Deferred (2026-11-12: the MVP takes notes from a digital piano over MIDI instead of listening through the mic; see PD-313. The mic work is shelved, not cut: the capture, analysis and benchmark corpus (PD-304 to PD-306) stay in the repo.)
+
+A calibration mode so the app works with an acoustic piano that is not perfectly in tune. Beyond the single global offset in PD-311, the user plays a guided set of notes across the range and the app measures each note's actual pitch deviation from equal temperament (including stretch in the extremes), building a per-note tuning profile. The verifier uses the profile to shift its expected fundamental and harmonic bins. Notes between sampled ones are interpolated; the user can re-run calibration for part of the range, and a quick "global offset only" mode remains available.
+
+**Acceptance:**
+- [ ] Tuning profile is saved per device/piano and applied automatically by the verifier.
+- [ ] On a test piano detuned by ≥ 30 cents on some notes, the false-reject rate is measurably lower than with the global offset alone.
+- [ ] A full-range calibration completes in a reasonable time (target to be set after the PD-307 spike).
+
+### PD-405: Level progression & unlocking
+
+**Size:** S  
+**Deps:** PD-403, PD-404  
+**Status:** Deferred (2026-11-12: post-MVP. Every level is open from the start. The idea: when a session meets a level's goal in its data (accuracy and median time), unlock the next level, with a "free play" switch to open everything.)
+
+Evaluate level targets from §3.2 after each session; unlock next level; surface progress.
+
+**Acceptance:**
+- [ ] Seeded session data unlocks as expected; free-play bypass works.
+
+### PD-406: Mic-driven play end-to-end integration
+
+**Size:** M  
+**Deps:** PD-308, PD-309, PD-402  
+**Status:** Deferred (2026-11-12: the MVP takes notes from a digital piano over MIDI instead of listening through the mic; see PD-313. The mic work is shelved, not cut: the capture, analysis and benchmark corpus (PD-304 to PD-306) stay in the repo.)
+
+Wire `MicInput` into drill loop; handle permission-denied, mic loss, noisy environment warnings, input switching mid-session.
+
+**Acceptance:**
+- [ ] Complete a 20-rep session on a real piano using only the mic.
+- [ ] The Play screen shows the "almost" state and a detected-notes strip, gives escalating hints for a stuck note, and has an input source selector (moved from PD-402).
+- [ ] Key ID's Play view (answer by playing the tonic) works with the mic (moved from PD-504).
