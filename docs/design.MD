@@ -3,6 +3,8 @@
 **Status:** Draft v1
 **Name:** Piano Drill
 
+> **Direction change (2026-11-12):** the MVP reads notes from **a digital piano over MIDI** on desktop Chromium, not from a microphone. The mic design in §6 (verification, calibration, tuning profiles) is kept as the plan for a later version: the mic spike verified mid-range notes well but could not reliably hear low notes or the top note on a laptop mic, and the MVP should not depend on that. Wherever this document says "the mic" or "listens", read "MIDI" for the MVP. See docs/tickets.md (PD-313, PD-314) and docs/benchmark.md for the findings.
+
 ---
 
 ## 1. Overview
@@ -201,9 +203,10 @@ interface NoteInput {
 
 Implementations:
 
-1. **`MicInput`** — Web Audio + DSP (primary, per the product requirement).
+1. **`MidiInput`** — a digital piano over Web MIDI (the MVP's primary input; exact notes and timing, so no verification is needed).
 2. **`OnScreenKeyboardInput`** — tap keys on screen (fallback/dev/demo; also lets people try the app without a piano).
 3. **`ScriptedInput`** — test harness that feeds recorded/synthetic note events.
+4. **`MicInput`** — Web Audio + DSP (deferred past the MVP; see the direction change at the top and the rest of this section).
 
 ### 6.2 Verification, not transcription
 
