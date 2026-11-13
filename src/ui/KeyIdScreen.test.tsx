@@ -421,16 +421,25 @@ describe('scores', () => {
 
 describe('the question clock', () => {
   const clock = () => document.querySelector('.keyid-clock')!.textContent
-  it('counts down in whole seconds from the time allowed, on its own line apart from the status', async () => {
+  it('stays hidden until 3 seconds are left, then counts down in whole seconds, apart from the status', async () => {
     store({ timeoutSeconds: 10 })
     show({ timing: FAST })
     expect(clock()).toBe('')
     await userEvent.click(button('Start'))
-    await waitFor(() => expect(Number(clock())).toBeGreaterThan(0))
-    expect(Number(clock())).toBeLessThanOrEqual(10)
+    await screen.findByText(/Which major key/)
+    expect(clock()).toBe('') // 10 seconds left: not shown
     expect(document.querySelector('.keyid-status')!.textContent).not.toMatch(/\d+ s|·/)
     await userEvent.click(button('End'))
     expect(clock()).toBe('')
+  })
+
+  it('shows the clock from the start when the limit is 3 seconds or less', async () => {
+    store({ timeoutSeconds: 3 })
+    show({ timing: FAST })
+    await userEvent.click(button('Start'))
+    await waitFor(() => expect(Number(clock())).toBeGreaterThan(0))
+    expect(Number(clock())).toBeLessThanOrEqual(3)
+    await userEvent.click(button('End'))
   })
 
   it('shows no clock when there is no time limit', async () => {

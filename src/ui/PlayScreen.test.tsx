@@ -422,14 +422,12 @@ describe('layout and countdown', () => {
     after.forEach((el, i) => expect(el).toBe(before[i]))
   })
 
-  it('counts down the time allowed for each target, on its own line', async () => {
+  it('keeps the clock off the screen at first, and the status line free of times', async () => {
     show({ timing: FAST, reps: 1 })
     expect(document.querySelector('.keyid-clock')!.textContent).toBe('')
     await userEvent.click(button('Start'))
     await waitForTarget()
-    await waitFor(() =>
-      expect(Number(document.querySelector('.keyid-clock')!.textContent)).toBeGreaterThan(0),
-    )
+    expect(document.querySelector('.keyid-clock')!.textContent).toBe('') // plenty of time left
     expect(document.querySelector('.keyid-status')!.textContent).not.toMatch(/\d+ s/)
     await userEvent.click(button('End'))
   })
