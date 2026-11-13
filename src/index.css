@@ -690,6 +690,11 @@ fieldset {
   text-align: center;
 }
 
+/* The piano view is as wide as the Play screen's piano (the full column), not the narrower wheel. */
+.answer-input:has(.keyboard) {
+  max-width: none;
+}
+
 .answer-views {
   display: flex;
   justify-content: center;
