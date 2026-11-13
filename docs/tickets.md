@@ -21,7 +21,7 @@ Cross out a row (`~~text~~` in each cell) when its ticket is Done. Rows that are
 | ~~0 Project Foundations~~ | ~~PD-001~~ | ~~Project scaffolding~~ |
 | ~~0 Project Foundations~~ | ~~PD-002~~ | ~~App shell & routing~~ |
 | ~~0 Project Foundations~~ | ~~PD-003~~ | ~~Local storage layer~~ |
-| 0 Project Foundations | PD-004 | GitHub Pages deploy & routing |
+| ~~0 Project Foundations~~ | ~~PD-004~~ | ~~GitHub Pages deploy & routing~~ |
 | ~~1 Music Theory Engine~~ | ~~PD-101~~ | ~~Core pitch & spelling primitives~~ |
 | ~~1 Music Theory Engine~~ | ~~PD-102~~ | ~~Keys & key signatures~~ |
 | ~~1 Music Theory Engine~~ | ~~PD-103~~ | ~~Diatonic chord & interval library~~ |
@@ -41,7 +41,7 @@ Cross out a row (`~~text~~` in each cell) when its ticket is Done. Rows that are
 | ~~3 Input & Verification~~ | ~~PD-305~~ | ~~Spectral analysis core~~ |
 | ~~3 Input & Verification~~ | ~~PD-306~~ | ~~Test corpus & benchmark harness~~ |
 | ~~3 Input & Verification~~ | ~~PD-313~~ | ~~MIDI keyboard input (`MidiInput`) & test screen~~ |
-| 3 Input & Verification | PD-314 | MIDI-driven Play and Key ID |
+| ~~3 Input & Verification~~ | ~~PD-314~~ | ~~MIDI-driven Play and Key ID~~ |
 | ~~4 Drill Session (Play Mode)~~ | ~~PD-401~~ | ~~Session state machine & timing core~~ |
 | ~~4 Drill Session (Play Mode)~~ | ~~PD-402~~ | ~~Drill screen UI~~ |
 | ~~4 Drill Session (Play Mode)~~ | ~~PD-403~~ | ~~Session results & high scores~~ |
@@ -68,7 +68,7 @@ Cross out a row (`~~text~~` in each cell) when its ticket is Done. Rows that are
 
 ## Suggested Build Order
 
-1. **PD-001 → PD-003** (foundations; PD-004, the Pages deploy, comes last of all)
+1. **PD-001 → PD-003** (foundations)
 2. **Theory and notation:** PD-101 → PD-108, PD-201 → PD-205
 3. **Input:** PD-301, PD-302 (on-screen piano), PD-304 → PD-306 (mic capture, analysis and benchmark, built before the mic was shelved), then **PD-313 → PD-314 (MIDI, the MVP's input)**
 4. **Play and Key ID screens:** PD-401 → PD-404, Epic 5
@@ -92,7 +92,7 @@ Cross out a row (`~~text~~` in each cell) when its ticket is Done. Rows that are
 
 ## Epic 0 — Project Foundations
 
-Progress: 3/4 tickets done
+Progress: 4/4 tickets done
 
 ### PD-001: Project scaffolding
 
@@ -133,12 +133,14 @@ IndexedDB wrapper (Dexie or similar) with repositories for settings, custom pres
 
 **Size:** S  
 **Deps:** PD-002  
-**Status:** Todo
+**Status:** Done (code and workflow in place; needs Pages enabled in the repo settings)
 
-Publish the app as a GitHub Pages site. Set the Vite `base` for the repo subpath, make direct URLs and reloads work (e.g. `HashRouter` or a `404.html` fallback), and add a Pages deploy job to CI. **Do this last, at the very end of the project (per Levi).** Not to be started earlier, even to unlock phone testing.
+Publish the app as a GitHub Pages site. Set the Vite `base` for the repo subpath, make direct URLs and reloads work (e.g. `HashRouter` or a `404.html` fallback), and add a Pages deploy job to CI.
 
 **Acceptance:**
-- [ ] The app loads at its GitHub Pages URL, and reloading or deep-linking (e.g. `/key-id`) works.
+- [x] The app loads at its GitHub Pages URL, and reloading or deep-linking (e.g. `/key-id`) works. *(HashRouter, so a deep link is `/#/key-id`; confirm once Pages is live.)*
+
+**Notes:** `HashRouter` in `src/main.tsx` (no server rewrites needed), `base: './'` in `vite.config.ts` (works under any repo subpath), and `.github/workflows/deploy.yml` builds and publishes `dist` on every push to master. One-time setup: repo Settings > Pages > Source: GitHub Actions.
 
 ## Epic 1 — Music Theory Engine
 
@@ -315,7 +317,7 @@ Optional note-name labels on notes; piano keyboard component highlighting target
 
 ## Epic 3 — Input & Verification
 
-Progress: 6/7 tickets done
+Progress: 7/7 tickets done
 
 > **Direction change (2026-11-12).** The mic spike did not reach the bar for the MVP: on a laptop mic with a digital piano through its speakers, the middle of the range was verified well, but low notes lost their fundamental (heard only as overtones) and the top note was too faint. The stand-in verifier accepted about 50% of 32 real clips (target: 90%), with every wrong, extra, silent and noisy clip correctly rejected; note starts were found in all of them within about 1 ms. Rather than gamble the MVP on the hardest problem, the MVP takes its notes from **a digital piano over MIDI** (PD-313, PD-314), on desktop Chromium. The mic tickets (PD-307–PD-312, PD-406) are Deferred, not cut: they moved to Epic 8 (Post-MVP) with their IDs unchanged, and the capture, analysis and corpus tools stay in the repo.
 
@@ -400,13 +402,13 @@ The MVP's real input: a digital piano connected to the laptop (USB or Bluetooth 
 
 **Size:** M  
 **Deps:** PD-313, PD-402, PD-503  
-**Status:** In progress (built and tested with a fake piano; awaiting a check with a real one)
+**Status:** Done
 
 Use `MidiInput` in the drill loop. An input chooser on the Play screen (on-screen piano or MIDI piano), remembered; the on-screen piano stays as the fallback and demo. Key ID's Play view uses the same input. **Reworked 2026-11-13: in Key ID's Play view you no longer play just the tonic; you play the key's scale, up one octave and back down in order (16 notes, the top note struck twice; natural minor for minor keys), in one fixed octave on the clef's side of middle C (treble: right hand, from middle C up; bass: left hand, up to middle C).** Any wrong note, a repeated note or a note in the wrong octave sends you back to the start of the scale. It takes much longer than tapping, so the question's time limit is **8 seconds longer** and the score is weighted (see Notes). The Play view's piano is the wide C2 to C6 one, like the Play screen's. If the piano is unplugged mid-session, pause with a clear message. Anything from the mic-era Play design that only made sense for a microphone (the "almost" state, the detected-notes strip, escalating hints) is dropped; wrong notes and the per-note halos already work.
 
 **Acceptance:**
-- [ ] Complete a 20-rep Play session on a real digital piano over MIDI.
-- [ ] Key ID's Play view works with MIDI: the scale up and back down is accepted, and a wrong note starts you over (tested with a fake piano; to be checked on a real one).
+- [x] Complete a 20-rep Play session on a real digital piano over MIDI.
+- [x] Key ID's Play view works with MIDI: the scale up and back down is accepted, and a wrong note starts you over (tested with a fake piano and checked on a real one).
 - [x] The scale rules, hand/register, the +8 s grace period and the weighted score are covered by tests.
 - [x] Unplugging the piano mid-session pauses with a clear message, and plugging it back in lets you resume (tested with a fake piano).
 
