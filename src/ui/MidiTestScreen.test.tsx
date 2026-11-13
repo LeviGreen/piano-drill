@@ -28,7 +28,7 @@ describe('before connecting', () => {
     expect(status()).toMatch(/Press Connect/)
     expect(screen.getByRole('button', { name: 'Connect' })).toBeTruthy()
     expect(screen.queryByLabelText('Piano')).toBeNull()
-    expect(screen.getByText('None yet.')).toBeTruthy()
+    expect(screen.getByRole('heading', { level: 1, name: 'MIDI Test' })).toBeTruthy()
   })
 })
 
@@ -71,7 +71,7 @@ describe('connecting', () => {
 })
 
 describe('playing', () => {
-  it('shows the notes you hold on the keyboard, and each note played in a table', async () => {
+  it('shows the notes you hold on the keyboard', async () => {
     const piano = new FakePort('p', 'Piano')
     show(withAccess(new FakeMidiAccess(piano)))
     await userEvent.click(screen.getByRole('button', { name: 'Connect' }))
@@ -82,28 +82,6 @@ describe('playing', () => {
     act(() => piano.noteOff(60, performance.now()))
     expect(key(60).classList.contains('heard')).toBe(false)
     expect(key(64).classList.contains('heard')).toBe(true)
-    const rows = within(screen.getByRole('table', { name: 'Notes played' }))
-      .getAllByRole('row')
-      .slice(1)
-    expect(rows).toHaveLength(2)
-    expect(within(rows[0]).getByText('E4')).toBeTruthy() // newest first
-    expect(within(rows[0]).getByText('64')).toBeTruthy() // velocity
-    expect(within(rows[0]).getByText(/^2[45]\d ms$|^\d{3} ms$/)).toBeTruthy() // after the previous note
-    expect(within(rows[1]).getByText('C4')).toBeTruthy()
-    expect(within(rows[1]).getByText('100')).toBeTruthy()
-    expect(within(rows[1]).getByText('–')).toBeTruthy() // the first note has no previous
-  })
-
-  it('shows only the last few notes', async () => {
-    const piano = new FakePort('p')
-    show(withAccess(new FakeMidiAccess(piano)))
-    await userEvent.click(screen.getByRole('button', { name: 'Connect' }))
-    for (let i = 0; i < 12; i++) act(() => piano.noteOn(48 + i, performance.now()))
-    expect(
-      within(screen.getByRole('table', { name: 'Notes played' }))
-        .getAllByRole('row')
-        .slice(1),
-    ).toHaveLength(8)
   })
 
   it('a piano plugged in later appears in the list and is heard', async () => {
@@ -193,21 +171,16 @@ describe('disconnecting', () => {
   })
 })
 
-describe('diagnostics: is the piano really sending?', () => {
-  const diag = () => screen.getByText('Diagnostics').closest('details')!
+describe('devices: does the browser see the piano?', () => {
+  const devices = () => screen.getByRole('table', { name: 'Devices' })
   const connect = async (...ports: FakePort[]) => {
     show(withAccess(new FakeMidiAccess(...ports)))
     await userEvent.click(screen.getByRole('button', { name: 'Connect' }))
   }
 
-  it('says none yet before anything arrives, and lists each piano with its state and port', async () => {
-    const piano = new FakePort('p', 'MM8 Port 1')
-    await connect(piano)
-    expect(within(diag()).getByText(/Messages received:/).textContent).toMatch(
-      /0.*0 real, 0 background/,
-    )
-    expect(within(diag()).getByText(/none yet/)).toBeTruthy()
-    const cells = within(diag()).getAllByRole('row')[1].querySelectorAll('td')
+  it('lists each piano with its state and port', async () => {
+    await connect(new FakePort('p', 'MM8 Port 1'))
+    const cells = within(devices()).getAllByRole('row')[1].querySelectorAll('td')
     expect([...cells].map((c) => c.textContent)).toEqual(['MM8 Port 1', 'connected', 'open'])
   })
 
@@ -215,34 +188,18 @@ describe('diagnostics: is the piano really sending?', () => {
     const piano = new FakePort('p', 'MM8 Port 1')
     piano.connection = 'closed'
     await connect(piano)
-    expect(within(diag()).getByText('closed')).toBeTruthy()
+    expect(within(devices()).getByText('closed')).toBeTruthy()
   })
 
-  it('counts every message and shows the last one in hex with what it means and where it came from', async () => {
-    const piano = new FakePort('p', 'MM8 Port 1')
-    await connect(piano)
-    act(() => piano.noteOn(60, performance.now(), 100))
-    expect(within(diag()).getByText('90 3C 64')).toBeTruthy()
-    expect(within(diag()).getByText(/from MM8 Port 1: note on 60, velocity 100/)).toBeTruthy()
-    expect(within(diag()).getByText(/Messages received:/).textContent).toMatch(
-      /1.*1 real, 0 background/,
-    )
+  it('has no message counters or note log', async () => {
+    await connect(new FakePort('p'))
+    expect(screen.queryByText(/Messages received/)).toBeNull()
+    expect(screen.queryByText(/Last message/)).toBeNull()
+    expect(screen.queryByText('Notes played')).toBeNull()
   })
 
-  it('tells background heartbeat and clock apart from real messages, and notes the pedal is ignored', async () => {
-    const piano = new FakePort('p', 'MM8 Port 1')
-    await connect(piano)
-    act(() => piano.send([0xfe], performance.now()))
-    act(() => piano.send([0xf8], performance.now()))
-    act(() => piano.pedal(true, performance.now()))
-    expect(within(diag()).getByText(/Messages received:/).textContent).toMatch(
-      /3.*1 real, 2 background/,
-    )
-    expect(within(diag()).getByText(/sustain pedal \(ignored\)/)).toBeTruthy()
-  })
-
-  it('is not shown until connected', () => {
+  it('shows no list until connected, or when there is no piano', async () => {
     show(withAccess(new FakeMidiAccess(new FakePort('p'))))
-    expect(screen.queryByText('Diagnostics')).toBeNull()
+    expect(screen.queryByRole('table', { name: 'Devices' })).toBeNull()
   })
 })

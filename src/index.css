@@ -187,6 +187,25 @@ select {
   border-color: var(--accent);
 }
 
+.card .tile-icon {
+  display: block;
+  margin-bottom: 0.4rem;
+  color: var(--accent);
+}
+
+.card.disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.card.disabled:hover {
+  border-color: var(--border);
+}
+
+.card.disabled .tile-icon {
+  color: var(--text-muted);
+}
+
 .card h2 {
   font-size: 1.15rem;
 }

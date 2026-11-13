@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 import { NAV_ITEMS } from './nav'
 
@@ -34,28 +35,91 @@ function Placeholder({ title, ticket }: { title: string; ticket: string }) {
   )
 }
 
+const iconProps = {
+  width: 28,
+  height: 28,
+  viewBox: '0 0 24 24',
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 1.8,
+  strokeLinecap: 'round' as const,
+  strokeLinejoin: 'round' as const,
+  'aria-hidden': true,
+}
+
+/** A piano keyboard. */
+const PianoIcon = () => (
+  <svg {...iconProps}>
+    <rect x="3" y="5" width="18" height="14" rx="2" />
+    <path d="M9 5v14M15 5v14" />
+    <path d="M7 5v7M13 5v7M19 5v7" strokeWidth="3" />
+  </svg>
+)
+
+/** A microphone. */
+const MicIcon = () => (
+  <svg {...iconProps}>
+    <rect x="9" y="3" width="6" height="11" rx="3" />
+    <path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6" />
+  </svg>
+)
+
+/** A record button. */
+const RecordIcon = () => (
+  <svg {...iconProps}>
+    <circle cx="12" cy="12" r="9" />
+    <circle cx="12" cy="12" r="3.5" fill="currentColor" />
+  </svg>
+)
+
+const TOOLS: { label: string; to: string; icon: ReactNode; enabled: boolean; note: string }[] = [
+  {
+    label: 'MIDI Test',
+    to: '/settings/midi-test',
+    icon: <PianoIcon />,
+    enabled: true,
+    note: 'Check that your piano is connected.',
+  },
+  {
+    label: 'Mic Test',
+    to: '/settings/mic-test',
+    icon: <MicIcon />,
+    enabled: false,
+    note: 'Shelved for now.',
+  },
+  {
+    label: 'Corpus Recorder',
+    to: '/settings/corpus-recorder',
+    icon: <RecordIcon />,
+    enabled: false,
+    note: 'Shelved for now.',
+  },
+]
+
 export function SettingsScreen() {
   return (
     <>
       <Placeholder title="Settings" ticket="PD-703" />
-      <p>
-        <Link to="/settings/midi-test">MIDI test</Link>
-      </p>
-      <p>
-        <Link to="/settings/mic-test">Mic test (shelved)</Link>
-      </p>
-      <p>
-        <Link to="/settings/corpus-recorder">Corpus recorder</Link>
-      </p>
-      <p>
-        <Link to="/settings/notation-gallery">Notation gallery</Link>
-      </p>
-      <p>
-        <Link to="/settings/generator-preview">Generator preview</Link>
-      </p>
-      <p>
-        <Link to="/settings/flash-test">Flash test</Link>
-      </p>
+      <div className="card-grid">
+        {TOOLS.map((tool) => {
+          const body = (
+            <>
+              <span className="tile-icon">{tool.icon}</span>
+              <h2>{tool.label}</h2>
+              <p>{tool.note}</p>
+            </>
+          )
+          return tool.enabled ? (
+            <Link key={tool.to} to={tool.to} className="card">
+              {body}
+            </Link>
+          ) : (
+            <div key={tool.to} className="card disabled" role="link" aria-disabled="true">
+              {body}
+            </div>
+          )
+        })}
+      </div>
     </>
   )
 }

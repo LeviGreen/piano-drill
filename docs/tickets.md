@@ -394,7 +394,7 @@ The MVP's real input: a digital piano connected to the laptop (USB or Bluetooth 
 - [x] Tests with a fake MIDI access cover note-on/off, velocity 0 as note-off, pedal ignored, device hot-plug, permission denied and an unsupported browser.
 - [x] Supported browsers are documented (Chrome, Edge and Opera on desktop).
 
-**Notes:** `src/audio/inputs/MidiInput.ts` (a `NoteInput`; `parseMidiMessage` for the raw messages), the test screen `src/ui/MidiTestScreen.tsx` at Settings > MIDI test, and a fake piano for tests in `src/test-utils/fakeMidi.ts`. Listens to all devices or one chosen device, which is remembered. Browsers and troubleshooting are in docs/midi.md. The test screen also has a Diagnostics panel (each port's state, a count of messages, and the last raw message), which is how a silent piano is told from a screen that drops notes.
+**Notes:** `src/audio/inputs/MidiInput.ts` (a `NoteInput`; `parseMidiMessage` for the raw messages), the test screen `src/ui/MidiTestScreen.tsx` at Settings > MIDI Test, and a fake piano for tests in `src/test-utils/fakeMidi.ts`. Listens to all devices or one chosen device, which is remembered. Browsers and troubleshooting are in docs/midi.md. The test screen is kept to what is needed to troubleshoot a connection: Connect, the status message, the piano list, a table of each device's state and port, and a keyboard that lights up the keys you hold. (It once also showed message counts, the last raw message and a log of notes played; those were removed.)
 
 ### PD-314: MIDI-driven Play and Key ID
 

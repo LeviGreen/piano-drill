@@ -5,7 +5,6 @@ import { PianoKeyboard, type KeyMark } from '../notation/PianoKeyboard'
 import { formatPitch, pitchFromMidi } from '../theory/pitch'
 
 const DEVICE_KEY = 'piano-drill.midi-device'
-const SHOWN = 8
 
 const noteName = (midi: number) => formatPitch(pitchFromMidi(midi))
 
@@ -25,57 +24,34 @@ function saveDevice(id: string | null): void {
   }
 }
 
-/** What the browser can see of each piano and what has arrived from it: tells a silent piano from a broken screen. */
-function Diagnostics({ input }: { input: MidiInput }) {
-  const { messages, background, last } = input.diagnostics
-  const hex = (bytes: number[]) =>
-    bytes.map((b) => b.toString(16).toUpperCase().padStart(2, '0')).join(' ')
+/** What the browser can see of each piano: tells a missing piano from a broken screen. */
+function Devices({ input }: { input: MidiInput }) {
+  if (input.devices.length === 0) return null
   return (
-    <details open className="midi-diagnostics">
-      <summary>Diagnostics</summary>
-      <p>
-        Messages received: <strong>{messages}</strong> ({messages - background} real, {background}{' '}
-        background heartbeat or clock)
-      </p>
-      <p>
-        Last message:{' '}
-        {last ? (
-          <>
-            <code>{hex(last.bytes)}</code> from {last.port}: {last.meaning}
-          </>
-        ) : (
-          'none yet'
-        )}
-      </p>
-      {input.devices.length > 0 && (
-        <table className="results">
-          <thead>
-            <tr>
-              <th>Device</th>
-              <th>State</th>
-              <th>Port</th>
-            </tr>
-          </thead>
-          <tbody>
-            {input.devices.map((d) => (
-              <tr key={d.id}>
-                <td>{d.name}</td>
-                <td>{d.connected ? 'connected' : 'not connected'}</td>
-                <td>{d.connection ?? 'unknown'}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </details>
+    <table className="results" aria-label="Devices">
+      <thead>
+        <tr>
+          <th>Device</th>
+          <th>State</th>
+          <th>Port</th>
+        </tr>
+      </thead>
+      <tbody>
+        {input.devices.map((d) => (
+          <tr key={d.id}>
+            <td>{d.name}</td>
+            <td>{d.connected ? 'connected' : 'not connected'}</td>
+            <td>{d.connection ?? 'unknown'}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   )
 }
 
-type Played = { n: number; midi: number; velocity: number; gapMs: number | null; lateMs: number }
-
 /**
- * Diagnostic screen for the MIDI input (PD-313): connect to your digital piano, pick it from the list, and watch the
- * notes you play arrive. This is the check that the piano is talking to the browser before using it in a drill.
+ * Troubleshooting screen for the MIDI input (PD-313): connect to your digital piano, pick it from the list, and watch
+ * the keys you hold light up. This is the check that the piano is talking to the browser before using it in a drill.
  */
 export function MidiTestScreen({ requestAccess }: { requestAccess?: RequestMidiAccess | null }) {
   const [input] = useState(
@@ -83,26 +59,12 @@ export function MidiTestScreen({ requestAccess }: { requestAccess?: RequestMidiA
   )
   const [, bump] = useState(0)
   const [held, setHeld] = useState<number[]>([])
-  const [played, setPlayed] = useState<Played[]>([])
   const [chosen, setChosen] = useState<string | null>(savedDevice)
 
   useEffect(() => {
-    let n = 0
-    let last: number | null = null
     const offChange = input.onChange(() => bump((x) => x + 1))
     const offUpdate = input.onUpdate((s) => {
       setHeld([...s.activeNotes.keys()])
-      for (const o of s.onsets) {
-        const entry: Played = {
-          n: ++n,
-          midi: o.midi,
-          velocity: Math.round(o.confidence * 127),
-          gapMs: last === null ? null : o.t - last,
-          lateMs: Math.max(0, performance.now() - o.t),
-        }
-        last = o.t
-        setPlayed((list) => [entry, ...list].slice(0, SHOWN))
-      }
     })
     return () => {
       offChange()
@@ -152,10 +114,10 @@ export function MidiTestScreen({ requestAccess }: { requestAccess?: RequestMidiA
       <p>
         <Link to="/settings">← Settings</Link>
       </p>
-      <h1>MIDI test</h1>
+      <h1>MIDI Test</h1>
       <p className="placeholder">
-        Checks that your digital piano is talking to the browser (PD-313). It needs Chrome, Edge or
-        Opera on a computer, with the piano plugged in by USB or paired by Bluetooth.
+        Checks that your digital piano is talking to the browser. It needs Chrome, Edge or Opera on
+        a computer, with the piano plugged in by USB or paired by Bluetooth.
       </p>
 
       <p>
@@ -193,37 +155,9 @@ export function MidiTestScreen({ requestAccess }: { requestAccess?: RequestMidiA
         </p>
       )}
 
-      {status === 'ready' && <Diagnostics input={input} />}
+      {status === 'ready' && <Devices input={input} />}
 
       <PianoKeyboard marks={marks} labels={labels} showNames label="Notes you are holding" />
-
-      <h2>Notes played</h2>
-      {played.length === 0 ? (
-        <p className="placeholder">None yet.</p>
-      ) : (
-        <table className="results" aria-label="Notes played">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Note</th>
-              <th>Velocity</th>
-              <th>After previous</th>
-              <th>Seen after</th>
-            </tr>
-          </thead>
-          <tbody>
-            {played.map((p) => (
-              <tr key={p.n}>
-                <td>{p.n}</td>
-                <td>{noteName(p.midi)}</td>
-                <td>{p.velocity}</td>
-                <td>{p.gapMs === null ? '–' : `${Math.round(p.gapMs)} ms`}</td>
-                <td>{`${p.lateMs.toFixed(0)} ms`}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
     </>
   )
 }
