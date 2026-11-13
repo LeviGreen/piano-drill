@@ -342,7 +342,7 @@ export function KeyAnswerInput({
         {disabled
           ? '' // what the right answer was is for the screen around this to say; the input only marks right and wrong
           : shownView === 'play'
-            ? `Play the key's scale up and back down with your ${play?.hand} hand (a wrong note starts you over). ${play?.progress ?? 0} / ${play?.total ?? 0}`
+            ? `Play the key's scale up and back down with your ${play?.hand} hand, starting on the tonic ${play?.hand === 'left' ? 'below' : 'at or above'} middle C (a wrong note starts you over). ${play?.progress ?? 0} / ${play?.total ?? 0}`
             : typing
               ? '' // the box shows what is typed, with the help as its placeholder
               : entryText(entry) ||

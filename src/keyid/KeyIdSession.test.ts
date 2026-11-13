@@ -419,6 +419,36 @@ describe("answering by playing the key's scale", () => {
     expect(r.session.snapshot.progress).toBe(0)
   })
 
+  it('the first note fixes the octave: any tonic on the clef side of middle C starts the scale', async () => {
+    const r = playRig(question('t', 'major', 0)) // C major, treble
+    await r.session.start()
+    await r.clock.advance(3)
+    const high = scaleNotes(r.session.snapshot.question!, parsePitch('C5').midi)
+    tap(r, high[0])
+    expect(r.session.snapshot.scale).toEqual(high)
+    for (const m of high.slice(1)) tap(r, m)
+    expect(r.session.results[0]).toMatchObject({ outcome: 'correct' })
+    expect(r.session.results[0].errors).toEqual([])
+  })
+
+  it('a tonic on the wrong side of middle C does not start a scale', async () => {
+    const r = playRig(question('t', 'major', 0)) // treble
+    await r.session.start()
+    await r.clock.advance(3)
+    tap(r, parsePitch('C3').midi)
+    expect(r.session.snapshot.progress).toBe(0)
+    expect(r.session.snapshot.wrongPlayed).toEqual([parsePitch('C3').midi])
+  })
+
+  it('a bass question can start on any tonic below middle C', async () => {
+    const bass = { ...question('b', 'major', 0), clef: 'bass' as const }
+    const r = playRig(bass)
+    await r.session.start()
+    await r.clock.advance(3)
+    for (const m of scaleNotes(bass, parsePitch('C2').midi)) tap(r, m)
+    expect(r.session.results[0].outcome).toBe('correct')
+  })
+
   it('a bass question wants the scale below middle C', async () => {
     const bass = { ...question('b', 'major', 0), clef: 'bass' as const } // C major
     const r = playRig(bass)

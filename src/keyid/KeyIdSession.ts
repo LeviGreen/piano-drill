@@ -3,7 +3,7 @@ import { RepSession, type RepSessionOptions } from '../session/RepSession'
 import type { BaseSnapshot, RepOutcome, RepResult } from '../session/types'
 import { keyName } from '../theory/keys'
 import { checkAnswer, type KeyIdAnswer, type KeyIdQuestion } from './questions'
-import { SCALE_GRACE_SECONDS, scaleNotes } from './scalePlay'
+import { SCALE_GRACE_SECONDS, scaleNotes, startsScale } from './scalePlay'
 
 export type KeyIdSessionSettings = {
   /** Seconds before a question times out, or null for no timeout. */
@@ -51,6 +51,8 @@ export class KeyIdSession extends RepSession<KeyIdQuestion, KeyIdSnapshot> {
   private unsubscribeInput: (() => void) | null = null
   private given: KeyIdAnswer | null = null
   private progress = 0
+  /** The note the scale was started on (fixes its octave); null until the player starts one. */
+  private tonic: number | null = null
   private wrong: KeyIdAnswer[] = []
   private wrongPlayed: number[] = []
   private errors: { t: number; notes: number[] }[] = []
@@ -73,7 +75,7 @@ export class KeyIdSession extends RepSession<KeyIdQuestion, KeyIdSnapshot> {
       ...this.baseSnapshot(),
       question: this.item,
       given: this.given,
-      scale: this.item ? scaleNotes(this.item) : [],
+      scale: this.item ? scaleNotes(this.item, this.tonic ?? undefined) : [],
       progress: this.progress,
       wrong: [...this.wrong],
       wrongPlayed: [...this.wrongPlayed],
@@ -116,6 +118,7 @@ export class KeyIdSession extends RepSession<KeyIdQuestion, KeyIdSnapshot> {
   protected beginRep(): void {
     this.given = null
     this.progress = 0
+    this.tonic = null
     this.wrong = []
     this.wrongPlayed = []
     this.errors = []
@@ -160,25 +163,36 @@ export class KeyIdSession extends RepSession<KeyIdQuestion, KeyIdSnapshot> {
       return
     }
     if (this.state !== 'FLASHED' || this.t0 === null || !this.item) return
-    // Every note struck after the question appeared is a try, in order. The next note of the scale moves on; anything
-    // else is a wrong note and the player starts over (a wrong note that is itself the first note counts as the start).
-    const scale = scaleNotes(this.item)
+    // Every note struck after the question appeared is a try, in order. The first note starts the scale: the key's tonic
+    // in any octave on the clef's side of middle C. After that the next note of the scale moves on, and anything else is
+    // a wrong note that sends the player back to the start (a wrong note that could itself start the scale counts as the start).
     const onsets = [...update.onsets].sort((a, b) => a.t - b.t).filter((o) => o.t >= this.t0!)
     for (const onset of onsets) {
       this.firstGuessAt ??= onset.t
-      if (onset.midi === scale[this.progress]) {
-        this.progress++
-        if (this.progress === scale.length) {
-          this.solvedAt = onset.t
-          this.solvedBy = 'play'
-          this.solved()
-          return
+      if (this.tonic === null) {
+        if (startsScale(this.item, onset.midi)) {
+          this.tonic = onset.midi
+          this.progress = 1
+          continue
         }
-        continue
+      } else {
+        const scale = scaleNotes(this.item, this.tonic)
+        if (onset.midi === scale[this.progress]) {
+          this.progress++
+          if (this.progress === scale.length) {
+            this.solvedAt = onset.t
+            this.solvedBy = 'play'
+            this.solved()
+            return
+          }
+          continue
+        }
       }
       this.wrongPlayed.push(onset.midi)
       this.errors.push({ t: onset.t - this.t0, notes: [onset.midi] })
-      this.progress = onset.midi === scale[0] ? 1 : 0
+      const restart = startsScale(this.item, onset.midi)
+      this.tonic = restart ? onset.midi : null
+      this.progress = restart ? 1 : 0
     }
     if (onsets.length > 0) this.emit()
   }
