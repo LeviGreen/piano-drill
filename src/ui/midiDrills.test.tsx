@@ -9,12 +9,12 @@ import {
 } from '../audio/inputs/drillInput'
 import type { RequestMidiAccess } from '../audio/inputs/MidiInput'
 import { KEY_ID_LEVELS } from '../keyid/presets'
-import { KeyIdGenerator, tonicMatches, type KeyIdQuestion } from '../keyid/questions'
+import { KeyIdGenerator, type KeyIdQuestion } from '../keyid/questions'
+import { scaleNotes } from '../keyid/scalePlay'
 import { toQuestionConfig } from '../keyid/settings'
 import { createLevelGenerator } from '../levels/levelGenerator'
 import { PRESET_LEVELS } from '../levels/presets'
 import { FakeMidiAccess, FakePort } from '../test-utils/fakeMidi'
-import { pitch } from '../theory/pitch'
 import type { Target } from '../theory/target'
 import { KeyIdScreen } from './KeyIdScreen'
 import { PlayScreen } from './PlayScreen'
@@ -222,7 +222,7 @@ describe('Key ID with a MIDI piano', () => {
     return g.next()
   }
 
-  it('in the Play view, the tonic played on the real piano answers the question', async () => {
+  it('in the Play view, the scale played on the real piano answers the question, and a wrong note starts over', async () => {
     const piano = new FakePort('p', 'MM8')
     showKeyId({ midiAccess: withAccess(new FakeMidiAccess(piano)) })
     await userEvent.click(button('Play'))
@@ -230,15 +230,19 @@ describe('Key ID with a MIDI piano', () => {
     const q = upcoming()
     await screen.findByText(q.prompt)
     await waitFor(() => expect((button('Skip') as HTMLButtonElement).disabled).toBe(false))
-    const tonic = pitch(q.key.tonic.letter, q.key.tonic.accidental, 3).midi
-    // A wrong note first, somewhere on the one octave the screen piano shows (C4 to C5).
-    const wrong = Array.from({ length: 13 }, (_, i) => 60 + i).find((m) => !tonicMatches(q, m))!
+    const notes = scaleNotes(q)
+    act(() => piano.noteOn(notes[0], performance.now()))
+    await waitFor(() =>
+      expect(document.querySelectorAll('svg.keyboard .kb-key.heard').length).toBe(1),
+    )
+    const wrong = notes[0] + 1 // a semitone above the tonic is never the second note of a major or minor scale
     act(() => piano.noteOn(wrong, performance.now()))
     await waitFor(() =>
       expect(document.querySelectorAll('svg.keyboard .kb-key.wrong').length).toBeGreaterThan(0),
     )
+    expect(document.querySelectorAll('svg.keyboard .kb-key.heard')).toHaveLength(0) // started over
     expect(statusLine()).toMatch(/Question 1 of/)
-    act(() => piano.noteOn(tonic, performance.now()))
+    for (const m of notes) act(() => piano.noteOn(m, performance.now()))
     await screen.findByText(/Question 2 of 3/)
   })
 

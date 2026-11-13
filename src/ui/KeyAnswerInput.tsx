@@ -26,20 +26,20 @@ type Props = {
   /** When the question is over: marks the right answer (and, if it was given by tapping, which one was chosen). */
   feedback?: AnswerFeedback | null
   /**
-   * Offers a fourth way to answer: playing the tonic on a piano keyboard. `onNote` receives each key played, and `mark`
-   * shows which key was played and whether it was right.
+   * Offers a third way to answer: playing the key's scale on a piano keyboard, up and back down, with one hand. `onNote`
+   * receives each key played, `marks` shows which keys were right, wrong or (after a miss) the notes to play, and
+   * `progress` of `total` notes are done.
    */
   play?: {
     onNote: (midi: number) => void
     marks: { midi: number; kind: 'right' | 'wrong' | 'target' }[]
+    progress: number
+    total: number
+    hand: 'left' | 'right'
   }
   /** Told when the player switches between wheel, type and play. */
   onViewChange?: (view: AnswerView) => void
 }
-
-/** The piano in the Play view is one octave, C4 to C5: the tonic counts in any octave, so one is enough. */
-const PLAY_LOW = 60
-const PLAY_HIGH = 72
 
 const SECTORS = wheelSectors()
 
@@ -68,7 +68,7 @@ function typingElsewhere(e: KeyboardEvent): boolean {
 }
 
 /**
- * Where the player names a key: a circle-of-fifths wheel (major keys outside, relative minors inside), a text box with no picture at all (so there is nothing to count around), or by playing the tonic. Every key
+ * Where the player names a key: a circle-of-fifths wheel (major keys outside, relative minors inside), a text box with no picture at all (so there is nothing to count around), or by playing the key's scale. Every key
  * can also be typed anywhere: a letter, then # or b, then m for minor, then Enter.
  */
 export function KeyAnswerInput({
@@ -332,11 +332,9 @@ export function KeyAnswerInput({
 
       {shownView === 'play' && play && (
         <PianoKeyboard
-          low={PLAY_LOW}
-          high={PLAY_HIGH}
           marks={playMarks}
           onKeyClick={disabled ? undefined : play.onNote}
-          label="Piano: play the tonic"
+          label="Piano: play the scale"
         />
       )}
 
@@ -344,7 +342,7 @@ export function KeyAnswerInput({
         {disabled
           ? '' // what the right answer was is for the screen around this to say; the input only marks right and wrong
           : shownView === 'play'
-            ? 'Play the tonic of the key, in any octave.'
+            ? `Play the key's scale up and back down with your ${play?.hand} hand (a wrong note starts you over). ${play?.progress ?? 0} / ${play?.total ?? 0}`
             : typing
               ? '' // the box shows what is typed, with the help as its placeholder
               : entryText(entry) ||

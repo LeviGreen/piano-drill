@@ -11,7 +11,6 @@ import {
   DEFAULT_KEY_ID_CONFIG,
   formatFor,
   KeyIdGenerator,
-  tonicMatches,
   type KeyIdConfig,
 } from './questions'
 
@@ -153,32 +152,5 @@ describe('checking answers', () => {
     const a = keySignature(-3, 'minor')
     expect(correctAnswer('major', a)).toEqual({ accidentals: -3, mode: 'major' })
     expect(correctAnswer('key', a)).toEqual({ accidentals: -3, mode: 'minor' })
-  })
-})
-
-describe('played answers', () => {
-  const ask = (accidentals: number, mode: 'major' | 'minor') => {
-    const key = keySignature(accidentals, mode)
-    return {
-      id: 'x',
-      key,
-      clef: 'treble' as const,
-      accidentals,
-      format: 'key' as const,
-      hint: null,
-      prompt: '',
-      answer: { accidentals, mode },
-    }
-  }
-
-  it('matches the tonic in any octave', () => {
-    const q = ask(-3, 'major') // E♭
-    for (const midi of [39, 51, 63, 75]) expect(tonicMatches(q, midi)).toBe(true)
-    expect(tonicMatches(q, 64)).toBe(false) // E natural
-  })
-
-  it('F♯ and G♭ sound the same, so either is right when played', () => {
-    expect(tonicMatches(ask(6, 'major'), 66)).toBe(true)
-    expect(tonicMatches(ask(-6, 'major'), 66)).toBe(true)
   })
 })

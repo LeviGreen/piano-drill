@@ -402,14 +402,17 @@ The MVP's real input: a digital piano connected to the laptop (USB or Bluetooth 
 **Deps:** PD-313, PD-402, PD-503  
 **Status:** In progress (built and tested with a fake piano; awaiting a check with a real one)
 
-Use `MidiInput` in the drill loop. An input chooser on the Play screen (on-screen piano or MIDI piano), remembered; the on-screen piano stays as the fallback and demo. Key ID's Play view (answer by playing the tonic) uses the same input. If the piano is unplugged mid-session, pause with a clear message. Anything from the mic-era Play design that only made sense for a microphone (the "almost" state, the detected-notes strip, escalating hints) is dropped; wrong notes and the per-note halos already work.
+Use `MidiInput` in the drill loop. An input chooser on the Play screen (on-screen piano or MIDI piano), remembered; the on-screen piano stays as the fallback and demo. Key ID's Play view uses the same input. **Reworked 2026-11-13: in Key ID's Play view you no longer play just the tonic; you play the key's scale, up one octave and back down in order (16 notes, the top note struck twice; natural minor for minor keys), in one fixed octave on the clef's side of middle C (treble: right hand, from middle C up; bass: left hand, up to middle C).** Any wrong note, a repeated note or a note in the wrong octave sends you back to the start of the scale. It takes much longer than tapping, so the question's time limit is **8 seconds longer** and the score is weighted (see Notes). The Play view's piano is the wide C2 to C6 one, like the Play screen's. If the piano is unplugged mid-session, pause with a clear message. Anything from the mic-era Play design that only made sense for a microphone (the "almost" state, the detected-notes strip, escalating hints) is dropped; wrong notes and the per-note halos already work.
 
 **Acceptance:**
 - [ ] Complete a 20-rep Play session on a real digital piano over MIDI.
-- [ ] Key ID's Play view works with MIDI.
+- [ ] Key ID's Play view works with MIDI: the scale up and back down is accepted, and a wrong note starts you over (tested with a fake piano; to be checked on a real one).
+- [x] The scale rules, hand/register, the +8 s grace period and the weighted score are covered by tests.
 - [x] Unplugging the piano mid-session pauses with a clear message, and plugging it back in lets you resume (tested with a fake piano).
 
 **Notes:** an "Input" option in both the Play and Key ID settings (on-screen piano or MIDI piano), remembered and shared, the on-screen piano by default. With MIDI chosen, the real piano and the on-screen piano both work at once (`MergedInput`). The piano is connected when you press Start, so no piano, a blocked permission or a browser without MIDI is reported in words and nothing starts. Unplugging pauses the drill with a message and Resume stays off until the piano is back. The piano picked on the MIDI test screen is the one used. Code: `src/audio/inputs/drillInput.ts`, `MergedInput.ts`, `src/ui/usePianoInput.ts`, `InputChoiceField.tsx`.
+
+**Key ID scale play:** `src/keyid/scalePlay.ts` (the notes, the hand, the 8 s grace), `KeyIdSession` (progress through the scale; a wrong note restarts it, unless the wrong note is itself the tonic, which counts as a fresh start; the limit is fixed when the question appears, from the way it is being answered then; `limitSeconds` is in the snapshot so the screen's clock follows it). A MIDI message cannot say which hand played, so the hand is enforced by register: the fixed octave. **Scoring** (`src/scoring/score.ts`): a question answered by playing the scale is worth 150 (not 100) plus the same up-to-100 speed bonus, measured against the level's goal time plus the 8 s grace; each restart costs 25; a perfect, fast session is 5000 (4000 for the other views). They share the one high-score board per level. The on-screen piano also works in this view (a key click holds the note for 120 ms, so the same note cannot be struck twice within that).
 
 ## Epic 4 — Drill Session (Play Mode)
 
@@ -521,7 +524,7 @@ Flash → answer → timed result; reuse the rep session machine (4 s first get-
 Alternative answer: a fourth view on the main screen (next to Wheel and Type) where you play the tonic of the key on the piano, verified via the mic. Not a setting in the drawer; switchable at any time.
 
 **Acceptance:**
-- [x] The Play view toggles between tap and play; the first note struck decides, any octave (on-screen piano keys stand in for the piano).
+- [x] The Play view toggles between tap and play; the first note struck decides, any octave (on-screen piano keys stand in for the piano). *(Superseded 2026-11-13 by PD-314: Play now means playing the key's scale.)*
 
 **Notes:** working with the real microphone moved to PD-406's acceptance, since it needs PD-307/308.
 

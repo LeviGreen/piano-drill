@@ -2,7 +2,8 @@ import type { NoteInput, NoteInputState } from '../audio/inputs/NoteInput'
 import { RepSession, type RepSessionOptions } from '../session/RepSession'
 import type { BaseSnapshot, RepOutcome, RepResult } from '../session/types'
 import { keyName } from '../theory/keys'
-import { checkAnswer, tonicMatches, type KeyIdAnswer, type KeyIdQuestion } from './questions'
+import { checkAnswer, type KeyIdAnswer, type KeyIdQuestion } from './questions'
+import { SCALE_GRACE_SECONDS, scaleNotes } from './scalePlay'
 
 export type KeyIdSessionSettings = {
   /** Seconds before a question times out, or null for no timeout. */
@@ -23,8 +24,9 @@ export type KeyIdSnapshot = BaseSnapshot<KeyIdQuestion> & {
   question: KeyIdQuestion | null
   /** The right answer as tapped or typed, once the question is solved; null before that, and for a played note. */
   given: KeyIdAnswer | null
-  /** For the play method: the note that was right. */
-  playedMidi: number | null
+  /** For the play method: the scale to play (up and back down), and how many of its notes are done so far. */
+  scale: number[]
+  progress: number
   /** The wrong keys named so far for this question (tapped or typed), and the wrong notes played. */
   wrong: KeyIdAnswer[]
   wrongPlayed: number[]
@@ -39,14 +41,16 @@ export type KeyIdSnapshot = BaseSnapshot<KeyIdQuestion> & {
  * the answer.
  *
  * The player can answer in two ways and switch between them at any time: tapping or typing (`answer`), or playing the
- * tonic of the key on the piano (any note after the question appears is a guess; the tonic in any octave is right).
+ * key's scale on the piano, up one octave and back down in order (see scalePlay.ts). Any note struck after the question
+ * appears is a try: the next note of the scale moves on, anything else is a wrong note and sends the player back to the
+ * start. Playing takes longer than tapping, so a question answered that way gets a longer time limit.
  */
 export class KeyIdSession extends RepSession<KeyIdQuestion, KeyIdSnapshot> {
   private readonly input: NoteInput | null
   private method: KeyIdAnswerMethod
   private unsubscribeInput: (() => void) | null = null
   private given: KeyIdAnswer | null = null
-  private playedMidi: number | null = null
+  private progress = 0
   private wrong: KeyIdAnswer[] = []
   private wrongPlayed: number[] = []
   private errors: { t: number; notes: number[] }[] = []
@@ -69,7 +73,8 @@ export class KeyIdSession extends RepSession<KeyIdQuestion, KeyIdSnapshot> {
       ...this.baseSnapshot(),
       question: this.item,
       given: this.given,
-      playedMidi: this.playedMidi,
+      scale: this.item ? scaleNotes(this.item) : [],
+      progress: this.progress,
       wrong: [...this.wrong],
       wrongPlayed: [...this.wrongPlayed],
       method: this.method,
@@ -102,9 +107,15 @@ export class KeyIdSession extends RepSession<KeyIdQuestion, KeyIdSnapshot> {
     return this.method === 'play' ? { active: this.active, silentSince: this.silentSince } : null
   }
 
+  /** The limit is set when the question appears, by the way it is being answered then. */
+  protected limitSecondsFor(): number | null {
+    const base = this.cfg.timeoutSeconds
+    return base === null ? null : base + (this.method === 'play' ? SCALE_GRACE_SECONDS : 0)
+  }
+
   protected beginRep(): void {
     this.given = null
-    this.playedMidi = null
+    this.progress = 0
     this.wrong = []
     this.wrongPlayed = []
     this.errors = []
@@ -149,19 +160,25 @@ export class KeyIdSession extends RepSession<KeyIdQuestion, KeyIdSnapshot> {
       return
     }
     if (this.state !== 'FLASHED' || this.t0 === null || !this.item) return
-    // Every note struck after the question appeared is a guess, in order: the tonic ends the question.
+    // Every note struck after the question appeared is a try, in order. The next note of the scale moves on; anything
+    // else is a wrong note and the player starts over (a wrong note that is itself the first note counts as the start).
+    const scale = scaleNotes(this.item)
     const onsets = [...update.onsets].sort((a, b) => a.t - b.t).filter((o) => o.t >= this.t0!)
     for (const onset of onsets) {
       this.firstGuessAt ??= onset.t
-      if (tonicMatches(this.item, onset.midi)) {
-        this.playedMidi = onset.midi
-        this.solvedAt = onset.t
-        this.solvedBy = 'play'
-        this.solved()
-        return
+      if (onset.midi === scale[this.progress]) {
+        this.progress++
+        if (this.progress === scale.length) {
+          this.solvedAt = onset.t
+          this.solvedBy = 'play'
+          this.solved()
+          return
+        }
+        continue
       }
       this.wrongPlayed.push(onset.midi)
       this.errors.push({ t: onset.t - this.t0, notes: [onset.midi] })
+      this.progress = onset.midi === scale[0] ? 1 : 0
     }
     if (onsets.length > 0) this.emit()
   }
@@ -191,7 +208,6 @@ export class KeyIdSession extends RepSession<KeyIdQuestion, KeyIdSnapshot> {
         wrong: [...this.wrong],
         wrongPlayed: [...this.wrongPlayed],
         method: this.solvedBy ?? this.method,
-        ...(this.playedMidi !== null && { playedMidi: this.playedMidi }),
       },
       timestamp: new Date().toISOString(),
     }

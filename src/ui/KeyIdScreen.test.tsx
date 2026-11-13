@@ -3,11 +3,11 @@ import { cleanup, render, screen, waitFor, within } from '@testing-library/react
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import { KeyIdGenerator, type KeyIdQuestion } from '../keyid/questions'
+import { scaleNotes } from '../keyid/scalePlay'
 import { parseKeyIdSettings, toQuestionConfig, type KeyIdSettings } from '../keyid/settings'
 import { answerLabel } from '../keyid/labels'
 import { KEY_ID_LEVELS } from '../keyid/presets'
 import { PianoDrillDB, Storage } from '../storage'
-import { pitch } from '../theory/pitch'
 import { KeyIdScreen } from './KeyIdScreen'
 
 const STORAGE_KEY = 'piano-drill.keyid-settings'
@@ -386,10 +386,10 @@ describe('the clef changes from question to question, treble or bass', () => {
     expect(within(screen.getByRole('dialog')).queryByLabelText(/clef/i)).toBeNull()
   })
 
-  it('the Play view piano is one octave', async () => {
+  it('the Play view piano is the wide one, C2 to C6, like the Play screen', async () => {
     show()
     await userEvent.click(button('Play'))
-    expect(document.querySelectorAll('svg.keyboard [data-midi]')).toHaveLength(13)
+    expect(document.querySelectorAll('svg.keyboard [data-midi]')).toHaveLength(49)
   })
 })
 
@@ -467,17 +467,17 @@ describe('the tonic note is a clue, so it only shows when major and minor are mi
   })
 })
 
-describe('answering by playing the tonic (on-screen keys stand in for the piano)', () => {
-  const play = async (q: KeyIdQuestion, semitonesAboveTonic: number) => {
-    const tonic = pitch(q.key.tonic.letter, q.key.tonic.accidental, 4).midi % 12
-    const keys = [...document.querySelectorAll<SVGElement>('svg.keyboard [data-midi]')]
-    const target = keys.find(
-      (k) => Number(k.dataset.midi) % 12 === (tonic + semitonesAboveTonic) % 12,
-    )!
-    await userEvent.click(target)
+describe('answering by playing the scale (on-screen keys stand in for the piano)', () => {
+  const key = (midi: number) =>
+    document.querySelector<SVGElement>(`svg.keyboard [data-midi="${midi}"]`)!
+  const scaleOf = (q: KeyIdQuestion) => scaleNotes(q)
+  /** A key click holds the note for 120 ms, so a note struck again sooner would not be a new strike. */
+  const strike = async (midi: number) => {
+    await userEvent.click(key(midi))
+    await new Promise((r) => setTimeout(r, 125))
   }
 
-  it('the Play view shows a piano instead of the wheel, and the tonic in any octave is correct', async () => {
+  it('the Play view shows a piano instead of the wheel, and the whole scale up and down is correct', async () => {
     const s = store({ maxAccidentals: 3 })
     const [q] = upcoming(s, 1)
     show({ timing: FAST })
@@ -486,25 +486,33 @@ describe('answering by playing the tonic (on-screen keys stand in for the piano)
     expect(document.querySelector('svg.keyboard')).toBeTruthy()
     await userEvent.click(button('Start'))
     await screen.findByText(q.prompt)
-    await play(q, 0)
+    const hand = q.clef === 'bass' ? 'left' : 'right'
+    expect(screen.getByText(new RegExp(`with your ${hand} hand`))).toBeTruthy()
+    for (const midi of scaleOf(q)) await strike(midi)
     await screen.findByText(/Question 2 of \d+/)
-  })
+  }, 20000)
 
-  it('any other note is a wrong guess, marked on the piano, and you keep playing', async () => {
+  it('shows progress as notes are played, and a wrong note is marked and starts you over', async () => {
     const s = store({ maxAccidentals: 3 })
     const [q] = upcoming(s, 1)
+    const notes = scaleOf(q)
     show({ timing: FAST })
     await userEvent.click(button('Play'))
     await userEvent.click(button('Start'))
     await screen.findByText(q.prompt)
-    await play(q, 1)
-    const wrongKey = document.querySelector('svg.keyboard .kb-key.wrong')
-    expect(wrongKey).toBeTruthy()
+    await strike(notes[0])
+    await strike(notes[1])
+    expect(screen.getByText(/2 \/ 16/)).toBeTruthy()
+    expect(document.querySelectorAll('svg.keyboard .kb-key.heard')).toHaveLength(2)
+    await strike(notes[3]) // the wrong note: it is not the next one
+    expect(document.querySelector('svg.keyboard .kb-key.wrong')).toBeTruthy()
+    expect(document.querySelectorAll('svg.keyboard .kb-key.heard')).toHaveLength(0)
+    expect(screen.getByText(/0 \/ 16/)).toBeTruthy()
     expect(message()).toBe('')
     expect(screen.getByText(/Question 1 of \d+/)).toBeTruthy()
-    await play(q, 0) // now the tonic
+    for (const midi of notes) await strike(midi) // all over again
     await screen.findByText(/Question 2 of \d+/)
-  })
+  }, 20000)
 
   it('can switch from the wheel to Play in the middle of a session', async () => {
     const s = store({ maxAccidentals: 3 })
@@ -513,7 +521,7 @@ describe('answering by playing the tonic (on-screen keys stand in for the piano)
     await userEvent.click(button('Start'))
     await screen.findByText(q.prompt)
     await userEvent.click(button('Play'))
-    await play(q, 0)
+    for (const midi of scaleOf(q)) await strike(midi)
     await screen.findByText(/Question 2 of \d+/)
-  })
+  }, 20000)
 })

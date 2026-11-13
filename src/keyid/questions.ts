@@ -92,15 +92,6 @@ export function consistentAnswers(q: KeyIdQuestion): KeyIdAnswer[] {
   })
 }
 
-/**
- * Does this played note answer the question? The tonic of the key named, in any octave. A played note carries a pitch
- * but no spelling, so F♯ and G♭ are the same answer when played.
- */
-export function tonicMatches(q: KeyIdQuestion, midi: number): boolean {
-  const key = keySignature(q.answer.accidentals, q.answer.mode)
-  return pitch(key.tonic.letter, key.tonic.accidental, 4).midi % 12 === ((midi % 12) + 12) % 12
-}
-
 /** A tonic note on the staff (treble or bass) with no ledger lines, in a random octave that fits. */
 function tonicOnStaff(key: KeySignature, clef: Clef, rng: Rng): Pitch {
   const options: Pitch[] = []

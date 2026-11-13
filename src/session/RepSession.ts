@@ -76,6 +76,8 @@ export abstract class RepSession<Item, Snapshot extends BaseSnapshot<Item> = Bas
   protected t0: number | null = null
   protected lastOutcome: RepOutcome | null = null
   protected failure: string | null = null
+  /** The time limit of the item on screen (set when it is flashed), or null for none. */
+  protected limitSeconds: number | null = null
   private readonly opts: RepSessionOptions<Item>
   private upcoming: Item | null = null
   private flashing = false
@@ -120,6 +122,10 @@ export abstract class RepSession<Item, Snapshot extends BaseSnapshot<Item> = Bas
     t0: number,
     startedWithoutSilence: boolean,
   ): RepResult
+  /** The time limit for an item about to be flashed. Sessions can lengthen it for harder ways of answering. */
+  protected limitSecondsFor(_item: Item): number | null {
+    return this.cfg.timeoutSeconds
+  }
   /** Called once the item is on screen (painted at t0). */
   protected onFlashed(_item: Item, _t0: number): void {}
   /** Start listening (open an input, etc.) when the session starts. */
@@ -168,6 +174,7 @@ export abstract class RepSession<Item, Snapshot extends BaseSnapshot<Item> = Bas
       lastOutcome: this.lastOutcome,
       completedReps: this.results.length,
       failure: this.failure,
+      limitSeconds: this.limitSeconds,
       ready:
         this.state === 'READY'
           ? { since: this.readyEnteredAt, at: this.readyAt, first: this.readyIsFirst }
@@ -221,6 +228,7 @@ export abstract class RepSession<Item, Snapshot extends BaseSnapshot<Item> = Bas
     this.item = this.upcoming
     this.upcoming = null
     this.t0 = null
+    this.limitSeconds = null
     this.startedWithoutSilence = false
     this.beginRep(this.item)
     this.opts.presenter.clear() // back to the empty staff while the player settles
@@ -271,9 +279,10 @@ export abstract class RepSession<Item, Snapshot extends BaseSnapshot<Item> = Bas
         this.flashing = false
         if (generation !== this.generation || this.state !== 'READY') return // abandoned while painting
         this.t0 = t0
+        const seconds = this.limitSecondsFor(item)
+        this.limitSeconds = seconds
         this.setState('FLASHED')
         this.onFlashed(item, t0)
-        const seconds = this.cfg.timeoutSeconds
         if (seconds !== null) {
           const left = Math.max(0, t0 + seconds * 1000 - this.clock.now())
           this.timers.timeout = this.clock.setTimeout(() => this.finishRep('timeout'), left)

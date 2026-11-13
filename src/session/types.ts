@@ -42,15 +42,13 @@ export type RepDims = PlayDims | KeyIdDims
 export type KeyIdDetail = {
   format: KeyIdFormat
   correct: KeyIdAnswer
-  /** The right answer as the player gave it (tapped or typed); null if they never got it, or got it by playing. */
+  /** The right answer as the player gave it (tapped or typed); null if they never got it, or got it by playing the scale. */
   given: KeyIdAnswer | null
   /** Every wrong key named (tapped or typed), in order. */
   wrong: KeyIdAnswer[]
-  /** Every wrong note played, in order (the play method). */
+  /** Every wrong note played, in order (the play method: each one sent the player back to the start of the scale). */
   wrongPlayed: number[]
   method: 'tap' | 'play'
-  /** For the play method: the note that was right. */
-  playedMidi?: number
 }
 
 /** One finished rep. `mode` lets key-ID reps share this shape (PD-503). */
@@ -114,6 +112,8 @@ export type BaseSnapshot<Item> = {
   lastOutcome: RepOutcome | null
   completedReps: number
   failure: string | null
+  /** The time limit of the item on screen (null: none, or nothing is flashed). */
+  limitSeconds: number | null
   /**
    * While READY: when the flash is due (on the session clock) and whether this is the long first wait (the one that
    * gets a visible countdown). Null in every other state.

@@ -143,7 +143,9 @@ describe('Type mode: no wheel to count around', () => {
     expect(['Wheel', 'Type'].every((n) => screen.getByRole('button', { name: n }))).toBe(true)
     expect(screen.queryByRole('button', { name: 'Play' })).toBeNull()
     cleanup()
-    setup('key', { play: { onNote: vi.fn(), marks: [] } })
+    setup('key', {
+      play: { onNote: vi.fn(), progress: 0, total: 16, hand: 'right' as const, marks: [] },
+    })
     expect(screen.getByRole('button', { name: 'Play' })).toBeTruthy()
   })
 
@@ -293,19 +295,22 @@ describe('locking and feedback', () => {
   })
 })
 
-describe('the Play view: answering with the tonic on a piano', () => {
+describe('the Play view: answering by playing the scale on a piano', () => {
   it('shows a piano, reports the key struck, and tells the screen the view changed', async () => {
     const onNote = vi.fn()
     const onViewChange = vi.fn()
-    setup('major', { play: { onNote, marks: [] }, onViewChange })
+    setup('major', {
+      play: { onNote, marks: [], progress: 0, total: 16, hand: 'right' as const },
+      onViewChange,
+    })
     await userEvent.click(screen.getByRole('button', { name: 'Play' }))
     expect(onViewChange).toHaveBeenLastCalledWith('play')
     expect(screen.queryByRole('group', { name: /circle of fifths/i })).toBeNull()
-    const piano = screen.getByLabelText('Piano: play the tonic')
+    const piano = screen.getByLabelText('Piano: play the scale')
     const keys = piano.querySelectorAll('[data-midi]')
-    expect(keys).toHaveLength(13) // one octave, C4 to C5: the tonic counts in any octave
+    expect(keys).toHaveLength(49) // the wide piano, C2 to C6, like the Play screen's
     expect([...keys].map((k) => Number(k.getAttribute('data-midi'))).sort((a, b) => a - b)).toEqual(
-      Array.from({ length: 13 }, (_, i) => 60 + i),
+      Array.from({ length: 49 }, (_, i) => 36 + i),
     )
     await userEvent.click(keys[0] as Element)
     expect(onNote).toHaveBeenCalledWith(Number(keys[0].getAttribute('data-midi')))
@@ -314,16 +319,36 @@ describe('the Play view: answering with the tonic on a piano', () => {
   })
 
   it('typing does not answer while in the Play view, and the hint says to play', async () => {
-    const onAnswer = setup('major', { play: { onNote: vi.fn(), marks: [] } })
+    const onAnswer = setup('major', {
+      play: { onNote: vi.fn(), progress: 0, total: 16, hand: 'right' as const, marks: [] },
+    })
     await userEvent.click(screen.getByRole('button', { name: 'Play' }))
     await userEvent.keyboard('c{Enter}')
     expect(onAnswer).not.toHaveBeenCalled()
-    expect(screen.getByText(/Play the tonic of the key/)).toBeTruthy()
+    expect(
+      screen.getByText(/Play the key's scale up and back down with your right hand/),
+    ).toBeTruthy()
+    expect(screen.getByText(/0 \/ 16/)).toBeTruthy()
+  })
+
+  it('says which hand, and how far along the scale you are', async () => {
+    setup('major', {
+      play: { onNote: vi.fn(), marks: [], progress: 4, total: 16, hand: 'left' as const },
+    })
+    await userEvent.click(screen.getByRole('button', { name: 'Play' }))
+    expect(screen.getByText(/with your left hand/)).toBeTruthy()
+    expect(screen.getByText(/4 \/ 16/)).toBeTruthy()
   })
 
   it('marks the key that was played', async () => {
     setup('major', {
-      play: { onNote: vi.fn(), marks: [{ midi: 60, kind: 'wrong' as const }] },
+      play: {
+        onNote: vi.fn(),
+        progress: 0,
+        total: 16,
+        hand: 'right' as const,
+        marks: [{ midi: 60, kind: 'wrong' as const }],
+      },
       disabled: true,
     })
     await userEvent.click(screen.getByRole('button', { name: 'Play' }))
@@ -372,6 +397,9 @@ describe('wrong guesses while the question is still open', () => {
     setup('major', {
       play: {
         onNote: vi.fn(),
+        progress: 0,
+        total: 16,
+        hand: 'right' as const,
         marks: [
           { midi: 60, kind: 'wrong' as const },
           { midi: 62, kind: 'wrong' as const },
@@ -418,7 +446,13 @@ describe('when time runs out the right answer is shown in the "to play" colour, 
   it('on the piano: keys marked "to play"', async () => {
     setup('major', {
       ...timedOut,
-      play: { onNote: vi.fn(), marks: [{ midi: 62, kind: 'target' }] },
+      play: {
+        onNote: vi.fn(),
+        progress: 0,
+        total: 16,
+        hand: 'right' as const,
+        marks: [{ midi: 62, kind: 'target' }],
+      },
     })
     await userEvent.click(screen.getByRole('button', { name: 'Play' }))
     expect(document.querySelector('[data-midi="62"]')?.getAttribute('class')).toMatch(/target/)

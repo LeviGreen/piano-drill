@@ -4,7 +4,8 @@ import type { OnScreenKeyboardInput } from '../audio/inputs/OnScreenKeyboardInpu
 import { KeyIdSession, type KeyIdAnswerMethod, type KeyIdSnapshot } from '../keyid/KeyIdSession'
 import { answerLabel } from '../keyid/labels'
 import { KEY_ID_LEVELS } from '../keyid/presets'
-import { formatFor, KeyIdGenerator, tonicMatches, type KeyIdQuestion } from '../keyid/questions'
+import { formatFor, KeyIdGenerator, type KeyIdQuestion } from '../keyid/questions'
+import { handFor } from '../keyid/scalePlay'
 import {
   mergeKeyIdSettings,
   parseKeyIdSettings,
@@ -29,10 +30,6 @@ import { useRemainingSeconds } from './useRemainingSeconds'
 
 /** A session is always this many questions. */
 const DEFAULT_QUESTIONS = 20
-
-/** The on-screen piano in the Play view shows one octave, C4 to C5: the tonic counts in any octave. */
-const KEYBOARD_LOW = 60
-const KEYBOARD_HIGH = 72
 
 const STORAGE_KEY = 'piano-drill.keyid-settings'
 
@@ -114,7 +111,7 @@ export function KeyIdScreen({
   const remaining = useRemainingSeconds(
     state === 'FLASHED',
     snap?.t0 ?? null,
-    settings.timeoutSeconds,
+    snap?.limitSeconds ?? null, // longer when the question is answered by playing the scale
   )
 
   const start = async () => {
@@ -224,18 +221,16 @@ export function KeyIdScreen({
         ? `${last.outcome === 'timeout' ? "Time's up." : 'Skipped.'} The answer is ${answerLabel(question.answer)}.`
         : '' // a right answer is shown by the green mark alone
       : ''
-  // Wrong notes stay marked as you keep trying; the right one lights up when you get it.
+  // The notes done so far light up green and the last wrong note is marked; if time ran out, the scale is shown.
   const marking = state === 'FLASHED' || finished // not while getting ready for the next question
   const unsolved = last?.outcome === 'timeout' || last?.outcome === 'skipped'
+  const scale = snap?.scale ?? []
   const playMarks: { midi: number; kind: 'right' | 'wrong' | 'target' }[] = marking
     ? [
-        ...(snap?.wrongPlayed ?? []).map((midi) => ({ midi, kind: 'wrong' as const })),
-        ...(snap?.playedMidi != null ? [{ midi: snap.playedMidi, kind: 'right' as const }] : []),
-        // If time ran out, show where the tonic is (in every octave on the piano), the way Play shows its targets.
-        ...(finished && unsolved && question
-          ? Array.from({ length: KEYBOARD_HIGH - KEYBOARD_LOW + 1 }, (_, i) => KEYBOARD_LOW + i)
-              .filter((midi) => tonicMatches(question, midi))
-              .map((midi) => ({ midi, kind: 'target' as const }))
+        ...(finished && unsolved ? scale.map((midi) => ({ midi, kind: 'target' as const })) : []),
+        ...scale.slice(0, snap?.progress ?? 0).map((midi) => ({ midi, kind: 'right' as const })),
+        ...(snap?.wrongPlayed.length
+          ? [{ midi: snap.wrongPlayed.at(-1)!, kind: 'wrong' as const }]
           : []),
       ]
     : []
@@ -307,7 +302,13 @@ export function KeyIdScreen({
         disabled={state !== 'FLASHED'}
         feedback={feedback}
         wrong={marking ? (snap?.wrong ?? []) : []}
-        play={{ onNote: playNote, marks: playMarks }}
+        play={{
+          onNote: playNote,
+          marks: playMarks,
+          progress: snap?.progress ?? 0,
+          total: scale.length,
+          hand: question ? handFor(question) : 'right',
+        }}
         onViewChange={onViewChange}
       />
 

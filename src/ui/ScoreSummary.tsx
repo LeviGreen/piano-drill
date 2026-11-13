@@ -124,7 +124,7 @@ export function ScoreSummary({
       reps={results.length}
       totalMs={totalMs}
       score={score}
-      maxScore={maxScore(plannedReps)}
+      maxScore={maxScore(plannedReps, results)}
       wrong={wrong}
       wrongLabel={mode === 'play' ? 'Wrong notes' : 'Wrong guesses'}
       onClose={onClose}
