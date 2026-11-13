@@ -133,14 +133,14 @@ IndexedDB wrapper (Dexie or similar) with repositories for settings, custom pres
 
 **Size:** S  
 **Deps:** PD-002  
-**Status:** Done (code and workflow in place; needs Pages enabled in the repo settings)
+**Status:** Done
 
 Publish the app as a GitHub Pages site. Set the Vite `base` for the repo subpath, make direct URLs and reloads work (e.g. `HashRouter` or a `404.html` fallback), and add a Pages deploy job to CI.
 
 **Acceptance:**
 - [x] The app loads at its GitHub Pages URL, and reloading or deep-linking (e.g. `/key-id`) works. *(HashRouter, so a deep link is `/#/key-id`; confirm once Pages is live.)*
 
-**Notes:** `HashRouter` in `src/main.tsx` (no server rewrites needed), `base: './'` in `vite.config.ts` (works under any repo subpath), and `.github/workflows/deploy.yml` builds and publishes `dist` on every push to master. One-time setup: repo Settings > Pages > Source: GitHub Actions.
+**Notes:** `HashRouter` in `src/main.tsx` (no server rewrites needed), `base: './'` in `vite.config.ts` (works under any repo subpath), and `.github/workflows/deploy.yml` builds and publishes `dist`. **It never runs on its own**: deploy by hand from the repo's Actions tab (Deploy to GitHub Pages > Run workflow). Pages is enabled with GitHub Actions as its source; the repo is public (Pages needs that on the free plan). Live at https://levigreen.github.io/piano-drill/ (deep links: `/#/key-id`).
 
 ## Epic 1 — Music Theory Engine
 

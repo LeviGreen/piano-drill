@@ -1,7 +1,6 @@
 name: Deploy to GitHub Pages
+# Manual only: nothing deploys until someone runs this from the Actions tab.
 on:
-  push:
-    branches: [master]
   workflow_dispatch:
 permissions:
   contents: read
