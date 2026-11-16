@@ -3,7 +3,6 @@ import { cleanup, render, screen, waitFor, within } from '@testing-library/react
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import { KeyIdGenerator, type KeyIdQuestion } from '../keyid/questions'
-import { scaleNotes } from '../keyid/scalePlay'
 import { parseKeyIdSettings, toQuestionConfig, type KeyIdSettings } from '../keyid/settings'
 import { answerLabel } from '../keyid/labels'
 import { KEY_ID_LEVELS } from '../keyid/presets'
@@ -385,12 +384,6 @@ describe('the clef changes from question to question, treble or bass', () => {
     await userEvent.click(button('Settings'))
     expect(within(screen.getByRole('dialog')).queryByLabelText(/clef/i)).toBeNull()
   })
-
-  it('the Play view piano is the wide one, C2 to C6, like the Play screen', async () => {
-    show()
-    await userEvent.click(button('Play'))
-    expect(document.querySelectorAll('svg.keyboard [data-midi]')).toHaveLength(49)
-  })
 })
 
 describe('scores', () => {
@@ -467,61 +460,48 @@ describe('the tonic note is a clue, so it only shows when major and minor are mi
   })
 })
 
-describe('answering by playing the scale (on-screen keys stand in for the piano)', () => {
-  const key = (midi: number) =>
-    document.querySelector<SVGElement>(`svg.keyboard [data-midi="${midi}"]`)!
-  const scaleOf = (q: KeyIdQuestion) => scaleNotes(q)
-  /** A key click holds the note for 120 ms, so a note struck again sooner would not be a new strike. */
-  const strike = async (midi: number) => {
-    await userEvent.click(key(midi))
-    await new Promise((r) => setTimeout(r, 125))
+describe('the Play view needs a MIDI piano and a desktop screen', () => {
+  const asPhone = () => {
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: query.includes('max-width'),
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    }))
   }
+  afterEach(() => vi.unstubAllGlobals())
 
-  it('the Play view shows a piano instead of the wheel, and the whole scale up and down is correct', async () => {
-    const s = store({ maxAccidentals: 3 })
-    const [q] = upcoming(s, 1)
-    show({ timing: FAST })
-    await userEvent.click(button('Play'))
-    expect(screen.queryByRole('group', { name: /circle of fifths/i })).toBeNull()
-    expect(document.querySelector('svg.keyboard')).toBeTruthy()
-    await userEvent.click(button('Start'))
-    await screen.findByText(q.prompt)
-    const hand = q.clef === 'bass' ? 'left' : 'right'
-    expect(screen.getByText(new RegExp(`with your ${hand} hand`))).toBeTruthy()
-    for (const midi of scaleOf(q)) await strike(midi)
-    await screen.findByText(/Question 2 of \d+/)
-  }, 20000)
+  it('with the on-screen piano chosen (the default), Play is greyed out, with a hint', async () => {
+    show()
+    const play = button('Play') as HTMLButtonElement
+    expect(play.disabled).toBe(true)
+    expect(screen.getByText(/needs a MIDI piano/i)).toBeTruthy()
+    await userEvent.click(play)
+    expect(screen.getByRole('group', { name: /circle of fifths/i })).toBeTruthy() // still on the wheel
+  })
 
-  it('shows progress as notes are played, and a wrong note is marked and starts you over', async () => {
-    const s = store({ maxAccidentals: 3 })
-    const [q] = upcoming(s, 1)
-    const notes = scaleOf(q)
-    show({ timing: FAST })
-    await userEvent.click(button('Play'))
-    await userEvent.click(button('Start'))
-    await screen.findByText(q.prompt)
-    await strike(notes[0])
-    await strike(notes[1])
-    expect(screen.getByText(/2 \/ 16/)).toBeTruthy()
-    expect(document.querySelectorAll('svg.keyboard .kb-key.heard')).toHaveLength(2)
-    await strike(notes[3]) // the wrong note: it is not the next one
-    expect(document.querySelector('svg.keyboard .kb-key.wrong')).toBeTruthy()
-    expect(document.querySelectorAll('svg.keyboard .kb-key.heard')).toHaveLength(0)
-    expect(screen.getByText(/0 \/ 16/)).toBeTruthy()
-    expect(message()).toBe('')
-    expect(screen.getByText(/Question 1 of \d+/)).toBeTruthy()
-    for (const midi of notes) await strike(midi) // all over again
-    await screen.findByText(/Question 2 of \d+/)
-  }, 20000)
+  it('with a MIDI piano chosen, Play is available', () => {
+    localStorage.setItem('piano-drill.input', 'midi')
+    show()
+    expect((button('Play') as HTMLButtonElement).disabled).toBe(false)
+  })
 
-  it('can switch from the wheel to Play in the middle of a session', async () => {
+  it('on a phone, Play is greyed out whatever is chosen, and there is no Input setting', async () => {
+    asPhone()
+    localStorage.setItem('piano-drill.input', 'midi')
+    show()
+    expect((button('Play') as HTMLButtonElement).disabled).toBe(true)
+    expect(screen.getByText(/for desktop screens/i)).toBeTruthy()
+    await userEvent.click(button('Settings'))
+    expect(within(screen.getByRole('dialog')).queryByLabelText('Input')).toBeNull()
+  })
+
+  it('starts on the wheel and answers by tapping when Play is not available', async () => {
     const s = store({ maxAccidentals: 3 })
     const [q] = upcoming(s, 1)
     show({ timing: FAST })
     await userEvent.click(button('Start'))
     await screen.findByText(q.prompt)
-    await userEvent.click(button('Play'))
-    for (const midi of scaleOf(q)) await strike(midi)
+    await userEvent.click(answerButton(q))
     await screen.findByText(/Question 2 of \d+/)
-  }, 20000)
+  })
 })

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import type { ChecklistRow } from '../keyid/checklist'
 import { answerLabel } from '../keyid/labels'
 import type { KeyIdAnswer, KeyIdFormat } from '../keyid/questions'
 import { EMPTY_ENTRY, entryAnswer, entryKey, entryText, type Entry } from '../keyid/shortcuts'
@@ -26,17 +27,17 @@ type Props = {
   /** When the question is over: marks the right answer (and, if it was given by tapping, which one was chosen). */
   feedback?: AnswerFeedback | null
   /**
-   * Offers a third way to answer: playing the key's scale on a piano keyboard, up and back down, with one hand. `onNote`
-   * receives each key played, `marks` shows which keys were right, wrong or (after a miss) the notes to play, and
-   * `progress` of `total` notes are done.
+   * Offers a third way to answer: playing the key on a MIDI piano, as a checklist done in any order. `checklist` is
+   * what there is to play and what is done, and `marks` shows the keys held right now (green, or red if out of key)
+   * and, after a miss, the notes to play. The piano here only mirrors what is played; it cannot be clicked.
    */
   play?: {
-    onNote: (midi: number) => void
-    marks: { midi: number; kind: 'right' | 'wrong' | 'target' }[]
-    progress: number
-    total: number
+    checklist: ChecklistRow[]
+    marks: { midi: number; kind: 'held' | 'wrong' | 'target' }[]
     hand: 'left' | 'right'
   }
+  /** Why the Play view cannot be used (no MIDI piano chosen, or a phone): it is then shown greyed out, with this hint. */
+  playUnavailable?: string
   /** Told when the player switches between wheel, type and play. */
   onViewChange?: (view: AnswerView) => void
 }
@@ -68,7 +69,7 @@ function typingElsewhere(e: KeyboardEvent): boolean {
 }
 
 /**
- * Where the player names a key: a circle-of-fifths wheel (major keys outside, relative minors inside), a text box with no picture at all (so there is nothing to count around), or by playing the key's scale. Every key
+ * Where the player names a key: a circle-of-fifths wheel (major keys outside, relative minors inside), a text box with no picture at all (so there is nothing to count around), or by playing the key on a MIDI piano. Every key
  * can also be typed anywhere: a letter, then # or b, then m for minor, then Enter.
  */
 export function KeyAnswerInput({
@@ -78,6 +79,7 @@ export function KeyAnswerInput({
   wrong = [],
   feedback = null,
   play,
+  playUnavailable,
   onViewChange,
 }: Props) {
   const [view, setView] = useState<AnswerView>('wheel')
@@ -186,7 +188,7 @@ export function KeyAnswerInput({
     onAnswer(a)
   }
 
-  const views: AnswerView[] = play ? ['wheel', 'type', 'play'] : ['wheel', 'type']
+  const views: AnswerView[] = ['wheel', 'type', 'play']
   const viewLabel: Record<AnswerView, string> = {
     wheel: 'Wheel',
     type: 'Type',
@@ -195,7 +197,7 @@ export function KeyAnswerInput({
 
   const playMarks = new Map<number, KeyMark>()
   for (const m of play?.marks ?? [])
-    playMarks.set(m.midi, m.kind === 'right' ? 'heard' : m.kind === 'wrong' ? 'wrong' : 'target')
+    playMarks.set(m.midi, m.kind === 'held' ? 'heard' : m.kind === 'wrong' ? 'wrong' : 'target')
 
   return (
     <div className="answer-input">
@@ -207,11 +209,14 @@ export function KeyAnswerInput({
             className="seg"
             aria-pressed={shownView === v}
             onClick={() => choose_view(v)}
+            disabled={v === 'play' && !play}
+            title={v === 'play' && !play ? playUnavailable : undefined}
           >
             {viewLabel[v]}
           </button>
         ))}
       </div>
+      {!play && playUnavailable && <small className="answer-views-hint">{playUnavailable}</small>}
 
       {shownView === 'wheel' && (
         <svg
@@ -331,18 +336,33 @@ export function KeyAnswerInput({
       )}
 
       {shownView === 'play' && play && (
-        <PianoKeyboard
-          marks={playMarks}
-          onKeyClick={disabled ? undefined : play.onNote}
-          label="Piano: play the scale"
-        />
+        <>
+          <PianoKeyboard marks={playMarks} label="Piano: the keys you are holding" />
+          <ul className="checklist" aria-label="To play, in any order">
+            {play.checklist.map((r) => (
+              <li
+                key={r.id}
+                className={r.done ? 'done' : ''}
+                aria-label={`${r.label}${r.done ? ', done' : ''}`}
+              >
+                <span aria-hidden="true">{r.done ? '✓' : '○'}</span> {r.label}
+                {r.total > 0 && !r.done && (
+                  <span className="checklist-count">
+                    {' '}
+                    {r.progress} / {r.total}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </>
       )}
 
       <p className="answer-pending" aria-live="polite">
         {disabled
           ? '' // what the right answer was is for the screen around this to say; the input only marks right and wrong
           : shownView === 'play'
-            ? `Play the key's scale up and back down with your ${play?.hand} hand, starting on the tonic ${play?.hand === 'left' ? 'below' : 'at or above'} middle C (a wrong note starts you over). ${play?.progress ?? 0} / ${play?.total ?? 0}`
+            ? `Play these with your ${play?.hand} hand, in any order, ${play?.hand === 'left' ? 'below' : 'at or above'} middle C.`
             : typing
               ? '' // the box shows what is typed, with the help as its placeholder
               : entryText(entry) ||

@@ -138,15 +138,14 @@ describe('Type mode: no wheel to count around', () => {
     return onAnswer
   }
 
-  it('offers Wheel and Type, and Play only when the screen can listen for notes', () => {
-    setup('key')
+  it('offers Wheel and Type, and Play only when the screen can listen for a MIDI piano (else greyed out, with a hint)', () => {
+    setup('key', { playUnavailable: 'Needs a MIDI piano.' })
     expect(['Wheel', 'Type'].every((n) => screen.getByRole('button', { name: n }))).toBe(true)
-    expect(screen.queryByRole('button', { name: 'Play' })).toBeNull()
+    expect((screen.getByRole('button', { name: 'Play' }) as HTMLButtonElement).disabled).toBe(true)
+    expect(screen.getByText('Needs a MIDI piano.')).toBeTruthy()
     cleanup()
-    setup('key', {
-      play: { onNote: vi.fn(), progress: 0, total: 16, hand: 'right' as const, marks: [] },
-    })
-    expect(screen.getByRole('button', { name: 'Play' })).toBeTruthy()
+    setup('key', { play: { checklist: [], hand: 'right' as const, marks: [] } })
+    expect((screen.getByRole('button', { name: 'Play' }) as HTMLButtonElement).disabled).toBe(false)
   })
 
   it('removes every visual cue: no wheel sectors, just a text box', async () => {
@@ -295,65 +294,89 @@ describe('locking and feedback', () => {
   })
 })
 
-describe('the Play view: answering by playing the scale on a piano', () => {
-  it('shows a piano, reports the key struck, and tells the screen the view changed', async () => {
-    const onNote = vi.fn()
+describe('the Play view: answering by playing a checklist on a MIDI piano', () => {
+  const rows = [
+    { id: 'up' as const, label: 'Scale up', done: true, progress: 8, total: 8 },
+    { id: 'down' as const, label: 'Scale down', done: false, progress: 3, total: 8 },
+    { id: 'root' as const, label: 'Tonic chord', done: false, progress: 0, total: 0 },
+  ]
+
+  it('shows the wide piano and the checklist instead of the wheel, and tells the screen the view changed', async () => {
     const onViewChange = vi.fn()
     setup('major', {
-      play: { onNote, marks: [], progress: 0, total: 16, hand: 'right' as const },
+      play: { checklist: rows, marks: [], hand: 'right' as const },
       onViewChange,
     })
     await userEvent.click(screen.getByRole('button', { name: 'Play' }))
     expect(onViewChange).toHaveBeenLastCalledWith('play')
     expect(screen.queryByRole('group', { name: /circle of fifths/i })).toBeNull()
-    const piano = screen.getByLabelText('Piano: play the scale')
-    const keys = piano.querySelectorAll('[data-midi]')
+    const keys = screen
+      .getByLabelText('Piano: the keys you are holding')
+      .querySelectorAll('[data-midi]')
     expect(keys).toHaveLength(49) // the wide piano, C2 to C6, like the Play screen's
-    expect([...keys].map((k) => Number(k.getAttribute('data-midi'))).sort((a, b) => a - b)).toEqual(
-      Array.from({ length: 49 }, (_, i) => 36 + i),
-    )
-    await userEvent.click(keys[0] as Element)
-    expect(onNote).toHaveBeenCalledWith(Number(keys[0].getAttribute('data-midi')))
     await userEvent.click(screen.getByRole('button', { name: 'Wheel' }))
     expect(onViewChange).toHaveBeenLastCalledWith('wheel')
   })
 
-  it('typing does not answer while in the Play view, and the hint says to play', async () => {
+  it('the piano only mirrors what is played: clicking a key does nothing', async () => {
     const onAnswer = setup('major', {
-      play: { onNote: vi.fn(), progress: 0, total: 16, hand: 'right' as const, marks: [] },
+      play: { checklist: rows, marks: [], hand: 'right' as const },
+    })
+    await userEvent.click(screen.getByRole('button', { name: 'Play' }))
+    await userEvent.click(document.querySelector('[data-midi="60"]')!)
+    expect(onAnswer).not.toHaveBeenCalled()
+    expect(document.querySelectorAll('svg.keyboard .kb-key.heard')).toHaveLength(0)
+  })
+
+  it('lists what is to play, ticking off what is done, with the count for a row of notes', async () => {
+    setup('major', { play: { checklist: rows, marks: [], hand: 'right' as const } })
+    await userEvent.click(screen.getByRole('button', { name: 'Play' }))
+    const list = screen.getByRole('list', { name: /to play/i })
+    const items = within(list).getAllByRole('listitem')
+    expect(items.map((i) => i.getAttribute('aria-label'))).toEqual([
+      'Scale up, done',
+      'Scale down',
+      'Tonic chord',
+    ])
+    expect(items[0].textContent).toContain('✓')
+    expect(items[1].textContent).toContain('3 / 8')
+    expect(items[2].textContent).not.toMatch(/\d \//)
+  })
+
+  it('typing does not answer while in the Play view, and the hint says which hand', async () => {
+    const onAnswer = setup('major', {
+      play: { checklist: rows, hand: 'right' as const, marks: [] },
     })
     await userEvent.click(screen.getByRole('button', { name: 'Play' }))
     await userEvent.keyboard('c{Enter}')
     expect(onAnswer).not.toHaveBeenCalled()
     expect(
-      screen.getByText(/Play the key's scale up and back down with your right hand/),
+      screen.getByText(/with your right hand, in any order, at or above middle C/),
     ).toBeTruthy()
-    expect(screen.getByText(/0 \/ 16/)).toBeTruthy()
   })
 
-  it('says which hand, and how far along the scale you are', async () => {
-    setup('major', {
-      play: { onNote: vi.fn(), marks: [], progress: 4, total: 16, hand: 'left' as const },
-    })
+  it('says which hand and side for the bass clef', async () => {
+    setup('major', { play: { checklist: rows, marks: [], hand: 'left' as const } })
     await userEvent.click(screen.getByRole('button', { name: 'Play' }))
-    expect(screen.getByText(/with your left hand/)).toBeTruthy()
-    expect(screen.getByText(/4 \/ 16/)).toBeTruthy()
+    expect(screen.getByText(/with your left hand, in any order, below middle C/)).toBeTruthy()
   })
 
-  it('marks the key that was played', async () => {
+  it('marks the keys held: green, or red if out of key', async () => {
     setup('major', {
       play: {
-        onNote: vi.fn(),
-        progress: 0,
-        total: 16,
+        checklist: rows,
         hand: 'right' as const,
-        marks: [{ midi: 60, kind: 'wrong' as const }],
+        marks: [
+          { midi: 60, kind: 'wrong' as const },
+          { midi: 63, kind: 'held' as const },
+        ],
       },
-      disabled: true,
     })
     await userEvent.click(screen.getByRole('button', { name: 'Play' }))
-    const key = document.querySelector('[data-midi="60"]')
-    expect(key?.getAttribute('class') ?? '').toMatch(/wrong/)
+    const cls = (m: number) =>
+      document.querySelector(`[data-midi="${m}"]`)?.getAttribute('class') ?? ''
+    expect(cls(60)).toMatch(/wrong/)
+    expect(cls(63)).toMatch(/heard/)
   })
 })
 
@@ -393,17 +416,15 @@ describe('wrong guesses while the question is still open', () => {
     expect(document.querySelector('.type-mark')).toBeNull()
   })
 
-  it('the piano marks every wrong note played so far, and the right one when it comes', async () => {
+  it('the piano marks every out-of-key key held, and the right ones', async () => {
     setup('major', {
       play: {
-        onNote: vi.fn(),
-        progress: 0,
-        total: 16,
+        checklist: [],
         hand: 'right' as const,
         marks: [
           { midi: 60, kind: 'wrong' as const },
           { midi: 62, kind: 'wrong' as const },
-          { midi: 63, kind: 'right' as const },
+          { midi: 63, kind: 'held' as const },
         ],
       },
     })
@@ -446,13 +467,7 @@ describe('when time runs out the right answer is shown in the "to play" colour, 
   it('on the piano: keys marked "to play"', async () => {
     setup('major', {
       ...timedOut,
-      play: {
-        onNote: vi.fn(),
-        progress: 0,
-        total: 16,
-        hand: 'right' as const,
-        marks: [{ midi: 62, kind: 'target' }],
-      },
+      play: { checklist: [], hand: 'right' as const, marks: [{ midi: 62, kind: 'target' }] },
     })
     await userEvent.click(screen.getByRole('button', { name: 'Play' }))
     expect(document.querySelector('[data-midi="62"]')?.getAttribute('class')).toMatch(/target/)

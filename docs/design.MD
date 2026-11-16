@@ -58,7 +58,7 @@ Timeout (configurable, default 10 s): the target is revealed with note names + a
 ### 2.2 Key Identification Mode
 
 1. A staff with a **key signature only** is flashed (clef varies; optionally a tonic hint, see §7).
-2. User answers by tapping a key button (the circle-of-fifths wheel), or optionally by playing the tonic on the piano.
+2. User answers by tapping a key button (the circle-of-fifths wheel), or (with a MIDI piano) by playing a checklist on it (§7).
 3. Timed; correct/incorrect recorded; same summary/stat treatment as Play Mode.
 
 ### 2.3 Settings / Level Select
@@ -279,7 +279,7 @@ Results stored per input device.
 
 F♯ major and G♭ major sound the same but have different signatures; they are always different answers.
 
-**Answering:** three views on the main screen, switchable at any time: the circle-of-fifths **wheel**, **typing** (a text box with no visual cue: a wheel lets you count around it, so typing is the harder, more direct test), and **playing the scale** (on a piano over MIDI, or the on-screen one): the key's scale up one octave and back down, in order, starting on the tonic in any octave on the clef's side of middle C (treble: right hand, tonic at or above middle C; bass: left hand, tonic below it; natural minor for minor keys). A wrong note starts you over. Because it takes longer, the question's time limit is 8 seconds longer, and the question scores 150 instead of 100 plus the usual speed bonus against a goal time that is also 8 seconds longer.
+**Answering:** three views on the main screen, switchable at any time: the circle-of-fifths **wheel**, **typing** (a text box with no visual cue: a wheel lets you count around it, so typing is the harder, more direct test), and **playing the key** (a MIDI piano on a desktop screen; the tab is greyed out otherwise): a checklist done in any order, with the hand that reads the clef (treble: right hand, at or above middle C; bass: left hand, below it): the scale up and down, the tonic chord and its two inversions, and the sharps or flats in the order they are written. A slip resets only the row in progress; the other hand's notes are ignored; the on-screen piano just mirrors the keys held. Because it takes longer, the question's time limit is 8 seconds longer, and the question scores 150 instead of 100 plus the usual speed bonus against a goal time that is also 8 seconds longer.
 
 **Gameplay (decided 2026-11-12):** modelled on Play. A wrong guess is marked ✕ and stays marked, but it does not end the question or reveal the answer: you keep guessing until you get it, time runs out, or you skip. Only a timeout or a skip shows the answer. Each wrong guess costs 25 points like a wrong note in Play; getting it after wrong guesses counts as correct with errors.
 

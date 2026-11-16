@@ -12,9 +12,9 @@ import type {
 /** How many scores a level's board keeps. */
 export const BOARD_SIZE = 10
 
-/** Best first; of equal scores the earlier one ranks higher. */
+/** Best first; of equal scores the faster session ranks higher, and then the earlier one. */
 const byRank = (a: ScoreRecord, b: ScoreRecord) =>
-  b.score - a.score || a.achievedAt.localeCompare(b.achievedAt)
+  b.score - a.score || a.totalMs - b.totalMs || a.achievedAt.localeCompare(b.achievedAt)
 
 export type SessionQuery = { mode?: StoredMode; level?: string; limit?: number }
 
@@ -139,11 +139,19 @@ export class Storage {
 
   /**
    * The place (1 to BOARD_SIZE) a score would take on the board, or null if it would not make it. A score equal to an
-   * existing one ranks below it, since the earlier score wins a tie.
+   * existing one ranks below it unless it was a faster session (`totalMs`): of equal scores the faster wins, and
+   * then the earlier.
    */
-  async prospectiveRank(mode: StoredMode, level: string, score: number): Promise<number | null> {
+  async prospectiveRank(
+    mode: StoredMode,
+    level: string,
+    score: number,
+    totalMs = Infinity,
+  ): Promise<number | null> {
     const board = await this.topScores(mode, level)
-    const ahead = board.filter((s) => s.score >= score).length
+    const ahead = board.filter(
+      (s) => s.score > score || (s.score === score && s.totalMs <= totalMs),
+    ).length
     return ahead < BOARD_SIZE ? ahead + 1 : null
   }
 

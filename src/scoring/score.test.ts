@@ -99,29 +99,27 @@ describe('a session', () => {
   })
 })
 
-describe('a question answered by playing the scale is weighted (150 + a speed bonus against a longer goal)', () => {
-  const scale = (over: Partial<RepResult> = {}) =>
+describe('a question answered by playing the checklist is a flat 250, with no speed bonus', () => {
+  const played = (over: Partial<RepResult> = {}) =>
     rep({ mode: 'keyid', keyId: { method: 'play' } as RepResult['keyId'], ...over })
 
-  it('is worth 150 plus up to 100, with the goal stretched by the 8 s grace period', () => {
-    expect(targetScore(scale({ completionMs: 9000 }), 2)).toBe(250) // within 2 + 8 = 10 s
-    expect(targetScore(scale({ completionMs: 10000 }), 2)).toBe(250)
-    expect(targetScore(scale({ completionMs: 15000 }), 2)).toBe(200) // halfway to 20 s
-    expect(targetScore(scale({ completionMs: 20000 }), 2)).toBe(150)
-    expect(targetScore(scale({ completionMs: 60000 }), 2)).toBe(150)
+  it('is worth 250 however long it took', () => {
+    expect(targetScore(played({ completionMs: 1000 }), 2)).toBe(250)
+    expect(targetScore(played({ completionMs: 20000 }), 2)).toBe(250)
+    expect(targetScore(played({ completionMs: 34000 }), 2)).toBe(250)
   })
 
-  it('a restart (a wrong note) still costs 25, and a timeout scores 0', () => {
+  it('a wrong note still costs 25, and a timeout scores 0', () => {
     expect(
-      targetScore(scale({ outcome: 'correct_with_errors', errors: [{ t: 1, notes: [60] }] }), 2),
+      targetScore(played({ outcome: 'correct_with_errors', errors: [{ t: 1, notes: [61] }] }), 2),
     ).toBe(225)
-    expect(targetScore(scale({ outcome: 'timeout', completionMs: null }), 2)).toBe(0)
+    expect(targetScore(played({ outcome: 'timeout', completionMs: null }), 2)).toBe(0)
   })
 
-  it('a perfect, fast session of them is 5000; tapped questions are unchanged', () => {
+  it('a perfect session of them is 5000, the same as a perfect, fast tapped one is 4000 + 1000 more', () => {
     expect(
       sessionScore(
-        Array.from({ length: 20 }, () => scale({ completionMs: 3000 })),
+        Array.from({ length: 20 }, () => played({ completionMs: 30000 })),
         2,
       ),
     ).toBe(5000)
@@ -129,12 +127,12 @@ describe('a question answered by playing the scale is weighted (150 + a speed bo
   })
 
   it('the most a session can earn counts each answered question by how it was answered', () => {
-    expect(maxScore(3, [scale(), rep()])).toBe(250 + 200 + 200)
+    expect(maxScore(3, [played(), rep()])).toBe(250 + 200 + 200)
     expect(maxScore(20)).toBe(4000)
   })
 
-  it('total time counts a scale timeout as the limit plus the grace period', () => {
-    const rs = [scale({ outcome: 'timeout', completionMs: null }), rep({ completionMs: 1000 })]
-    expect(totalTimeMs(rs, 10)).toBe(18000 + 1000)
+  it('total time counts a timeout while playing as the limit plus the 25 s grace period', () => {
+    const rs = [played({ outcome: 'timeout', completionMs: null }), rep({ completionMs: 1000 })]
+    expect(totalTimeMs(rs, 10)).toBe(35000 + 1000)
   })
 })

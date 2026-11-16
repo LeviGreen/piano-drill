@@ -3,7 +3,7 @@ import { RepSession, type RepSessionOptions } from '../session/RepSession'
 import type { BaseSnapshot, RepOutcome, RepResult } from '../session/types'
 import { keyName } from '../theory/keys'
 import { checkAnswer, type KeyIdAnswer, type KeyIdQuestion } from './questions'
-import { SCALE_GRACE_SECONDS, scaleNotes, startsScale } from './scalePlay'
+import { Checklist, onClefSide, PLAY_GRACE_SECONDS, type ChecklistRow } from './checklist'
 
 export type KeyIdSessionSettings = {
   /** Seconds before a question times out, or null for no timeout. */
@@ -14,7 +14,7 @@ export type KeyIdAnswerMethod = 'tap' | 'play'
 
 export type KeyIdSessionOptions = Omit<RepSessionOptions<KeyIdQuestion>, 'timeoutSeconds'> & {
   settings: KeyIdSessionSettings
-  /** Where played notes come from. Needed for the 'play' method (answering by playing the tonic). */
+  /** Where played notes come from. Needed for the 'play' method (answering by playing the checklist). */
   input?: NoteInput
   /** How the player is answering to begin with (they can switch with `setMethod`). Default 'tap'. */
   method?: KeyIdAnswerMethod
@@ -24,9 +24,9 @@ export type KeyIdSnapshot = BaseSnapshot<KeyIdQuestion> & {
   question: KeyIdQuestion | null
   /** The right answer as tapped or typed, once the question is solved; null before that, and for a played note. */
   given: KeyIdAnswer | null
-  /** For the play method: the scale to play (up and back down), and how many of its notes are done so far. */
-  scale: number[]
-  progress: number
+  /** For the play method: the checklist to play and what is done so far (empty for tapping), and the keys held right now. */
+  checklist: ChecklistRow[]
+  held: { midi: number; wrong: boolean }[]
   /** The wrong keys named so far for this question (tapped or typed), and the wrong notes played. */
   wrong: KeyIdAnswer[]
   wrongPlayed: number[]
@@ -40,19 +40,18 @@ export type KeyIdSnapshot = BaseSnapshot<KeyIdQuestion> & {
  * with errors if they guessed wrong first), when time runs out, or when they skip. Only a timeout or a skip reveals
  * the answer.
  *
- * The player can answer in two ways and switch between them at any time: tapping or typing (`answer`), or playing the
- * key's scale on the piano, up one octave and back down in order (see scalePlay.ts). Any note struck after the question
- * appears is a try: the next note of the scale moves on, anything else is a wrong note and sends the player back to the
- * start. Playing takes longer than tapping, so a question answered that way gets a longer time limit.
+ * The player can answer in two ways and switch between them at any time: tapping or typing (`answer`), or playing
+ * the key on a MIDI piano (see checklist.ts): a checklist of the scale up and down, the tonic chord with its
+ * inversions, and the sharps or flats, done in any order. A slip resets only the row it was in. Playing takes much
+ * longer than tapping, so a question answered that way gets a longer time limit.
  */
 export class KeyIdSession extends RepSession<KeyIdQuestion, KeyIdSnapshot> {
   private readonly input: NoteInput | null
   private method: KeyIdAnswerMethod
   private unsubscribeInput: (() => void) | null = null
   private given: KeyIdAnswer | null = null
-  private progress = 0
-  /** The note the scale was started on (fixes its octave); null until the player starts one. */
-  private tonic: number | null = null
+  private checklist: Checklist | null = null
+  private held: number[] = []
   private wrong: KeyIdAnswer[] = []
   private wrongPlayed: number[] = []
   private errors: { t: number; notes: number[] }[] = []
@@ -75,15 +74,15 @@ export class KeyIdSession extends RepSession<KeyIdQuestion, KeyIdSnapshot> {
       ...this.baseSnapshot(),
       question: this.item,
       given: this.given,
-      scale: this.item ? scaleNotes(this.item, this.tonic ?? undefined) : [],
-      progress: this.progress,
+      checklist: this.method === 'play' ? (this.checklist?.rows() ?? []) : [],
+      held: this.held.map((midi) => ({ midi, wrong: this.checklist?.isWrongNote(midi) ?? false })),
       wrong: [...this.wrong],
       wrongPlayed: [...this.wrongPlayed],
       method: this.method,
     }
   }
 
-  /** Switch between answering by tapping/typing and by playing the tonic. Playing needs an input. */
+  /** Switch between answering by tapping/typing and by playing. Playing needs an input. */
   setMethod(method: KeyIdAnswerMethod): void {
     if (method === 'play' && !this.input)
       throw new RangeError('The play answer method needs an input')
@@ -112,13 +111,13 @@ export class KeyIdSession extends RepSession<KeyIdQuestion, KeyIdSnapshot> {
   /** The limit is set when the question appears, by the way it is being answered then. */
   protected limitSecondsFor(): number | null {
     const base = this.cfg.timeoutSeconds
-    return base === null ? null : base + (this.method === 'play' ? SCALE_GRACE_SECONDS : 0)
+    return base === null ? null : base + (this.method === 'play' ? PLAY_GRACE_SECONDS : 0)
   }
 
-  protected beginRep(): void {
+  protected beginRep(item: KeyIdQuestion): void {
     this.given = null
-    this.progress = 0
-    this.tonic = null
+    this.checklist = new Checklist(item)
+    this.held = []
     this.wrong = []
     this.wrongPlayed = []
     this.errors = []
@@ -158,43 +157,35 @@ export class KeyIdSession extends RepSession<KeyIdQuestion, KeyIdSnapshot> {
     else if (wasActive || this.silentSince === null) this.silentSince = this.clock.now()
 
     if (this.method !== 'play') return
+    this.held = [...update.activeNotes.keys()]
     if (this.state === 'READY') {
       this.recheckReady()
       return
     }
     if (this.state !== 'FLASHED' || this.t0 === null || !this.item) return
-    // Every note struck after the question appeared is a try, in order. The first note starts the scale: the key's tonic
-    // in any octave on the clef's side of middle C. After that the next note of the scale moves on, and anything else is
-    // a wrong note that sends the player back to the start (a wrong note that could itself start the scale counts as the start).
+    // Every note struck after the question appeared goes to the checklist, in order. A wrong note (on the clef's side of
+    // middle C but not in the key) costs points; any other slip only resets the row it was in, and notes on the other
+    // side of middle C are ignored.
+    const checklist = this.checklist
+    if (!checklist) return
     const onsets = [...update.onsets].sort((a, b) => a.t - b.t).filter((o) => o.t >= this.t0!)
+    const held = [...update.activeNotes.keys()]
     for (const onset of onsets) {
-      this.firstGuessAt ??= onset.t
-      if (this.tonic === null) {
-        if (startsScale(this.item, onset.midi)) {
-          this.tonic = onset.midi
-          this.progress = 1
-          continue
-        }
-      } else {
-        const scale = scaleNotes(this.item, this.tonic)
-        if (onset.midi === scale[this.progress]) {
-          this.progress++
-          if (this.progress === scale.length) {
-            this.solvedAt = onset.t
-            this.solvedBy = 'play'
-            this.solved()
-            return
-          }
-          continue
-        }
+      if (onClefSide(this.item, onset.midi)) this.firstGuessAt ??= onset.t
+      if (checklist.isWrongNote(onset.midi)) {
+        this.wrongPlayed.push(onset.midi)
+        this.errors.push({ t: onset.t - this.t0, notes: [onset.midi] })
       }
-      this.wrongPlayed.push(onset.midi)
-      this.errors.push({ t: onset.t - this.t0, notes: [onset.midi] })
-      const restart = startsScale(this.item, onset.midi)
-      this.tonic = restart ? onset.midi : null
-      this.progress = restart ? 1 : 0
+      checklist.strike(onset.midi, held)
     }
-    if (onsets.length > 0) this.emit()
+    if (onsets.length > 0) checklist.hold(held) // only when a key goes down, not as a bigger chord is let go of
+    if (checklist.complete) {
+      this.solvedAt = onsets.at(-1)?.t ?? update.t
+      this.solvedBy = 'play'
+      this.solved()
+      return
+    }
+    this.emit()
   }
 
   protected buildResult(

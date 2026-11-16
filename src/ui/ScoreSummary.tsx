@@ -80,7 +80,7 @@ export function ScoreSummary({
     checked.current = sessionId
     void (async () => {
       try {
-        setProspective(eligible ? await db.prospectiveRank(mode, level, score) : null)
+        setProspective(eligible ? await db.prospectiveRank(mode, level, score, totalMs) : null)
       } catch {
         setFailed(true) // no storage (a private window, say): the results still show
         setProspective(null)

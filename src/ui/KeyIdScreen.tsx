@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import type { RequestMidiAccess } from '../audio/inputs/MidiInput'
-import type { OnScreenKeyboardInput } from '../audio/inputs/OnScreenKeyboardInput'
 import { KeyIdSession, type KeyIdAnswerMethod, type KeyIdSnapshot } from '../keyid/KeyIdSession'
 import { answerLabel } from '../keyid/labels'
 import { KEY_ID_LEVELS } from '../keyid/presets'
 import { formatFor, KeyIdGenerator, type KeyIdQuestion } from '../keyid/questions'
-import { handFor } from '../keyid/scalePlay'
+import { handFor, scaleToShow } from '../keyid/checklist'
 import {
   mergeKeyIdSettings,
   parseKeyIdSettings,
@@ -25,6 +24,7 @@ import { levelLabel } from './levelLabel'
 import { ScoreSummary } from './ScoreSummary'
 import { InputChoiceField } from './InputChoiceField'
 import { useCountdown } from './useCountdown'
+import { PHONE_QUERY, useMediaQuery } from './useMediaQuery'
 import { usePianoInput } from './usePianoInput'
 import { useRemainingSeconds } from './useRemainingSeconds'
 
@@ -71,7 +71,7 @@ export type KeyIdScreenProps = {
 
 /**
  * Key identification (design §7): a key signature is flashed on a treble or bass staff and you name the key, by tapping the
- * wheel, typing, or playing the tonic.
+ * wheel, typing, or (with a MIDI piano, on a desktop screen) playing the key as a checklist.
  */
 export function KeyIdScreen({
   timing,
@@ -87,10 +87,10 @@ export function KeyIdScreen({
   const [method, setMethod] = useState<KeyIdAnswerMethod>('tap')
   const stage = useRef<HTMLDivElement>(null)
   const session = useRef<KeyIdSession | null>(null)
-  const input = useRef<OnScreenKeyboardInput | null>(null)
   const [snap, setSnap] = useState<KeyIdSnapshot | null>(null)
   const [results, setResults] = useState<RepResult[]>([])
   const count = useCountdown(snap?.ready ?? null)
+  const phone = useMediaQuery(PHONE_QUERY)
   const piano = usePianoInput({
     requestAccess: midiAccess,
     onLost: () => session.current?.pause(), // the piano went away: stop, and say so
@@ -101,6 +101,8 @@ export function KeyIdScreen({
     return () => session.current?.end()
   }, [])
 
+  // Playing the key needs a MIDI piano (chosen in Settings) and a desktop screen.
+  const playable = piano.choice === 'midi' && !phone
   const state = snap?.state ?? 'IDLE'
   const running = state !== 'IDLE' && state !== 'ENDED'
   useEffect(() => {
@@ -111,7 +113,7 @@ export function KeyIdScreen({
   const remaining = useRemainingSeconds(
     state === 'FLASHED',
     snap?.t0 ?? null,
-    snap?.limitSeconds ?? null, // longer when the question is answered by playing the scale
+    snap?.limitSeconds ?? null, // longer when the question is answered by playing
   )
 
   const start = async () => {
@@ -122,7 +124,6 @@ export function KeyIdScreen({
     setDismissed(false)
     const drill = await piano.open() // a missing MIDI piano is reported here, before anything starts
     if (!drill) return
-    input.current = drill.screen
     const flash = new FlashController<KeyIdQuestion>({
       container: stage.current!,
       render: (into, q) =>
@@ -138,8 +139,8 @@ export function KeyIdScreen({
       settings: toSessionSettings(settings),
       generator: new KeyIdGenerator(toQuestionConfig(settings), Math.floor(Math.random() * 1e6)),
       presenter,
-      input: drill.input,
-      method,
+      input: drill.midi ?? undefined, // the on-screen piano only mirrors the keys; it is not an input here
+      method: playable ? method : 'tap',
       totalReps: QUESTIONS,
       ...timing,
     })
@@ -156,14 +157,6 @@ export function KeyIdScreen({
     const next: KeyIdAnswerMethod = view === 'play' ? 'play' : 'tap'
     setMethod(next)
     session.current?.setMethod(next)
-  }
-
-  /** A click on a piano key is a note struck and let go. */
-  const playNote = (midi: number) => {
-    const i = input.current
-    if (!i) return
-    i.press(midi)
-    window.setTimeout(() => i.release(midi), 120)
   }
 
   // ----- settings -----
@@ -221,16 +214,19 @@ export function KeyIdScreen({
         ? `${last.outcome === 'timeout' ? "Time's up." : 'Skipped.'} The answer is ${answerLabel(question.answer)}.`
         : '' // a right answer is shown by the green mark alone
       : ''
-  // The notes done so far light up green and the last wrong note is marked; if time ran out, the scale is shown.
+  // The keys held right now light up (red if out of key); if time ran out, the scale is shown.
   const marking = state === 'FLASHED' || finished // not while getting ready for the next question
   const unsolved = last?.outcome === 'timeout' || last?.outcome === 'skipped'
-  const scale = snap?.scale ?? []
-  const playMarks: { midi: number; kind: 'right' | 'wrong' | 'target' }[] = marking
+  const playMarks: { midi: number; kind: 'held' | 'wrong' | 'target' }[] = marking
     ? [
-        ...(finished && unsolved ? scale.map((midi) => ({ midi, kind: 'target' as const })) : []),
-        ...scale.slice(0, snap?.progress ?? 0).map((midi) => ({ midi, kind: 'right' as const })),
-        ...(snap?.wrongPlayed.length
-          ? [{ midi: snap.wrongPlayed.at(-1)!, kind: 'wrong' as const }]
+        ...(finished && unsolved && question
+          ? scaleToShow(question).map((midi) => ({ midi, kind: 'target' as const }))
+          : []),
+        ...(state === 'FLASHED'
+          ? (snap?.held ?? []).map((h) => ({
+              midi: h.midi,
+              kind: h.wrong ? ('wrong' as const) : ('held' as const),
+            }))
           : []),
       ]
     : []
@@ -302,13 +298,22 @@ export function KeyIdScreen({
         disabled={state !== 'FLASHED'}
         feedback={feedback}
         wrong={marking ? (snap?.wrong ?? []) : []}
-        play={{
-          onNote: playNote,
-          marks: playMarks,
-          progress: snap?.progress ?? 0,
-          total: scale.length,
-          hand: question ? handFor(question) : 'right',
-        }}
+        play={
+          playable
+            ? {
+                checklist: snap?.checklist ?? [],
+                marks: playMarks,
+                hand: question ? handFor(question) : 'right',
+              }
+            : undefined
+        }
+        playUnavailable={
+          playable
+            ? undefined
+            : phone
+              ? 'Playing the key is for desktop screens, with a MIDI piano.'
+              : 'Playing the key needs a MIDI piano: choose it under Input in Settings.'
+        }
         onViewChange={onViewChange}
       />
 
@@ -354,7 +359,19 @@ export function KeyIdScreen({
             {KEY_ID_LEVELS.find((l) => l.id === levelId)?.description}
           </small>
         )}
-        <InputChoiceField value={piano.choice} onChange={piano.setChoice} disabled={running} />
+        {!phone && (
+          <>
+            <InputChoiceField
+              value={piano.choice}
+              onChange={piano.setChoice}
+              disabled={running}
+              midiLabel="MIDI piano (to play the key)"
+            />
+            {piano.choice === 'screen' && (
+              <small className="placeholder">Playing the key needs a MIDI piano.</small>
+            )}
+          </>
+        )}
         <label>
           Up to this many sharps or flats
           <select

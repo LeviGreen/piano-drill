@@ -364,6 +364,23 @@ describe('high-score boards', () => {
     expect(await storage.prospectiveRank('play', '9', 10)).toBe(1) // an empty board
   })
 
+  it('of equal scores the faster session ranks higher, then the earlier one', async () => {
+    const slow = {
+      ...scoreRec('slow', 'keyid', '1', 5000, 'SLO', '2026-01-01T00:00:00Z'),
+      totalMs: 90000,
+    }
+    const fast = {
+      ...scoreRec('fast', 'keyid', '1', 5000, 'FST', '2026-01-02T00:00:00Z'),
+      totalMs: 60000,
+    }
+    await storage.addScore(slow)
+    expect(await storage.addScore(fast)).toBe(1) // later, but faster
+    expect((await storage.topScores('keyid', '1')).map((s) => s.id)).toEqual(['fast', 'slow'])
+    expect(await storage.prospectiveRank('keyid', '1', 5000, 50000)).toBe(1)
+    expect(await storage.prospectiveRank('keyid', '1', 5000, 70000)).toBe(2)
+    expect(await storage.prospectiveRank('keyid', '1', 5000, 100000)).toBe(3)
+  })
+
   it('a tie with the tenth place does not make a full board', async () => {
     for (let i = 1; i <= 10; i++) await storage.addScore(scoreRec(`s${i}`, 'play', '1', i * 100))
     expect(await storage.prospectiveRank('play', '1', 100)).toBeNull()

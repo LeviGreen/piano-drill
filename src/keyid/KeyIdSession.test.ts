@@ -4,7 +4,6 @@ import type { Presenter } from '../session/types'
 import { FakeClock } from '../test-utils/fakeClock'
 import { keySignature } from '../theory/keys'
 import { parsePitch } from '../theory/pitch'
-import { scaleNotes } from './scalePlay'
 import { KeyIdSession, type KeyIdSessionOptions, type KeyIdSnapshot } from './KeyIdSession'
 import {
   correctAnswer,
@@ -304,8 +303,15 @@ describe('the shared rep cycle', () => {
   })
 })
 
-describe("answering by playing the key's scale", () => {
-  // E♭ major on the treble clef: Eb4 F4 G4 Ab4 Bb4 C5 D5 Eb5, then back down to Eb4 (16 notes)
+describe('answering by playing the checklist', () => {
+  // E♭ major on the treble clef (3 flats): everything is played at or above middle C.
+  const UP = ['Eb4', 'F4', 'G4', 'Ab4', 'Bb4', 'C5', 'D5', 'Eb5'].map((n) => parsePitch(n).midi)
+  const DOWN = [...UP].reverse()
+  const ROOT = ['Eb4', 'G4', 'Bb4'].map((n) => parsePitch(n).midi)
+  const FIRST = ['G4', 'Bb4', 'Eb5'].map((n) => parsePitch(n).midi)
+  const SECOND = ['Bb4', 'Eb5', 'G5'].map((n) => parsePitch(n).midi)
+  const FLATS = ['Bb4', 'Eb4', 'Ab4'].map((n) => parsePitch(n).midi)
+
   const playRig = (
     q = question('a', 'major'),
     settings = { timeoutSeconds: 10 as number | null },
@@ -324,152 +330,193 @@ describe("answering by playing the key's scale", () => {
       silenceMs: 0,
       totalReps: 2,
     })
-    return { clock, input, presenter, session, notes: scaleNotes(q) }
+    return { clock, input, presenter, session }
   }
-  const tap = (r: ReturnType<typeof playRig>, midi: number) => {
+  type Rig = ReturnType<typeof playRig>
+  const tap = async (r: Rig, midi: number) => {
     r.input.noteOn(midi, r.clock.now())
     r.input.noteOff(midi, r.clock.now())
+    await r.clock.advance(50)
+  }
+  const run = async (r: Rig, notes: number[]) => {
+    for (const m of notes) await tap(r, m)
+  }
+  /** Strike notes one after another and hold them all, then let go: a chord. */
+  const chord = async (r: Rig, notes: number[]) => {
+    for (const m of notes) r.input.noteOn(m, r.clock.now())
+    await r.clock.advance(50)
+    for (const m of notes) r.input.noteOff(m, r.clock.now())
+    await r.clock.advance(50)
+  }
+  const rows = (r: Rig) => Object.fromEntries(r.session.snapshot.checklist.map((x) => [x.id, x]))
+  const begin = async (r: Rig) => {
+    await r.session.start()
+    await r.clock.advance(3)
   }
 
-  it('the whole scale, up and back down in order, answers correctly with the time of the last note', async () => {
+  it('lists what to play without saying which key it is', async () => {
     const r = playRig()
-    expect(r.notes).toHaveLength(16)
-    await r.session.start()
-    await r.clock.advance(503) // t0 = 3
-    for (const [i, m] of r.notes.entries()) {
-      expect(r.session.snapshot.progress).toBe(i)
-      tap(r, m)
-      await r.clock.advance(100)
-    }
+    await begin(r)
+    expect(r.session.snapshot.checklist.map((x) => x.label)).toEqual([
+      'Scale up',
+      'Scale down',
+      'Tonic chord',
+      'First inversion',
+      'Second inversion',
+      'Flats in order',
+    ])
+    expect(r.session.snapshot.checklist.every((x) => !x.done)).toBe(true)
+  })
+
+  it('a key with no sharps or flats has no sharps/flats row', async () => {
+    const r = playRig(question('c', 'major', 0))
+    await begin(r)
+    expect(r.session.snapshot.checklist.map((x) => x.id)).not.toContain('accidentals')
+  })
+
+  it('finishing every row, in any order, answers correctly, with the time of the last one', async () => {
+    const r = playRig()
+    await begin(r)
+    await chord(r, SECOND)
+    await run(r, DOWN) // going down first
+    await run(r, FLATS)
+    await chord(r, ROOT)
+    await run(r, UP)
+    expect(rows(r).up.done && rows(r).down.done && rows(r).root.done).toBe(true)
+    expect(r.session.results).toHaveLength(0) // the first inversion is still to do
+    const t = r.clock.now()
+    await chord(r, FIRST)
     const rep = r.session.results[0]
     expect(rep.outcome).toBe('correct')
-    expect(rep.reactionMs).toBe(500)
-    expect(rep.completionMs).toBe(500 + 15 * 100)
+    expect(rep.completionMs).toBeLessThanOrEqual(r.clock.now() - t + (t - 3))
+    expect(rep.errors).toEqual([])
     expect(rep.keyId).toMatchObject({ method: 'play', given: null, wrongPlayed: [] })
   })
 
-  it('the snapshot carries the scale and how far along the player is', async () => {
-    const r = playRig()
-    await r.session.start()
-    await r.clock.advance(3)
-    expect(r.session.snapshot.scale).toEqual(r.notes)
-    tap(r, r.notes[0])
-    tap(r, r.notes[1])
-    expect(r.session.snapshot.progress).toBe(2)
+  it('the top note can be struck once or twice between going up and coming down', async () => {
+    const once = playRig()
+    await begin(once)
+    await run(once, [...UP, ...DOWN.slice(1)])
+    expect(rows(once).up.done && rows(once).down.done).toBe(true)
+    const twice = playRig()
+    await begin(twice)
+    await run(twice, [...UP, ...DOWN])
+    expect(rows(twice).up.done && rows(twice).down.done).toBe(true)
   })
 
-  it('a wrong note sends you back to the start, and the question carries on', async () => {
+  it('a slip in the scale resets only that row, and costs nothing if the note is in the key', async () => {
     const r = playRig()
-    await r.session.start()
-    await r.clock.advance(3)
-    tap(r, r.notes[0])
-    tap(r, r.notes[1])
-    tap(r, r.notes[2])
-    tap(r, parsePitch('A4').midi) // not Ab4: wrong
-    expect(r.session.results).toHaveLength(0)
-    expect(r.session.snapshot.progress).toBe(0)
-    expect(r.session.snapshot.wrongPlayed).toEqual([parsePitch('A4').midi])
-    for (const m of r.notes) tap(r, m) // all over again
+    await begin(r)
+    await chord(r, ROOT)
+    await run(r, UP.slice(0, 4))
+    expect(rows(r).up.progress).toBe(4)
+    await tap(r, parsePitch('D5').midi) // in the key, but not the next note
+    expect(rows(r).up.progress).toBe(0)
+    expect(rows(r).root.done).toBe(true) // kept
+    expect(r.session.snapshot.wrongPlayed).toEqual([])
+    await run(r, UP)
+    expect(rows(r).up.done).toBe(true)
+  })
+
+  it('a note that is not in the key costs a wrong note and resets only the row in progress', async () => {
+    const r = playRig()
+    await begin(r)
+    await run(r, UP.slice(0, 3))
+    await tap(r, parsePitch('E4').midi) // E natural is not in E♭ major
+    expect(r.session.snapshot.wrongPlayed).toEqual([parsePitch('E4').midi])
+    expect(rows(r).up.progress).toBe(0)
+    await run(r, UP)
+    await run(r, DOWN)
+    await chord(r, ROOT)
+    await chord(r, FIRST)
+    await chord(r, SECOND)
+    await run(r, FLATS)
     const rep = r.session.results[0]
     expect(rep.outcome).toBe('correct_with_errors')
-    expect(rep.errors.map((e) => e.notes)).toEqual([[parsePitch('A4').midi]])
+    expect(rep.errors.map((e) => e.notes)).toEqual([[parsePitch('E4').midi]])
   })
 
-  it('a wrong note near the end costs the whole run: 15 right notes, one wrong, start over', async () => {
+  it('notes on the other side of middle C are ignored: they reset nothing and cost nothing', async () => {
     const r = playRig()
-    await r.session.start()
-    await r.clock.advance(3)
-    for (const m of r.notes.slice(0, 15)) tap(r, m)
-    expect(r.session.snapshot.progress).toBe(15)
-    tap(r, parsePitch('D4').midi) // the last note should be Eb4
-    expect(r.session.snapshot.progress).toBe(0)
-    expect(r.session.results).toHaveLength(0)
+    await begin(r)
+    await run(r, UP.slice(0, 4))
+    await tap(r, parsePitch('C3').midi) // the other hand (an in-key note below middle C)
+    await tap(r, parsePitch('E3').midi) // and one that is out of key
+    expect(rows(r).up.progress).toBe(4)
+    expect(r.session.snapshot.wrongPlayed).toEqual([])
+    r.input.noteOn(parsePitch('C2').midi, r.clock.now()) // held under the chord, too
+    await chord(r, ROOT)
+    expect(rows(r).root.done).toBe(true)
   })
 
-  it('striking the same note twice, or the wrong octave, is a wrong note', async () => {
+  it('a chord is exactly its three notes held together, and the lowest note says which inversion', async () => {
     const r = playRig()
-    await r.session.start()
-    await r.clock.advance(3)
-    tap(r, r.notes[0])
-    tap(r, r.notes[0]) // a second strike of the tonic
-    expect(r.session.snapshot.progress).toBe(1) // wrong, but it is the tonic, so it counts as a fresh start
-    expect(r.session.snapshot.wrongPlayed).toHaveLength(1)
-    tap(r, r.notes[1] + 12) // the right note a whole octave up
-    expect(r.session.snapshot.progress).toBe(0)
-    expect(r.session.snapshot.wrongPlayed).toHaveLength(2)
+    await begin(r)
+    await chord(r, [ROOT[0], parsePitch('Eb5').midi, ROOT[1], ROOT[2]]) // four notes, the root doubled: not the chord
+    await chord(r, [ROOT[0], ROOT[1]]) // only two
+    await chord(r, [parsePitch('Eb4').midi, parsePitch('Ab4').midi, parsePitch('C5').midi]) // some other chord
+    expect(rows(r).root.done || rows(r).first.done || rows(r).second.done).toBe(false)
+    await chord(r, FIRST)
+    expect(rows(r).first.done).toBe(true)
+    expect(rows(r).root.done).toBe(false)
+    await chord(r, SECOND)
+    expect(rows(r).second.done).toBe(true)
+    // a chord can be rolled: struck one at a time, held until the third arrives
+    for (const m of ROOT) {
+      r.input.noteOn(m, r.clock.now())
+      await r.clock.advance(60)
+    }
+    expect(rows(r).root.done).toBe(true)
   })
 
-  it('the top note has to be struck twice: going straight down from one strike is a wrong note', async () => {
+  it('the sharps or flats are played in the order they are written, in any octave, one after another', async () => {
     const r = playRig()
-    await r.session.start()
-    await r.clock.advance(3)
-    for (const m of r.notes.slice(0, 8)) tap(r, m) // up to the top note
-    expect(r.session.snapshot.progress).toBe(8)
-    tap(r, r.notes[9]) // the note below the top, skipping the second strike of the top
-    expect(r.session.snapshot.progress).toBe(0)
-    expect(r.session.snapshot.wrongPlayed).toHaveLength(1)
+    await begin(r)
+    await tap(r, parsePitch('Bb4').midi)
+    await tap(r, parsePitch('Eb6').midi)
+    expect(rows(r).accidentals.progress).toBe(2)
+    await tap(r, parsePitch('F5').midi) // a note between them: back to the start
+    expect(rows(r).accidentals.progress).toBe(0)
+    await tap(r, parsePitch('Eb5').midi) // out of order
+    expect(rows(r).accidentals.progress).toBe(0)
+    await run(r, [parsePitch('Bb5').midi, parsePitch('Eb5').midi, parsePitch('Ab4').midi])
+    expect(rows(r).accidentals.done).toBe(true)
   })
 
-  it('a note before the scale starts that is not the tonic is a wrong note too', async () => {
-    const r = playRig()
-    await r.session.start()
-    await r.clock.advance(3)
-    tap(r, parsePitch('G4').midi)
-    expect(r.session.snapshot.wrongPlayed).toEqual([parsePitch('G4').midi])
-    expect(r.session.snapshot.progress).toBe(0)
-  })
-
-  it('the first note fixes the octave: any tonic on the clef side of middle C starts the scale', async () => {
-    const r = playRig(question('t', 'major', 0)) // C major, treble
-    await r.session.start()
-    await r.clock.advance(3)
-    const high = scaleNotes(r.session.snapshot.question!, parsePitch('C5').midi)
-    tap(r, high[0])
-    expect(r.session.snapshot.scale).toEqual(high)
-    for (const m of high.slice(1)) tap(r, m)
-    expect(r.session.results[0]).toMatchObject({ outcome: 'correct' })
-    expect(r.session.results[0].errors).toEqual([])
-  })
-
-  it('a tonic on the wrong side of middle C does not start a scale', async () => {
-    const r = playRig(question('t', 'major', 0)) // treble
-    await r.session.start()
-    await r.clock.advance(3)
-    tap(r, parsePitch('C3').midi)
-    expect(r.session.snapshot.progress).toBe(0)
-    expect(r.session.snapshot.wrongPlayed).toEqual([parsePitch('C3').midi])
-  })
-
-  it('a bass question can start on any tonic below middle C', async () => {
-    const bass = { ...question('b', 'major', 0), clef: 'bass' as const }
+  it('a bass question is played below middle C, and the scale can climb past it', async () => {
+    const bass = { ...question('b', 'major', 5), clef: 'bass' as const } // B major, 5 sharps
     const r = playRig(bass)
-    await r.session.start()
-    await r.clock.advance(3)
-    for (const m of scaleNotes(bass, parsePitch('C2').midi)) tap(r, m)
-    expect(r.session.results[0].outcome).toBe('correct')
+    await begin(r)
+    const up = [59, 61, 63, 64, 66, 68, 70, 71] // B3 up to B4: the top notes are above middle C
+    await run(r, up)
+    expect(rows(r).up.done).toBe(true)
+    await tap(r, 72) // a treble-side note that is not expected: ignored
+    await run(r, [...up].reverse())
+    expect(rows(r).down.done).toBe(true)
+    expect(r.session.snapshot.wrongPlayed).toEqual([])
+    await chord(r, [59, 63, 66]) // B3 D#4 F#4: root position, the lowest note below middle C
+    expect(rows(r).root.done).toBe(true)
   })
 
-  it('a bass question wants the scale below middle C', async () => {
-    const bass = { ...question('b', 'major', 0), clef: 'bass' as const } // C major
-    const r = playRig(bass)
-    expect(r.notes[0]).toBe(parsePitch('C3').midi)
-    await r.session.start()
-    await r.clock.advance(3)
-    for (const m of r.notes) tap(r, m)
-    expect(r.session.results[0].outcome).toBe('correct')
-  })
-
-  it('a minor key is played as natural minor', async () => {
-    const r = playRig(question('m', 'minor', -3, 'minor')) // C minor
-    expect(r.notes.slice(0, 4)).toEqual(['C4', 'D4', 'Eb4', 'F4'].map((n) => parsePitch(n).midi))
-  })
-
-  it('the time limit is 8 seconds longer when answering by playing, and shown in the snapshot', async () => {
+  it('shows the keys being held, red if they are out of key', async () => {
     const r = playRig()
-    await r.session.start()
-    await r.clock.advance(3)
-    expect(r.session.snapshot.limitSeconds).toBe(18)
-    await r.clock.advance(17000)
+    await begin(r)
+    r.input.noteOn(UP[0], r.clock.now())
+    r.input.noteOn(parsePitch('E4').midi, r.clock.now())
+    expect(r.session.snapshot.held).toEqual([
+      { midi: UP[0], wrong: false },
+      { midi: parsePitch('E4').midi, wrong: true },
+    ])
+    r.input.noteOff(UP[0], r.clock.now())
+    r.input.noteOff(parsePitch('E4').midi, r.clock.now())
+    expect(r.session.snapshot.held).toEqual([])
+  })
+
+  it('the time limit is 25 seconds longer when answering by playing, and shown in the snapshot', async () => {
+    const r = playRig()
+    await begin(r)
+    expect(r.session.snapshot.limitSeconds).toBe(35)
+    await r.clock.advance(34000)
     expect(r.session.results).toHaveLength(0)
     await r.clock.advance(1100)
     expect(r.session.results[0].outcome).toBe('timeout')
@@ -488,30 +535,32 @@ describe("answering by playing the key's scale", () => {
 
   it('a note that was ringing before the question appeared does not count', async () => {
     const r = playRig()
-    r.input.noteOn(r.notes[0], -100) // ignored while stopped; the session has not started
-    await r.session.start()
-    await r.clock.advance(3)
-    expect(r.session.snapshot.progress).toBe(0)
+    r.input.noteOn(UP[0], -100) // ignored while stopped; the session has not started
+    await begin(r)
+    expect(rows(r).up.progress).toBe(0)
   })
 
   it('waits for the room to go quiet before flashing (the input is a live one)', async () => {
     const r = playRig()
-    await r.session.start()
-    await r.clock.advance(3)
-    for (const m of r.notes.slice(0, 15)) tap(r, m)
-    r.input.noteOn(r.notes[15], r.clock.now()) // the last note, and the key is held down
+    await begin(r)
+    await run(r, [...UP, ...DOWN.slice(1)])
+    await chord(r, ROOT)
+    await chord(r, FIRST)
+    await run(r, FLATS)
+    r.input.noteOn(SECOND[0], r.clock.now()) // the last row's notes: held down...
+    r.input.noteOn(SECOND[1], r.clock.now())
+    r.input.noteOn(SECOND[2], r.clock.now())
     expect(r.session.results[0].outcome).toBe('correct')
-    await r.clock.advance(3000) // feedback is over, but the note is still held
+    await r.clock.advance(3000) // feedback is over, but the keys are still held
     expect(r.session.snapshot.state).toBe('READY') // not flashed while notes sound
-    r.input.noteOff(r.notes[15], r.clock.now())
+    for (const m of SECOND) r.input.noteOff(m, r.clock.now())
     await r.clock.advance(20)
     expect(r.session.snapshot.state).toBe('FLASHED')
   })
 
   it('tapped answers are ignored in play mode', async () => {
     const r = playRig()
-    await r.session.start()
-    await r.clock.advance(3)
+    await begin(r)
     r.session.answer({ accidentals: -3, mode: 'major' })
     expect(r.session.results).toHaveLength(0)
   })
@@ -530,11 +579,10 @@ describe("answering by playing the key's scale", () => {
 
   it('can switch between tapping and playing at any time', async () => {
     const r = playRig()
-    await r.session.start()
-    await r.clock.advance(3)
+    await begin(r)
     r.session.setMethod('tap')
-    tap(r, r.notes[0]) // played notes are ignored while tapping
-    expect(r.session.snapshot.progress).toBe(0)
+    await tap(r, UP[0]) // played notes are ignored while tapping
+    expect(r.session.snapshot.checklist).toEqual([])
     r.session.answer({ accidentals: -3, mode: 'major' })
     expect(r.session.results[0]).toMatchObject({ outcome: 'correct' })
     expect(r.session.results[0].keyId?.method).toBe('tap')

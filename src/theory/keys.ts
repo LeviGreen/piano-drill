@@ -7,8 +7,8 @@ export type TonicSpelling = { letter: Letter; accidental: Accidental }
 /** `accidentals`: -7..-1 flats, 0 none, 1..7 sharps (the position on the circle of fifths). */
 export type KeySignature = { tonic: TonicSpelling; mode: Mode; accidentals: number }
 
-const SHARP_ORDER: Letter[] = ['F', 'C', 'G', 'D', 'A', 'E', 'B']
-const FLAT_ORDER: Letter[] = ['B', 'E', 'A', 'D', 'G', 'C', 'F']
+export const SHARP_ORDER: Letter[] = ['F', 'C', 'G', 'D', 'A', 'E', 'B']
+export const FLAT_ORDER: Letter[] = ['B', 'E', 'A', 'D', 'G', 'C', 'F']
 
 /** Where each signature accidental is drawn, in order of appearance (standard engraving). */
 const PLACEMENT: Record<Clef, { sharps: string[]; flats: string[] }> = {

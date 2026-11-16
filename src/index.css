@@ -1400,3 +1400,39 @@ button:disabled {
   color: var(--bad);
   font-weight: 600;
 }
+
+/* Key ID, Play view: what to play, ticked off as it is done */
+.checklist {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem 0.6rem;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.checklist li {
+  padding: 0.25rem 0.75rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: 999px;
+}
+
+.checklist li.done {
+  border-color: var(--accent);
+  font-weight: 700;
+}
+
+.checklist-count {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.answer-views-hint {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--text-muted);
+  text-align: center;
+}

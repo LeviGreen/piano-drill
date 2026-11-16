@@ -8,12 +8,14 @@ import {
   PIANO_LOST_MESSAGE,
 } from '../audio/inputs/drillInput'
 import type { RequestMidiAccess } from '../audio/inputs/MidiInput'
+import { scaleToShow } from '../keyid/checklist'
 import { KEY_ID_LEVELS } from '../keyid/presets'
 import { KeyIdGenerator, type KeyIdQuestion } from '../keyid/questions'
-import { scaleNotes } from '../keyid/scalePlay'
 import { toQuestionConfig } from '../keyid/settings'
 import { createLevelGenerator } from '../levels/levelGenerator'
 import { PRESET_LEVELS } from '../levels/presets'
+import { FLAT_ORDER, SHARP_ORDER } from '../theory/keys'
+import { pitch } from '../theory/pitch'
 import { FakeMidiAccess, FakePort } from '../test-utils/fakeMidi'
 import type { Target } from '../theory/target'
 import { KeyIdScreen } from './KeyIdScreen'
@@ -216,33 +218,80 @@ describe('unplugging the piano during a session', () => {
   })
 })
 
+/** The notes of a question's checklist as MIDI numbers, played on the clef's side of middle C. */
+function createKey(q: KeyIdQuestion) {
+  const up = scaleToShow(q)
+  const t = up[0]
+  const third = q.answer.mode === 'major' ? 4 : 3
+  // A chord's lowest note has to be on the clef's side of middle C: for the bass clef, below it.
+  const onSide = (c: number[]) => (q.clef === 'bass' && c[0] >= 60 ? c.map((m) => m - 12) : c)
+  const root = [t, t + third, t + 7]
+  const order = q.answer.accidentals > 0 ? SHARP_ORDER : FLAT_ORDER
+  const accidentals = order
+    .slice(0, Math.abs(q.answer.accidentals))
+    .map((l) => pitch(l, q.answer.accidentals > 0 ? 1 : -1, 4).midi % 12)
+    .map((pc) => {
+      let m = t + ((pc - t) % 12) // in the octave above the tonic, which is on the clef's side
+      while (m <= t) m += 12
+      return m
+    })
+  const inKey = new Set(up.map((m) => m % 12))
+  const outOfKey = [t + 1, t + 6, t + 11].find((m) => !inKey.has(m % 12))!
+  return {
+    up,
+    down: [...up].reverse(),
+    root,
+    first: onSide([root[1], root[2], root[0] + 12]),
+    second: onSide([root[2], root[0] + 12, root[1] + 12]),
+    accidentals,
+    outOfKey,
+  }
+}
+
 describe('Key ID with a MIDI piano', () => {
   const upcoming = (): KeyIdQuestion => {
     const g = new KeyIdGenerator(toQuestionConfig(KEY_ID_LEVELS[0].settings), SEED)
     return g.next()
   }
 
-  it('in the Play view, the scale played on the real piano answers the question, and a wrong note starts over', async () => {
+  it('in the Play view, the checklist played on the real piano answers the question', async () => {
     const piano = new FakePort('p', 'MM8')
     showKeyId({ midiAccess: withAccess(new FakeMidiAccess(piano)) })
     await userEvent.click(button('Play'))
+    expect(document.querySelectorAll('svg.keyboard [data-midi]')).toHaveLength(49) // as wide as Play mode's
     await userEvent.click(button('Start'))
     const q = upcoming()
     await screen.findByText(q.prompt)
     await waitFor(() => expect((button('Skip') as HTMLButtonElement).disabled).toBe(false))
-    const notes = scaleNotes(q)
-    act(() => piano.noteOn(notes[0], performance.now()))
+    const key = createKey(q)
+    const strike = (m: number) => {
+      act(() => piano.noteOn(m, performance.now()))
+      act(() => piano.noteOff(m, performance.now()))
+    }
+    // the first note lights its key while it is held, and the key goes dark when it is let go
+    act(() => piano.noteOn(key.up[0], performance.now()))
     await waitFor(() =>
       expect(document.querySelectorAll('svg.keyboard .kb-key.heard').length).toBe(1),
     )
-    const wrong = notes[0] + 1 // a semitone above the tonic is never the second note of a major or minor scale
-    act(() => piano.noteOn(wrong, performance.now()))
+    act(() => piano.noteOff(key.up[0], performance.now()))
+    await waitFor(() =>
+      expect(document.querySelectorAll('svg.keyboard .kb-key.heard').length).toBe(0),
+    )
+    // a note out of key is red while it is held, and counts as a wrong note
+    const bad = key.outOfKey
+    act(() => piano.noteOn(bad, performance.now()))
     await waitFor(() =>
       expect(document.querySelectorAll('svg.keyboard .kb-key.wrong').length).toBeGreaterThan(0),
     )
-    expect(document.querySelectorAll('svg.keyboard .kb-key.heard')).toHaveLength(0) // started over
+    act(() => piano.noteOff(bad, performance.now()))
     expect(statusLine()).toMatch(/Question 1 of/)
-    for (const m of notes) act(() => piano.noteOn(m, performance.now()))
+    // everything on the list, in any order
+    for (const m of [...key.up, ...key.down]) strike(m)
+    for (const c of [key.root, key.first, key.second]) {
+      for (const m of c) act(() => piano.noteOn(m, performance.now()))
+      for (const m of c) act(() => piano.noteOff(m, performance.now()))
+    }
+    for (const m of key.accidentals) strike(m)
     await screen.findByText(/Question 2 of 3/)
   })
 

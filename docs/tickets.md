@@ -42,6 +42,7 @@ Cross out a row (`~~text~~` in each cell) when its ticket is Done. Rows that are
 | ~~3 Input & Verification~~ | ~~PD-306~~ | ~~Test corpus & benchmark harness~~ |
 | ~~3 Input & Verification~~ | ~~PD-313~~ | ~~MIDI keyboard input (`MidiInput`) & test screen~~ |
 | ~~3 Input & Verification~~ | ~~PD-314~~ | ~~MIDI-driven Play and Key ID~~ |
+| 3 Input & Verification | PD-315 | Key ID Play view: a checklist on a MIDI piano (in progress) |
 | ~~4 Drill Session (Play Mode)~~ | ~~PD-401~~ | ~~Session state machine & timing core~~ |
 | ~~4 Drill Session (Play Mode)~~ | ~~PD-402~~ | ~~Drill screen UI~~ |
 | ~~4 Drill Session (Play Mode)~~ | ~~PD-403~~ | ~~Session results & high scores~~ |
@@ -70,7 +71,7 @@ Cross out a row (`~~text~~` in each cell) when its ticket is Done. Rows that are
 
 1. **PD-001 → PD-003** (foundations)
 2. **Theory and notation:** PD-101 → PD-108, PD-201 → PD-205
-3. **Input:** PD-301, PD-302 (on-screen piano), PD-304 → PD-306 (mic capture, analysis and benchmark, built before the mic was shelved), then **PD-313 → PD-314 (MIDI, the MVP's input)**
+3. **Input:** PD-301, PD-302 (on-screen piano), PD-304 → PD-306 (mic capture, analysis and benchmark, built before the mic was shelved), then **PD-313 → PD-315 (MIDI, the MVP's input)**
 4. **Play and Key ID screens:** PD-401 → PD-404, Epic 5
 5. **Polish:** Epic 7
 6. **After the MVP:** Epic 8 (the mic verifier and calibration, mic-driven play, level unlocking)
@@ -82,7 +83,7 @@ Cross out a row (`~~text~~` in each cell) when its ticket is Done. Rows that are
 | 0 Foundations | PD-001 – PD-004 |
 | 1 Theory Engine | PD-101 – PD-108 |
 | 2 Notation | PD-201 – PD-205 (PD-206 cut) |
-| 3 Input & Verification | PD-301, PD-302, PD-304 – PD-306, PD-313, PD-314 (PD-303 cut) |
+| 3 Input & Verification | PD-301, PD-302, PD-304 – PD-306, PD-313 – PD-315 (PD-303 cut) |
 | 4 Drill Session | PD-401 – PD-404 |
 | 5 Key ID Mode | PD-501 – PD-505 |
 | 7 Polish & Release | PD-701 – PD-706 |
@@ -317,7 +318,7 @@ Optional note-name labels on notes; piano keyboard component highlighting target
 
 ## Epic 3 — Input & Verification
 
-Progress: 7/7 tickets done
+Progress: 7/8 tickets done
 
 > **Direction change (2026-11-12).** The mic spike did not reach the bar for the MVP: on a laptop mic with a digital piano through its speakers, the middle of the range was verified well, but low notes lost their fundamental (heard only as overtones) and the top note was too faint. The stand-in verifier accepted about 50% of 32 real clips (target: 90%), with every wrong, extra, silent and noisy clip correctly rejected; note starts were found in all of them within about 1 ms. Rather than gamble the MVP on the hardest problem, the MVP takes its notes from **a digital piano over MIDI** (PD-313, PD-314), on desktop Chromium. The mic tickets (PD-307–PD-312, PD-406) are Deferred, not cut: they moved to Epic 8 (Post-MVP) with their IDs unchanged, and the capture, analysis and corpus tools stay in the repo.
 
@@ -414,7 +415,25 @@ Use `MidiInput` in the drill loop. An input chooser on the Play screen (on-scree
 
 **Notes:** an "Input" option in both the Play and Key ID settings (on-screen piano or MIDI piano), remembered and shared, the on-screen piano by default. With MIDI chosen, the real piano and the on-screen piano both work at once (`MergedInput`). The piano is connected when you press Start, so no piano, a blocked permission or a browser without MIDI is reported in words and nothing starts. Unplugging pauses the drill with a message and Resume stays off until the piano is back. The piano picked on the MIDI test screen is the one used. Code: `src/audio/inputs/drillInput.ts`, `MergedInput.ts`, `src/ui/usePianoInput.ts`, `InputChoiceField.tsx`.
 
-**Key ID scale play:** `src/keyid/scalePlay.ts` (the notes, the hand, the 8 s grace), `KeyIdSession` (progress through the scale; a wrong note restarts it, unless the wrong note could itself start the scale, which counts as a fresh start; the limit is fixed when the question appears, from the way it is being answered then; `limitSeconds` is in the snapshot so the screen's clock follows it). A MIDI message cannot say which hand played, so the hand is enforced by register: the first note must be the tonic on the clef's side of middle C, and it fixes the octave of the scale (`startsScale`; before it, the screen shows the tonic nearest middle C). **Scoring** (`src/scoring/score.ts`): a question answered by playing the scale is worth 150 (not 100) plus the same up-to-100 speed bonus, measured against the level's goal time plus the 8 s grace; each restart costs 25; a perfect, fast session is 5000 (4000 for the other views). They share the one high-score board per level. The on-screen piano also works in this view (a key click holds the note for 120 ms, so the same note cannot be struck twice within that).
+**Key ID scale play (replaced by the checklist in PD-315; kept here as history):** `src/keyid/scalePlay.ts` (the notes, the hand, the 8 s grace), `KeyIdSession` (progress through the scale; a wrong note restarts it, unless the wrong note could itself start the scale, which counts as a fresh start; the limit is fixed when the question appears, from the way it is being answered then; `limitSeconds` is in the snapshot so the screen's clock follows it). A MIDI message cannot say which hand played, so the hand is enforced by register: the first note must be the tonic on the clef's side of middle C, and it fixes the octave of the scale (`startsScale`; before it, the screen shows the tonic nearest middle C). **Scoring** (`src/scoring/score.ts`): a question answered by playing the scale is worth 150 (not 100) plus the same up-to-100 speed bonus, measured against the level's goal time plus the 8 s grace; each restart costs 25; a perfect, fast session is 5000 (4000 for the other views). They share the one high-score board per level. The on-screen piano also works in this view (a key click holds the note for 120 ms, so the same note cannot be struck twice within that).
+
+### PD-315: Key ID Play view: a checklist on a MIDI piano
+
+**Size:** M  
+**Deps:** PD-314  
+**Status:** In progress (built and tested with a fake piano; awaiting a check with a real one)
+
+Replaces PD-314's "play the scale" with a checklist, played on a MIDI piano with the hand that reads the clef shown (treble: right hand, at or above middle C; bass: left hand, below it). The rows can be done in any order and tick off as they are met: **scale up** (8 notes, from the tonic in any octave on the clef's side), **scale down** (8 notes, its own octave), **the tonic chord** and its **first and second inversions** (exactly the three notes held together, the lowest note says which), and **the sharps or flats in the order they are written** (any octave, one after another; no row for C major / A minor). Minor keys are natural minor with a minor tonic chord. The labels never say which key. The Play view works **only with a MIDI piano chosen under Input and on a desktop screen** (wider than 640 px); otherwise the tab is greyed out with a hint. The on-screen piano in the Play view only mirrors the keys held (green; red if out of key), it cannot be clicked, and what it lit does not stay lit.
+
+**Rules:** a slip resets only the row in progress (ticked rows are kept); only a note on the clef's side that is not in the key costs a wrong note (25 points); notes on the other side of middle C are ignored completely (no reset, no cost), so the other hand is free. A note struck while another key on the clef's side is held belongs to a chord and is not seen by the scale or sharps/flats rows. A bass scale may climb past middle C (a note up there counts only if it is the next one expected). **Scoring:** a finished question is a flat 250 points with no speed bonus (a perfect session is 5000), a wrong note costs 25, a timeout scores 0; the time limit is 25 seconds longer. Of equal scores on a board the faster session ranks higher (then the earlier).
+
+**Acceptance:**
+- [ ] Key ID's Play view works with a real piano over MIDI: every row can be ticked, in any order, and the on-screen piano follows the keys held.
+- [x] The rows, the hand/register rule, wrong-note and slip handling, the +25 s limit and the flat 250 score are covered by tests (with a fake piano).
+- [x] With the on-screen piano chosen, or on a phone-width screen, the Play tab is greyed out with a hint, and there is no Input setting on a phone.
+- [x] Ties on a high-score board go to the faster session.
+
+**Notes:** `src/keyid/checklist.ts` (the rows, `Checklist`), `KeyIdSession` (feeds it every note struck and the keys held; `checklist` and `held` are in the snapshot), `KeyAnswerInput` / `KeyIdScreen` (the checklist and the mirror piano). Replaces `scalePlay.ts` and the 150-point scale scoring. A chord is checked whenever a key goes down (not when keys are let go), so a four-note chord struck one note at a time counts as the chord once its first three notes are held.
 
 ## Epic 4 — Drill Session (Play Mode)
 
