@@ -13,8 +13,8 @@ export default function App() {
     <Routes>
       <Route element={<AppShell />}>
         <Route index element={<HomeScreen />} />
-        <Route path="play" element={<PlayScreen />} />
-        <Route path="key-id" element={<KeyIdScreen />} />
+        <Route path="sight-read" element={<PlayScreen />} />
+        <Route path="key-signatures" element={<KeyIdScreen />} />
         <Route path="scores" element={<ScoresScreen />} />
         <Route path="settings" element={<SettingsScreen />} />
         <Route path="settings/midi-test" element={<MidiTestScreen />} />

@@ -294,7 +294,7 @@ describe('locking and feedback', () => {
   })
 })
 
-describe('the Play view: answering by playing a checklist on a MIDI piano', () => {
+describe('the MIDI view: answering by playing a checklist on a MIDI piano', () => {
   const rows = [
     { id: 'up' as const, label: 'Scale up', done: true, progress: 8, total: 8 },
     { id: 'down' as const, label: 'Scale down', done: false, progress: 3, total: 8 },
@@ -343,7 +343,7 @@ describe('the Play view: answering by playing a checklist on a MIDI piano', () =
     expect(items[2].textContent).not.toMatch(/\d \//)
   })
 
-  it('typing does not answer while in the Play view, and the hint says which hand', async () => {
+  it('typing does not answer while in the MIDI view, and the hint says which hand', async () => {
     const onAnswer = setup('major', {
       play: { checklist: rows, hand: 'right' as const, marks: [] },
     })

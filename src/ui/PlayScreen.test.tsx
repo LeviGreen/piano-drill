@@ -65,7 +65,7 @@ const waitForTarget = async () =>
 describe('before starting', () => {
   it('shows an empty grand staff, the piano and the controls', () => {
     show()
-    expect(screen.getByRole('heading', { name: 'Play' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Sight-Read' })).toBeTruthy()
     expect(screen.getByText('Press Start.')).toBeTruthy()
     expect(document.querySelectorAll('.staff .vf-stave')).toHaveLength(2)
     expect(document.querySelectorAll('.staff .vf-clef')).toHaveLength(2)
@@ -79,7 +79,7 @@ describe('before starting', () => {
   it('starts on level 1 and remembers the level you pick', async () => {
     show()
     await userEvent.click(button('Settings'))
-    const dialog = screen.getByRole('dialog', { name: 'Play settings' })
+    const dialog = screen.getByRole('dialog', { name: 'Sight-Read settings' })
     expect((within(dialog).getByLabelText('Level') as HTMLSelectElement).value).toBe('1')
     await userEvent.selectOptions(within(dialog).getByLabelText('Level'), '4')
     cleanup()
@@ -91,7 +91,7 @@ describe('before starting', () => {
   it('the settings have the level, hands, notes per hand, sharps/flats and a time limit, but not the keys', async () => {
     show()
     await userEvent.click(button('Settings'))
-    const dialog = screen.getByRole('dialog', { name: 'Play settings' })
+    const dialog = screen.getByRole('dialog', { name: 'Sight-Read settings' })
     expect(within(dialog).getByLabelText('Level')).toBeTruthy()
     expect(within(dialog).getByRole('group', { name: 'Hands' })).toBeTruthy()
     expect(within(dialog).getByRole('group', { name: 'Notes per hand' })).toBeTruthy()
@@ -103,7 +103,7 @@ describe('before starting', () => {
   it('"One key signature" hides the level and sharps/flats, and plays the major key and its relative minor', async () => {
     show()
     await userEvent.click(button('Settings'))
-    const dialog = screen.getByRole('dialog', { name: 'Play settings' })
+    const dialog = screen.getByRole('dialog', { name: 'Sight-Read settings' })
     expect(
       within(dialog).getByLabelText('Key signature', { selector: 'select' }).closest('.unused'),
     ).not.toBeNull()
@@ -130,7 +130,7 @@ describe('before starting', () => {
   it('switching back to several keys brings the level picker back, and the key signature is remembered', async () => {
     show()
     await userEvent.click(button('Settings'))
-    const dialog = screen.getByRole('dialog', { name: 'Play settings' })
+    const dialog = screen.getByRole('dialog', { name: 'Sight-Read settings' })
     await userEvent.click(within(dialog).getByRole('radio', { name: 'One key signature' }))
     await userEvent.selectOptions(within(dialog).getByLabelText('Key signature'), '2')
     await userEvent.click(within(dialog).getByRole('radio', { name: 'Several keys' }))

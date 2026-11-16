@@ -25,7 +25,7 @@ export type PlayDims = {
   contentType: string
 }
 
-/** Key-ID reps are described by what was asked. */
+/** Key-signature reps are described by what was asked. */
 export type KeyIdDims = {
   key: string
   clef: 'treble' | 'bass'
@@ -68,7 +68,7 @@ export type RepResult = {
   outcome: RepOutcome
   /** True if the rep began without the input having been quiet (noisy room, held pedal). */
   startedWithoutSilence: boolean
-  /** Key-ID reps only. */
+  /** Key-signature reps only. */
   keyId?: KeyIdDetail
   timestamp: string
 }

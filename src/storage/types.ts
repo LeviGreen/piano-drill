@@ -19,7 +19,7 @@ export type SessionRecord = {
   score?: number
   /** How many targets were right. */
   correct?: number
-  /** Wrong notes played (Play) or wrong keys guessed (Key ID), added up over the session. */
+  /** Wrong notes played (Sight-Read) or wrong keys guessed (Key Signatures), added up over the session. */
   wrong?: number
   /** Total time in ms, as shown on the results screen. */
   totalMs?: number

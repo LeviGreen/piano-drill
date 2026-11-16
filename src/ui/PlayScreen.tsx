@@ -272,7 +272,7 @@ export function PlayScreen({ reps = DEFAULT_REPS, timing, storage, midiAccess }:
 
   return (
     <div className="keyid-screen play-screen">
-      <h1>Play</h1>
+      <h1>Sight-Read</h1>
       <div className="keyid-bar">
         <button type="button" onClick={() => void start()} disabled={running || piano.starting}>
           Start
@@ -364,7 +364,7 @@ export function PlayScreen({ reps = DEFAULT_REPS, timing, storage, midiAccess }:
       <SettingsDrawer
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
-        title="Play settings"
+        title="Sight-Read settings"
         centered
       >
         <fieldset disabled={running}>

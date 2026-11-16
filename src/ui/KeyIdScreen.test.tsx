@@ -56,7 +56,7 @@ describe('before starting', () => {
   it('shows an empty staff and a disabled answer area, with the controls ready', () => {
     store({})
     show()
-    expect(screen.getByRole('heading', { name: 'Key ID' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Key Signatures' })).toBeTruthy()
     expect(screen.getByText('Press Start.')).toBeTruthy()
     expect(document.querySelectorAll('.staff .vf-stave')).toHaveLength(1)
     expect(document.querySelectorAll('.staff .vf-clef')).toHaveLength(1)
@@ -255,7 +255,7 @@ describe('the settings drawer', () => {
     show()
     expect(screen.queryByRole('dialog')).toBeNull() // settings are not on the page itself
     await userEvent.click(button('Settings'))
-    const dialog = screen.getByRole('dialog', { name: 'Key ID settings' })
+    const dialog = screen.getByRole('dialog', { name: 'Key Signatures settings' })
     expect(within(dialog).getByLabelText('Level')).toBeTruthy()
     await userEvent.keyboard('{Escape}')
     expect(screen.queryByRole('dialog')).toBeNull()
@@ -460,7 +460,7 @@ describe('the tonic note is a clue, so it only shows when major and minor are mi
   })
 })
 
-describe('the Play view needs a MIDI piano and a desktop screen', () => {
+describe('the MIDI view needs a MIDI piano and a desktop screen', () => {
   const asPhone = () => {
     vi.stubGlobal('matchMedia', (query: string) => ({
       matches: query.includes('max-width'),

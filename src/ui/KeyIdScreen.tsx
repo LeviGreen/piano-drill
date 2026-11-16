@@ -235,7 +235,7 @@ export function KeyIdScreen({
 
   return (
     <div className="keyid-screen">
-      <h1>Key ID</h1>
+      <h1>Key Signatures</h1>
       <div className="keyid-bar">
         <button type="button" onClick={() => void start()} disabled={running || piano.starting}>
           Start
@@ -339,7 +339,7 @@ export function KeyIdScreen({
       <SettingsDrawer
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
-        title="Key ID settings"
+        title="Key Signatures settings"
         centered
         narrow
       >

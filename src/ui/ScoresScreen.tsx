@@ -7,8 +7,8 @@ import { SettingsDrawer } from './SettingsDrawer'
 import { PHONE_QUERY, useMediaQuery } from './useMediaQuery'
 
 const MODES: { value: StoredMode; label: string }[] = [
-  { value: 'play', label: 'Play' },
-  { value: 'keyid', label: 'Key ID' },
+  { value: 'play', label: 'Sight-Read' },
+  { value: 'keyid', label: 'Key Signatures' },
 ]
 const levelsFor = (mode: StoredMode) => (mode === 'play' ? PRESET_LEVELS : KEY_ID_LEVELS)
 const date = (iso: string) => iso.slice(0, 10)
@@ -161,7 +161,7 @@ function Board({
   )
 }
 
-/** The high-score board for each level: top ten, three initials, separately for Play and Key ID. */
+/** The high-score board for each level: top ten, three initials, separately for Sight-Read and Key Signatures. */
 export function ScoresScreen({ storage }: { storage?: Storage }) {
   const db = storage ?? getStorage()
   const compact = useMediaQuery(PHONE_QUERY)

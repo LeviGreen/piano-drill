@@ -14,7 +14,7 @@ export const NO_PIANO_MESSAGE =
 export const PIANO_LOST_MESSAGE = 'Your piano was disconnected. Plug it back in, then press Resume.'
 export const PIANO_BACK_MESSAGE = 'Your piano is back. Press Resume.'
 
-/** The remembered choice, shared by the Play and Key ID screens. The on-screen piano until you choose otherwise. */
+/** The remembered choice, shared by the Sight-Read and Key Signatures screens. The on-screen piano until you choose otherwise. */
 export function loadInputChoice(): InputChoice {
   try {
     return localStorage.getItem(CHOICE_KEY) === 'midi' ? 'midi' : 'screen'

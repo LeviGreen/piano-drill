@@ -415,7 +415,7 @@ IDLE → READY → FLASHED → (WRONG_NOTE → FLASHED)* → SUCCESS | TIMEOUT |
 |---|---|---|
 | **M0 — Feasibility** | Theory-engine skeleton, staff rendering demo, **mic verification spike** | Mic matcher correctly verifies single notes + triads on a real piano ≥ 90% in a quiet room |
 | **M1 — Playable MVP** | Single/interval/triad drills, one-hand, key sigs, timing, results, with Mic + on-screen input | A user can run a full session at levels 1–6 |
-| **M2 — Two hands + Key ID** | Two-hand voicings, grand staff, key identification mode | Levels 7–10 and Key ID mode work end-to-end |
+| **M2 — Two hands + Key Signatures** | Two-hand voicings, grand staff, key identification mode | Levels 7–10 and Key Signatures mode work end-to-end |
 | **M3 — Polish** | Calibration wizard, custom presets, PWA, a11y | Beta-ready |
 
 ---
@@ -436,7 +436,7 @@ Set up Vite + React + TypeScript, linting, formatting, test runner (Vitest), CI 
 
 ### PD-002: App shell & routing
 **Size:** S · **Deps:** PD-001
-Home screen, routes for Play, Key ID, Settings; placeholder screens; responsive layout; theme tokens (light/dark/high-contrast).
+Home screen, routes for Sight-Read, Key Signatures, Settings; placeholder screens; responsive layout; theme tokens (light/dark/high-contrast).
 **Acceptance:**
 - Navigation works on mobile and desktop widths; theme toggle persists.
 
@@ -648,7 +648,7 @@ Wire `MicInput` into drill loop; handle permission-denied, mic loss, noisy envir
 
 ## Epic 5 — Key Identification Mode
 
-### PD-501: Key-ID question generator
+### PD-501: Key-signature question generator
 **Size:** S · **Deps:** PD-102
 Generate key-signature questions respecting settings (clef, accidental range, major/minor/both, tonic hint, enharmonic rules); anti-repeat.
 **Acceptance:**
@@ -660,7 +660,7 @@ Touch-friendly answer input with proper enharmonic labelling; major/minor toggle
 **Acceptance:**
 - All 30 keys can be selected correctly on mobile and desktop.
 
-### PD-503: Key-ID session screen & scoring
+### PD-503: Key-signature session screen & scoring
 **Size:** M · **Deps:** PD-501, PD-502, PD-401
 Flash → answer → timed result; reuse session machine/summary; record confusion data (answered vs. correct).
 **Acceptance:**
@@ -672,7 +672,7 @@ Alternative answer method: play the tonic note on the piano and verify via the m
 **Acceptance:**
 - Works with the mic input; settings toggle between tap and play.
 
-### PD-505: Key-ID settings & levels
+### PD-505: Key-signature settings & levels
 **Size:** S · **Deps:** PD-503, PD-404
 Presets (e.g. ≤2 accidentals → all keys; major → minor), custom options UI.
 **Acceptance:**
@@ -741,5 +741,5 @@ In-app help (mic placement, pedal advice, troubleshooting) and developer README 
 | 2 Notation | PD-201 – PD-206 |
 | 3 Input & Verification | PD-301 – PD-312 (PD-303 cut) |
 | 4 Drill Session | PD-401 – PD-406 |
-| 5 Key ID Mode | PD-501 – PD-505 |
+| 5 Key Signatures Mode | PD-501 – PD-505 |
 | 7 Polish & Release | PD-701 – PD-706 |

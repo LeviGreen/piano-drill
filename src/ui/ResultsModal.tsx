@@ -25,7 +25,7 @@ export function ResultsModal({
   /** The arcade score, when there is one, and the most it could have been. */
   score?: number
   maxScore?: number
-  /** Wrong notes (Play) or wrong guesses (Key ID) over the session, and what to call them. */
+  /** Wrong notes (Sight-Read) or wrong guesses (Key Signatures) over the session, and what to call them. */
   wrong?: number
   wrongLabel?: string
   onClose: () => void

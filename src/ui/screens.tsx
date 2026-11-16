@@ -3,8 +3,8 @@ import { Link } from 'react-router'
 import { NAV_ITEMS } from './nav'
 
 const DESCRIPTIONS: Record<string, string> = {
-  '/play': 'Flash a chord or interval, play it, beat the clock.',
-  '/key-id': 'Name the key signature as fast as you can.',
+  '/sight-read': 'Flash a chord or interval, play it, beat the clock.',
+  '/key-signatures': 'Name the key signature as fast as you can.',
   '/scores': 'The top ten scores for each level.',
   '/settings': 'Input, timing and display options.',
 }

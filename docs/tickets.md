@@ -41,17 +41,17 @@ Cross out a row (`~~text~~` in each cell) when its ticket is Done. Rows that are
 | ~~3 Input & Verification~~ | ~~PD-305~~ | ~~Spectral analysis core~~ |
 | ~~3 Input & Verification~~ | ~~PD-306~~ | ~~Test corpus & benchmark harness~~ |
 | ~~3 Input & Verification~~ | ~~PD-313~~ | ~~MIDI keyboard input (`MidiInput`) & test screen~~ |
-| ~~3 Input & Verification~~ | ~~PD-314~~ | ~~MIDI-driven Play and Key ID~~ |
-| 3 Input & Verification | PD-315 | Key ID MIDI view: a checklist on a MIDI piano (in progress) |
+| ~~3 Input & Verification~~ | ~~PD-314~~ | ~~MIDI-driven Play and Key Signatures~~ |
+| 3 Input & Verification | PD-315 | Key Signatures MIDI view: a checklist on a MIDI piano (in progress) |
 | ~~4 Drill Session (Play Mode)~~ | ~~PD-401~~ | ~~Session state machine & timing core~~ |
 | ~~4 Drill Session (Play Mode)~~ | ~~PD-402~~ | ~~Drill screen UI~~ |
 | ~~4 Drill Session (Play Mode)~~ | ~~PD-403~~ | ~~Session results & high scores~~ |
 | ~~4 Drill Session (Play Mode)~~ | ~~PD-404~~ | ~~Level select & custom settings UI~~ |
-| ~~5 Key Identification Mode~~ | ~~PD-501~~ | ~~Key-ID question generator~~ |
+| ~~5 Key Identification Mode~~ | ~~PD-501~~ | ~~Key-signature question generator~~ |
 | ~~5 Key Identification Mode~~ | ~~PD-502~~ | ~~Answer UI (circle-of-fifths wheel / typing)~~ |
-| ~~5 Key Identification Mode~~ | ~~PD-503~~ | ~~Key-ID session screen & scoring~~ |
+| ~~5 Key Identification Mode~~ | ~~PD-503~~ | ~~Key-signature session screen & scoring~~ |
 | ~~5 Key Identification Mode~~ | ~~PD-504~~ | ~~Play-the-tonic answer option~~ |
-| ~~5 Key Identification Mode~~ | ~~PD-505~~ | ~~Key-ID settings & levels~~ |
+| ~~5 Key Identification Mode~~ | ~~PD-505~~ | ~~Key-signature settings & levels~~ |
 | 7 Polish, Quality & Release | PD-701 | Onboarding & first-run flow |
 | 7 Polish, Quality & Release | PD-702 | PWA setup (offline, installable) |
 | 7 Polish, Quality & Release | PD-703 | Settings screen |
@@ -72,7 +72,7 @@ Cross out a row (`~~text~~` in each cell) when its ticket is Done. Rows that are
 1. **PD-001 → PD-003** (foundations)
 2. **Theory and notation:** PD-101 → PD-108, PD-201 → PD-205
 3. **Input:** PD-301, PD-302 (on-screen piano), PD-304 → PD-306 (mic capture, analysis and benchmark, built before the mic was shelved), then **PD-313 → PD-315 (MIDI, the MVP's input)**
-4. **Play and Key ID screens:** PD-401 → PD-404, Epic 5
+4. **Play and Key Signatures screens:** PD-401 → PD-404, Epic 5
 5. **Polish:** Epic 7
 6. **After the MVP:** Epic 8 (the mic verifier and calibration, mic-driven play, level unlocking)
 
@@ -85,7 +85,7 @@ Cross out a row (`~~text~~` in each cell) when its ticket is Done. Rows that are
 | 2 Notation | PD-201 – PD-205 (PD-206 cut) |
 | 3 Input & Verification | PD-301, PD-302, PD-304 – PD-306, PD-313 – PD-315 (PD-303 cut) |
 | 4 Drill Session | PD-401 – PD-404 |
-| 5 Key ID Mode | PD-501 – PD-505 |
+| 5 Key Signatures Mode | PD-501 – PD-505 |
 | 7 Polish & Release | PD-701 – PD-706 |
 | 8 Post-MVP | PD-307 – PD-312, PD-405, PD-406 |
 
@@ -112,7 +112,7 @@ Set up Vite + React + TypeScript, linting, formatting, test runner (Vitest), CI 
 **Deps:** PD-001  
 **Status:** Done
 
-Home screen, routes for Play, Key ID, Settings; placeholder screens; responsive layout; theme tokens (light/dark/high-contrast).
+Home screen, routes for Play, Key Signatures, Settings; placeholder screens; responsive layout; theme tokens (light/dark/high-contrast).
 
 **Acceptance:**
 - [x] Navigation works on mobile and desktop widths; theme toggle persists.
@@ -128,7 +128,7 @@ IndexedDB wrapper (Dexie or similar) with repositories for settings, custom pres
 **Acceptance:**
 - [x] CRUD tests pass; export → wipe → import restores data.
 
-**Notes:** `src/storage/`: `PianoDrillDB` (Dexie, schema version 1; later changes go in as a new `version(n)` with an upgrade step), a `Storage` object with sessions (saved together with their reps), custom presets and remembered settings, and `exportBackup` / `parseBackup` / `importBackup` (replace or merge; a checked, versioned JSON file). `getStorage()` gives the app's shared instance. The tests use `fake-indexeddb` (a dev dependency). High scores are saved through it (PD-403; the session and rep tables exist but nothing writes to them for now); the Play and Key ID settings still live in localStorage until PD-404/703 move them over. Schema version 2 added the high-score `scores` table.
+**Notes:** `src/storage/`: `PianoDrillDB` (Dexie, schema version 1; later changes go in as a new `version(n)` with an upgrade step), a `Storage` object with sessions (saved together with their reps), custom presets and remembered settings, and `exportBackup` / `parseBackup` / `importBackup` (replace or merge; a checked, versioned JSON file). `getStorage()` gives the app's shared instance. The tests use `fake-indexeddb` (a dev dependency). High scores are saved through it (PD-403; the session and rep tables exist but nothing writes to them for now); the Play and Key Signatures settings still live in localStorage until PD-404/703 move them over. Schema version 2 added the high-score `scores` table.
 
 ### PD-004: GitHub Pages deploy & routing
 
@@ -139,7 +139,7 @@ IndexedDB wrapper (Dexie or similar) with repositories for settings, custom pres
 Publish the app as a GitHub Pages site. Set the Vite `base` for the repo subpath, make direct URLs and reloads work (e.g. `HashRouter` or a `404.html` fallback), and add a Pages deploy job to CI.
 
 **Acceptance:**
-- [x] The app loads at its GitHub Pages URL, and reloading or deep-linking (e.g. `/key-id`) works. *(HashRouter, so a deep link is `/#/key-id`; confirm once Pages is live.)*
+- [x] The app loads at its GitHub Pages URL, and reloading or deep-linking (e.g. `/key-signatures`) works. *(HashRouter, so a deep link is `/#/key-id`; confirm once Pages is live.)*
 
 **Notes:** `HashRouter` in `src/main.tsx` (no server rewrites needed), `base: './'` in `vite.config.ts` (works under any repo subpath), and `.github/workflows/deploy.yml` builds and publishes `dist`. **It never runs on its own**: deploy by hand from the repo's Actions tab (Deploy to GitHub Pages > Run workflow). Pages is enabled with GitHub Actions as its source; the repo is public (Pages needs that on the free plan). Live at https://levigreen.github.io/piano-drill/ (deep links: `/#/key-id`).
 
@@ -230,7 +230,7 @@ Reworked on 2026-11-12 (it was "either hand, one at a time & cross-clef options"
 - [x] Levels 3 to 10 really do reach notes needing 2 ledger lines in the treble and in the bass clef.
 - [x] The grand staff leaves room for two ledger lines above, below and between the staves, at a fixed size so nothing shifts.
 - [x] The on-screen piano spans C2 to C6.
-- [x] Checked by eye on the Play screen (the piano is cramped on a phone; left as it is for now).
+- [x] Checked by eye on the Sight-Read screen (the piano is cramped on a phone; left as it is for now).
 
 **Notes:** `src/theory/constraints.ts` (`RANGE_LOW_MIDI` = 36, `RANGE_HIGH_MIDI` = 84, default 2 ledger lines), `src/levels/levels.json` (per-level ledger lines and range), `renderGrandStaff` (default `ledgerRoom` 2), `PianoKeyboard` (default range), and the two-hand search window (left hand up to F4, right hand down to G3).
 
@@ -344,7 +344,7 @@ Tap/click keyboard implementing `NoteInput` (multi-touch for chords). Also acts 
 **Acceptance:**
 - [x] Multi-touch chord produces the combined active note set.
 
-**Notes:** `OnScreenKeyboardInput` (`src/audio/inputs/`) and the press/release props on `PianoKeyboard` (pointer events, one per finger; also Enter/Space). Used by the Play screen.
+**Notes:** `OnScreenKeyboardInput` (`src/audio/inputs/`) and the press/release props on `PianoKeyboard` (pointer events, one per finger; also Enter/Space). Used by the Sight-Read screen.
 
 ### PD-304: Mic capture pipeline
 
@@ -399,36 +399,36 @@ The MVP's real input: a digital piano connected to the laptop (USB or Bluetooth 
 
 **Notes:** `src/audio/inputs/MidiInput.ts` (a `NoteInput`; `parseMidiMessage` for the raw messages), the test screen `src/ui/MidiTestScreen.tsx` at Settings > MIDI Test, and a fake piano for tests in `src/test-utils/fakeMidi.ts`. Listens to all devices or one chosen device, which is remembered. Browsers and troubleshooting are in docs/midi.md. The test screen is kept to what is needed to troubleshoot a connection: Connect, the status message, the piano list, a table of each device's state and port, and a keyboard that lights up the keys you hold. (It once also showed message counts, the last raw message and a log of notes played; those were removed.)
 
-### PD-314: MIDI-driven Play and Key ID
+### PD-314: MIDI-driven Play and Key Signatures
 
 **Size:** M  
 **Deps:** PD-313, PD-402, PD-503  
 **Status:** Done
 
-Use `MidiInput` in the drill loop. An input chooser on the Play screen (on-screen piano or MIDI piano), remembered; the on-screen piano stays as the fallback and demo. Key ID's Play view uses the same input. **Reworked 2026-11-13: in Key ID's Play view you no longer play just the tonic; you play the key's scale, up one octave and back down in order (16 notes, the top note struck twice; natural minor for minor keys), starting on the tonic in any octave on the clef's side of middle C (treble: right hand, tonic at or above middle C; bass: left hand, tonic below middle C).** Any wrong note, a repeated note or a note in the wrong octave sends you back to the start of the scale. It takes much longer than tapping, so the question's time limit is **8 seconds longer** and the score is weighted (see Notes). The Play view's piano is the wide C2 to C6 one, like the Play screen's. If the piano is unplugged mid-session, pause with a clear message. Anything from the mic-era Play design that only made sense for a microphone (the "almost" state, the detected-notes strip, escalating hints) is dropped; wrong notes and the per-note halos already work.
+Use `MidiInput` in the drill loop. An input chooser on the Sight-Read screen (on-screen piano or MIDI piano), remembered; the on-screen piano stays as the fallback and demo. Key Signatures's MIDI view uses the same input. **Reworked 2026-11-13: in Key Signatures's MIDI view you no longer play just the tonic; you play the key's scale, up one octave and back down in order (16 notes, the top note struck twice; natural minor for minor keys), starting on the tonic in any octave on the clef's side of middle C (treble: right hand, tonic at or above middle C; bass: left hand, tonic below middle C).** Any wrong note, a repeated note or a note in the wrong octave sends you back to the start of the scale. It takes much longer than tapping, so the question's time limit is **8 seconds longer** and the score is weighted (see Notes). The MIDI view's piano is the wide C2 to C6 one, like the Sight-Read screen's. If the piano is unplugged mid-session, pause with a clear message. Anything from the mic-era Play design that only made sense for a microphone (the "almost" state, the detected-notes strip, escalating hints) is dropped; wrong notes and the per-note halos already work.
 
 **Acceptance:**
 - [x] Complete a 20-rep Play session on a real digital piano over MIDI.
-- [x] Key ID's Play view works with MIDI: the scale up and back down is accepted, and a wrong note starts you over (tested with a fake piano and checked on a real one).
+- [x] Key Signatures's MIDI view works with MIDI: the scale up and back down is accepted, and a wrong note starts you over (tested with a fake piano and checked on a real one).
 - [x] The scale rules, hand/register, the +8 s grace period and the weighted score are covered by tests.
 - [x] Unplugging the piano mid-session pauses with a clear message, and plugging it back in lets you resume (tested with a fake piano).
 
-**Notes:** an "Input" option in both the Play and Key ID settings (on-screen piano or MIDI piano), remembered and shared, the on-screen piano by default. With MIDI chosen, the real piano and the on-screen piano both work at once (`MergedInput`). The piano is connected when you press Start, so no piano, a blocked permission or a browser without MIDI is reported in words and nothing starts. Unplugging pauses the drill with a message and Resume stays off until the piano is back. The piano picked on the MIDI test screen is the one used. Code: `src/audio/inputs/drillInput.ts`, `MergedInput.ts`, `src/ui/usePianoInput.ts`, `InputChoiceField.tsx`.
+**Notes:** an "Input" option in both the Play and Key Signatures settings (on-screen piano or MIDI piano), remembered and shared, the on-screen piano by default. With MIDI chosen, the real piano and the on-screen piano both work at once (`MergedInput`). The piano is connected when you press Start, so no piano, a blocked permission or a browser without MIDI is reported in words and nothing starts. Unplugging pauses the drill with a message and Resume stays off until the piano is back. The piano picked on the MIDI test screen is the one used. Code: `src/audio/inputs/drillInput.ts`, `MergedInput.ts`, `src/ui/usePianoInput.ts`, `InputChoiceField.tsx`.
 
-**Key ID scale play (replaced by the checklist in PD-315; kept here as history):** `src/keyid/scalePlay.ts` (the notes, the hand, the 8 s grace), `KeyIdSession` (progress through the scale; a wrong note restarts it, unless the wrong note could itself start the scale, which counts as a fresh start; the limit is fixed when the question appears, from the way it is being answered then; `limitSeconds` is in the snapshot so the screen's clock follows it). A MIDI message cannot say which hand played, so the hand is enforced by register: the first note must be the tonic on the clef's side of middle C, and it fixes the octave of the scale (`startsScale`; before it, the screen shows the tonic nearest middle C). **Scoring** (`src/scoring/score.ts`): a question answered by playing the scale is worth 150 (not 100) plus the same up-to-100 speed bonus, measured against the level's goal time plus the 8 s grace; each restart costs 25; a perfect, fast session is 5000 (4000 for the other views). They share the one high-score board per level. The on-screen piano also works in this view (a key click holds the note for 120 ms, so the same note cannot be struck twice within that).
+**Key Signatures scale play (replaced by the checklist in PD-315; kept here as history):** `src/keyid/scalePlay.ts` (the notes, the hand, the 8 s grace), `KeyIdSession` (progress through the scale; a wrong note restarts it, unless the wrong note could itself start the scale, which counts as a fresh start; the limit is fixed when the question appears, from the way it is being answered then; `limitSeconds` is in the snapshot so the screen's clock follows it). A MIDI message cannot say which hand played, so the hand is enforced by register: the first note must be the tonic on the clef's side of middle C, and it fixes the octave of the scale (`startsScale`; before it, the screen shows the tonic nearest middle C). **Scoring** (`src/scoring/score.ts`): a question answered by playing the scale is worth 150 (not 100) plus the same up-to-100 speed bonus, measured against the level's goal time plus the 8 s grace; each restart costs 25; a perfect, fast session is 5000 (4000 for the other views). They share the one high-score board per level. The on-screen piano also works in this view (a key click holds the note for 120 ms, so the same note cannot be struck twice within that).
 
-### PD-315: Key ID MIDI view: a checklist on a MIDI piano
+### PD-315: Key Signatures MIDI view: a checklist on a MIDI piano
 
 **Size:** M  
 **Deps:** PD-314  
 **Status:** In progress (built and tested with a fake piano; awaiting a check with a real one)
 
-Replaces PD-314's "play the scale" with a checklist, played on a MIDI piano with the hand that reads the clef shown (treble: right hand, at or above middle C; bass: left hand, below it). The rows can be done in any order and tick off as they are met: **scale up** (8 notes, from the tonic in any octave on the clef's side), **scale down** (8 notes, its own octave), and **the tonic chord** with its **first and second inversions** (exactly the three notes held together, the lowest note says which). (Playing the signature's sharps or flats in order was tried and dropped on 2026-11-16.) Minor keys are natural minor with a minor tonic chord. The labels never say which key. The Play view works **only with a MIDI piano chosen under Input and on a desktop screen** (wider than 640 px); otherwise the tab is greyed out with a hint. The on-screen piano in the Play view only mirrors the keys held (green; red if out of key), it cannot be clicked, and what it lit does not stay lit. The tab is named **MIDI**. Notes may overlap (the next key down before the last is up) without breaking a scale. Chords count when the root-position chord they come from starts on the clef's side, so in the bass a rising root position and inversions still count when the inversions climb above middle C.
+Replaces PD-314's "play the scale" with a checklist, played on a MIDI piano with the hand that reads the clef shown (treble: right hand, at or above middle C; bass: left hand, below it). The rows can be done in any order and tick off as they are met: **scale up** (8 notes, from the tonic in any octave on the clef's side), **scale down** (8 notes, its own octave), and **the tonic chord** with its **first and second inversions** (exactly the three notes held together, the lowest note says which). (Playing the signature's sharps or flats in order was tried and dropped on 2026-11-16.) Minor keys are natural minor with a minor tonic chord. The labels never say which key. The MIDI view works **only with a MIDI piano chosen under Input and on a desktop screen** (wider than 640 px); otherwise the tab is greyed out with a hint. The on-screen piano in the MIDI view only mirrors the keys held (green; red if out of key), it cannot be clicked, and what it lit does not stay lit. The tab is named **MIDI**. Notes may overlap (the next key down before the last is up) without breaking a scale. Chords count when the root-position chord they come from starts on the clef's side, so in the bass a rising root position and inversions still count when the inversions climb above middle C.
 
 **Rules:** a slip resets only the row in progress (ticked rows are kept); only a note on the clef's side that is not in the key costs a wrong note (25 points); notes on the other side of middle C are ignored completely (no reset, no cost), so the other hand is free. A note struck while another key on the clef's side is held belongs to a chord and is not seen by the scale rows. A bass scale may climb past middle C (a note up there counts only if it is the next one expected). **Scoring:** a finished question is a flat 250 points with no speed bonus (a perfect session is 5000), a wrong note costs 25, a timeout scores 0; the time limit is 25 seconds longer. Of equal scores on a board the faster session ranks higher (then the earlier).
 
 **Acceptance:**
-- [ ] Key ID's MIDI view works with a real piano over MIDI: every row can be ticked, in any order, and the on-screen piano follows the keys held.
+- [ ] Key Signatures's MIDI view works with a real piano over MIDI: every row can be ticked, in any order, and the on-screen piano follows the keys held.
 - [x] The rows, the hand/register rule, wrong-note and slip handling, the +25 s limit and the flat 250 score are covered by tests (with a fake piano).
 - [x] With the on-screen piano chosen, or on a phone-width screen, the MIDI tab is greyed out with a hint, and there is no Input setting on a phone.
 - [x] Ties on a high-score board go to the faster session.
@@ -450,7 +450,7 @@ Implement states from §9.3 with a fake-clock-friendly design; start/pause/end; 
 **Acceptance:**
 - [x] Deterministic tests cover success, wrong-then-right, timeout, skip, and pause paths.
 
-**Notes:** `DrillSession` in `src/session/`: per-note cumulative verification (a note stays heard; wrong notes are logged but never undo), outcomes correct / correct with errors / timeout / skipped, quiet-wait before each flash (marks a rep that started in a noisy room), pause voids the rep on screen. Runs on an injectable clock (31 deterministic tests). Verified by playing reps on the Play screen. The get-ready wait is fixed (not a setting): 4 seconds at the start of a session and after a resume, 1 second between targets; "Get ready" must be readable for the 4 seconds.
+**Notes:** `DrillSession` in `src/session/`: per-note cumulative verification (a note stays heard; wrong notes are logged but never undo), outcomes correct / correct with errors / timeout / skipped, quiet-wait before each flash (marks a rep that started in a noisy room), pause voids the rep on screen. Runs on an injectable clock (31 deterministic tests). Verified by playing reps on the Sight-Read screen. The get-ready wait is fixed (not a setting): 4 seconds at the start of a session and after a resume, 1 second between targets; "Get ready" must be readable for the 4 seconds.
 
 ### PD-402: Drill screen UI
 
@@ -463,7 +463,7 @@ Main play screen: big staff, minimal chrome, optional timer visibility, success/
 **Acceptance:**
 - [x] Full rep loop works with on-screen keyboard input at levels 1–10.
 
-**Notes:** `src/ui/PlayScreen.tsx`, laid out like the Key ID screen (centred column, settings in a drawer, fixed-height status/clock/notes lines so nothing shifts, 4 s countdown over the always-present empty grand staff, results modal at the end). A session is 20 targets. The drawer has the level plus the four options pulled forward from PD-404 (hands, notes per hand, sharps/flats, keys; shared `DifficultyFields` component, also used by the Generator preview). Picking a level fills them in; changing one makes it Custom, and it is remembered. Per-note green halos on the staff and keys, wrong notes marked ✕, "N / M notes" counter, reveal with note names on a timeout or skip. Not built: the "almost" state and the detected-notes strip, escalating hints for a stuck note and the input source selector (all need the microphone; moved to PD-406), and optional timer visibility and keyboard shortcuts (cut to keep the screen simple).
+**Notes:** `src/ui/PlayScreen.tsx`, laid out like the Key Signatures screen (centred column, settings in a drawer, fixed-height status/clock/notes lines so nothing shifts, 4 s countdown over the always-present empty grand staff, results modal at the end). A session is 20 targets. The drawer has the level plus the four options pulled forward from PD-404 (hands, notes per hand, sharps/flats, keys; shared `DifficultyFields` component, also used by the Generator preview). Picking a level fills them in; changing one makes it Custom, and it is remembered. Per-note green halos on the staff and keys, wrong notes marked ✕, "N / M notes" counter, reveal with note names on a timeout or skip. Not built: the "almost" state and the detected-notes strip, escalating hints for a stuck note and the input source selector (all need the microphone; moved to PD-406), and optional timer visibility and keyboard shortcuts (cut to keep the screen simple).
 
 ### PD-403: Session results & high scores
 
@@ -471,7 +471,7 @@ Main play screen: big staff, minimal chrome, optional timer visibility, success/
 **Deps:** PD-402, PD-003  
 **Status:** Done
 
-Changed from the original "stats screen" (2026-11-12): you care about score and total time, not per-target numbers, so the results are an arcade high-score system. **Score:** each target you get right is worth 100, plus a speed bonus of up to 100 (full within the level's goal time, fading to nothing at twice the goal time), minus 25 per wrong note; a timeout or skip scores 0 (in Key ID, wrong guesses cost 25 each like wrong notes, since the question carries on); a perfect fast 20-target session is 4000. **End-of-session modal:** score, correct count, total time, and (for a finished session on a preset level that makes the top ten) a 3-letter initials box, like an old arcade game. **High scores screen** (`/scores`): top ten per level, always ten lines, separately for Play and Key ID; on a phone it shows # / initials / score / date and tapping the score opens the breakdown. Only high scores are kept: sessions themselves are not saved, and there is no History screen (cut). Custom setups and sessions ended early are not scored for a board. Applies to both Play and Key ID.
+Changed from the original "stats screen" (2026-11-12): you care about score and total time, not per-target numbers, so the results are an arcade high-score system. **Score:** each target you get right is worth 100, plus a speed bonus of up to 100 (full within the level's goal time, fading to nothing at twice the goal time), minus 25 per wrong note; a timeout or skip scores 0 (in Key Signatures, wrong guesses cost 25 each like wrong notes, since the question carries on); a perfect fast 20-target session is 4000. **End-of-session modal:** score, correct count, total time, and (for a finished session on a preset level that makes the top ten) a 3-letter initials box, like an old arcade game. **High scores screen** (`/scores`): top ten per level, always ten lines, separately for Play and Key Signatures; on a phone it shows # / initials / score / date and tapping the score opens the breakdown. Only high scores are kept: sessions themselves are not saved, and there is no History screen (cut). Custom setups and sessions ended early are not scored for a board. Applies to both Play and Key Signatures.
 
 **Acceptance:**
 - [x] Results are saved and viewable (per-level boards).
@@ -485,19 +485,19 @@ Changed from the original "stats screen" (2026-11-12): you care about score and 
 **Deps:** PD-108, PD-002  
 **Status:** Done
 
-Scope cut down on 2026-11-12 to keep settings simple: no level locks, no saved custom setups, no live preview, and only a few options. **Level select** is the Level dropdown in each mode's settings (Play and Key ID), with "Custom" once you change something. **Play's custom options:** hands (checkboxes: left, right, both; several checked = random per target), notes per hand (1 note, 2 interval, 3 triad, 4 seventh chord), up to N sharps/flats and a time limit per target (none, 5, 10, 20 s). **Key ID's options:** up to N sharps/flats, keys (major, minor or both) and a time limit. The keys option is not offered in Play: a level keeps the keys it was made with.
+Scope cut down on 2026-11-12 to keep settings simple: no level locks, no saved custom setups, no live preview, and only a few options. **Level select** is the Level dropdown in each mode's settings (Play and Key Signatures), with "Custom" once you change something. **Play's custom options:** hands (checkboxes: left, right, both; several checked = random per target), notes per hand (1 note, 2 interval, 3 triad, 4 seventh chord), up to N sharps/flats and a time limit per target (none, 5, 10, 20 s). **Key Signatures's options:** up to N sharps/flats, keys (major, minor or both) and a time limit. The keys option is not offered in Play: a level keeps the keys it was made with.
 
 **Acceptance:**
 - [x] A valid custom configuration can be created and launched, and is remembered.
-- [x] Key-ID levels are selectable too (moved from PD-505).
+- [x] Key-signature levels are selectable too (moved from PD-505).
 
-**Notes:** the Play settings are a centred modal (`src/ui/PlayScreen.tsx`, shared `DifficultyFields`); Key ID's are the same modal, narrower. Cut from the original ticket: the full level list with targets and locks (see PD-405, deferred), save/load/delete of presets (the storage for it exists but is unused), live preview of sample targets, the "free play" toggle, and the remaining dimensions of design §3 (clef, content type, inversions, chromatic notes, ledger lines, octave strictness).
+**Notes:** the Play settings are a centred modal (`src/ui/PlayScreen.tsx`, shared `DifficultyFields`); Key Signatures's are the same modal, narrower. Cut from the original ticket: the full level list with targets and locks (see PD-405, deferred), save/load/delete of presets (the storage for it exists but is unused), live preview of sample targets, the "free play" toggle, and the remaining dimensions of design §3 (clef, content type, inversions, chromatic notes, ledger lines, octave strictness).
 
 ## Epic 5 — Key Identification Mode
 
 Progress: 5/5 tickets done
 
-### PD-501: Key-ID question generator
+### PD-501: Key-signature question generator
 
 **Size:** S  
 **Deps:** PD-102  
@@ -521,9 +521,9 @@ Touch-friendly answer input with proper enharmonic labelling; major/minor toggle
 **Acceptance:**
 - [x] All 30 keys can be selected correctly on desktop, by wheel and typing (phone check moved to PD-704).
 
-**Notes:** circle-of-fifths wheel (majors outside, relative minors inside, the three enharmonic positions split; kept compact), Type (no visual cue; works with a phone keyboard), and Play. All centred under the staff. Marks right and wrong by shape and color. The input marks right/wrong only; the screen around it says what the answer was. Verified on desktop in Settings > Key ID preview.
+**Notes:** circle-of-fifths wheel (majors outside, relative minors inside, the three enharmonic positions split; kept compact), Type (no visual cue; works with a phone keyboard), and Play. All centred under the staff. Marks right and wrong by shape and color. The input marks right/wrong only; the screen around it says what the answer was. Verified on desktop in Settings > Key Signatures preview.
 
-### PD-503: Key-ID session screen & scoring
+### PD-503: Key-signature session screen & scoring
 
 **Size:** M  
 **Deps:** PD-501, PD-502, PD-401  
@@ -545,11 +545,11 @@ Flash → answer → timed result; reuse the rep session machine (4 s first get-
 Alternative answer: a fourth view on the main screen (next to Wheel and Type) where you play the tonic of the key on the piano, verified via the mic. Not a setting in the drawer; switchable at any time.
 
 **Acceptance:**
-- [x] The Play view toggles between tap and play; the first note struck decides, any octave (on-screen piano keys stand in for the piano). *(Superseded 2026-11-13 by PD-314: Play now means playing the key's scale.)*
+- [x] The MIDI view toggles between tap and play; the first note struck decides, any octave (on-screen piano keys stand in for the piano). *(Superseded 2026-11-13 by PD-314: Play now means playing the key's scale.)*
 
 **Notes:** working with the real microphone moved to PD-406's acceptance, since it needs PD-307/308.
 
-### PD-505: Key-ID settings & levels
+### PD-505: Key-signature settings & levels
 
 **Size:** S  
 **Deps:** PD-503, PD-404  
@@ -558,7 +558,7 @@ Alternative answer: a fourth view on the main screen (next to Wheel and Type) wh
 Presets (≤2 accidentals → all major keys → major and minor → all 30 keys), custom options UI.
 
 **Acceptance:**
-- [x] Presets selectable, and options editable, in the Key ID screen's settings drawer (level, sharps/flats, keys, time limit).
+- [x] Presets selectable, and options editable, in the Key Signatures screen's settings drawer (level, sharps/flats, keys, time limit).
 
 **Notes:** selecting key-ID levels from the global level screen moved to PD-404's acceptance.
 
@@ -611,7 +611,7 @@ Test matrix per §11; fix iOS Safari audio, permission, throttling, and layout b
 - [ ] Checklist passes on the device matrix; issues triaged.
 - [ ] Mic test screen level meter works on iOS Safari and Android Chrome (moved from PD-304); fill in the mobile rows in docs/audio-clock.md. (Deferred with the mic.)
 - [ ] Flash test screen on a mid-range phone: swap within one frame, t0 callback once per flash (moved from PD-204); record the numbers.
-- [ ] Key-ID answer wheel and Type mode work on a phone: every key tappable, soft keyboard works in Type mode (moved from PD-502).
+- [ ] Key-signature answer wheel and Type mode work on a phone: every key tappable, soft keyboard works in Type mode (moved from PD-502).
 
 ### PD-705: Performance & battery pass
 
@@ -730,5 +730,5 @@ Wire `MicInput` into drill loop; handle permission-denied, mic loss, noisy envir
 
 **Acceptance:**
 - [ ] Complete a 20-rep session on a real piano using only the mic.
-- [ ] The Play screen shows the "almost" state and a detected-notes strip, gives escalating hints for a stuck note, and has an input source selector (moved from PD-402).
-- [ ] Key ID's Play view (answer by playing the tonic) works with the mic (moved from PD-504).
+- [ ] The Sight-Read screen shows the "almost" state and a detected-notes strip, gives escalating hints for a stuck note, and has an input source selector (moved from PD-402).
+- [ ] Key Signatures's MIDI view (answer by playing the tonic) works with the mic (moved from PD-504).

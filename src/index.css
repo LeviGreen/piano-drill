@@ -249,7 +249,7 @@ select {
   }
 }
 
-/* Phones: tighten the Key ID screen so the answer wheel fits without scrolling. */
+/* Phones: tighten the Key Signatures screen so the answer wheel fits without scrolling. */
 @media (max-width: 640px) {
   .shell-header {
     padding-top: 0.25rem;
@@ -263,7 +263,7 @@ select {
   }
 
   .keyid-screen h1 {
-    display: none; /* the tab bar already says Key ID */
+    display: none; /* the tab bar already says Key Signatures */
   }
 
   .keyid-bar {
@@ -685,7 +685,7 @@ fieldset {
   gap: 0.25rem;
 }
 
-/* Key ID screen: one centred column, so the staff and the answer input line up */
+/* Key Signatures screen: one centred column, so the staff and the answer input line up */
 .keyid-screen {
   max-width: 34rem;
   margin: 0 auto;
@@ -739,7 +739,7 @@ fieldset {
   border-bottom: 1px solid var(--border);
 }
 
-/* Key-ID answer input */
+/* Key-signature answer input */
 .answer-input {
   max-width: 26rem;
   margin: 0 auto;
@@ -1103,7 +1103,7 @@ button:disabled {
   color: var(--text-muted);
 }
 
-/* Settings as a wide centred modal (Play): room for the picture tiles */
+/* Settings as a wide centred modal (Sight-Read): room for the picture tiles */
 .settings-modal {
   width: min(56rem, calc(100% - 2rem));
   max-height: calc(100% - 2rem);
@@ -1401,7 +1401,7 @@ button:disabled {
   font-weight: 600;
 }
 
-/* Key ID, Play view: what to play, ticked off as it is done */
+/* Key Signatures, MIDI view: what to play, ticked off as it is done */
 .checklist {
   display: flex;
   flex-wrap: wrap;

@@ -26,14 +26,14 @@ describe('routing', () => {
   it('shows the home screen with links to every section', () => {
     renderAt('/')
     expect(screen.getByRole('heading', { level: 1, name: 'Piano Drill' })).toBeTruthy()
-    for (const name of ['Play', 'Key ID', 'Scores', 'Settings']) {
+    for (const name of ['Sight-Read', 'Key Signatures', 'Scores', 'Settings']) {
       expect(screen.getAllByRole('link', { name: new RegExp(name) }).length).toBeGreaterThan(0)
     }
   })
 
   it.each([
-    ['/play', 'Play'],
-    ['/key-id', 'Key ID'],
+    ['/sight-read', 'Sight-Read'],
+    ['/key-signatures', 'Key Signatures'],
     ['/settings', 'Settings'],
   ])('renders %s', (path, heading) => {
     renderAt(path)

@@ -112,7 +112,7 @@ describe('high scores', () => {
     await userEvent.selectOptions(screen.getByLabelText('Level'), '4')
     await screen.findByText('FOR')
     expect(screen.queryByText('ONE')).toBeNull()
-    await userEvent.click(screen.getByRole('button', { name: 'Key ID' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Key Signatures' }))
     await screen.findByText('KEY')
     expect(screen.queryByText('FOR')).toBeNull()
     expect(screen.getAllByRole('option')).toHaveLength(5) // the five key-ID levels
@@ -164,10 +164,10 @@ describe('on a phone', () => {
     expect(screen.queryByRole('dialog')).toBeNull()
   })
 
-  it('Key ID boards say wrong guesses', async () => {
+  it('Key Signatures boards say wrong guesses', async () => {
     await addScore('k', 'keyid', '1', 'KEY', 2000)
     show()
-    await userEvent.click(screen.getByRole('button', { name: 'Key ID' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Key Signatures' }))
     await userEvent.click(await screen.findByRole('button', { name: /2,000, show details/ }))
     expect(within(screen.getByRole('dialog')).getByText('Wrong guesses: 4')).toBeTruthy()
   })

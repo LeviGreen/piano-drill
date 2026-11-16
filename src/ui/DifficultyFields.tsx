@@ -18,7 +18,7 @@ function toggle<T>(list: T[], value: T): T[] {
 
 /**
  * The options that shape a play-mode target: which hands, how many notes per hand, how many sharps/flats and which
- * keys. Shared by the Play settings drawer and the Generator preview. `onEdit` receives a partial settings object to
+ * keys. Shared by the Sight-Read settings drawer and the Generator preview. `onEdit` receives a partial settings object to
  * merge; the caller keeps the settings valid.
  */
 export function DifficultyFields({

@@ -102,7 +102,7 @@ describe('Play with a MIDI piano', () => {
     await screen.findByRole('dialog', { name: 'Session summary' })
   })
 
-  it('the input choice is in the settings, remembered, and shared with Key ID', async () => {
+  it('the input choice is in the settings, remembered, and shared with Key Signatures', async () => {
     localStorage.clear()
     showPlay({ midiAccess: withAccess(new FakeMidiAccess()) })
     await userEvent.click(button('Settings'))
@@ -236,13 +236,13 @@ function createKey(q: KeyIdQuestion) {
   }
 }
 
-describe('Key ID with a MIDI piano', () => {
+describe('Key Signatures with a MIDI piano', () => {
   const upcoming = (): KeyIdQuestion => {
     const g = new KeyIdGenerator(toQuestionConfig(KEY_ID_LEVELS[0].settings), SEED)
     return g.next()
   }
 
-  it('in the Play view, the checklist played on the real piano answers the question', async () => {
+  it('in the MIDI view, the checklist played on the real piano answers the question', async () => {
     const piano = new FakePort('p', 'MM8')
     showKeyId({ midiAccess: withAccess(new FakeMidiAccess(piano)) })
     await userEvent.click(button('MIDI'))

@@ -1,6 +1,6 @@
 import type { InputChoice } from '../audio/inputs/drillInput'
 
-/** Where the notes come from: the on-screen piano or a MIDI piano. The same choice is used by Play and Key ID. */
+/** Where the notes come from: the on-screen piano or a MIDI piano. The same choice is used by Sight-Read and Key Signatures. */
 export function InputChoiceField({
   value,
   onChange,
@@ -10,7 +10,7 @@ export function InputChoiceField({
   value: InputChoice
   onChange: (choice: InputChoice) => void
   disabled?: boolean
-  /** What the MIDI option says (Key ID's on-screen piano only mirrors the keys). */
+  /** What the MIDI option says (Key Signatures's on-screen piano only mirrors the keys). */
   midiLabel?: string
 }) {
   return (
