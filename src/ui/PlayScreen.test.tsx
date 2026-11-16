@@ -97,7 +97,48 @@ describe('before starting', () => {
     expect(within(dialog).getByRole('group', { name: 'Notes per hand' })).toBeTruthy()
     expect(within(dialog).getByLabelText(/Up to this many sharps/)).toBeTruthy()
     expect(within(dialog).getByLabelText('Time limit per target')).toBeTruthy()
-    expect(within(dialog).queryByLabelText('Keys')).toBeNull() // a level keeps the keys it was made with
+    expect(within(dialog).queryByRole('option', { name: 'Major only' })).toBeNull() // a level keeps the keys it was made with
+  })
+
+  it('"One key signature" hides the level and sharps/flats, and plays the major key and its relative minor', async () => {
+    show()
+    await userEvent.click(button('Settings'))
+    const dialog = screen.getByRole('dialog', { name: 'Play settings' })
+    expect(
+      within(dialog).getByLabelText('Key signature', { selector: 'select' }).closest('.unused'),
+    ).not.toBeNull()
+    expect(
+      within(dialog).getByRole('radio', { name: 'Several keys' }).getAttribute('aria-checked'),
+    ).toBe('true')
+    await userEvent.click(within(dialog).getByRole('radio', { name: 'One key signature' }))
+    // Hidden but still taking room, so the modal does not change size
+    expect(within(dialog).getByLabelText('Level').closest('.unused')).not.toBeNull()
+    expect(
+      within(dialog)
+        .getByLabelText(/Up to this many sharps/)
+        .closest('.unused'),
+    ).not.toBeNull()
+    expect(within(dialog).getByLabelText('Key signature').closest('.unused')).toBeNull()
+    expect(within(dialog).getByLabelText('Time limit per target')).toBeTruthy()
+    await userEvent.selectOptions(within(dialog).getByLabelText('Key signature'), '-3')
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!)).toMatchObject({
+      levelId: 'custom',
+      settings: { keys: { explicit: ['E♭ major', 'C minor'] } },
+    })
+  })
+
+  it('switching back to several keys brings the level picker back, and the key signature is remembered', async () => {
+    show()
+    await userEvent.click(button('Settings'))
+    const dialog = screen.getByRole('dialog', { name: 'Play settings' })
+    await userEvent.click(within(dialog).getByRole('radio', { name: 'One key signature' }))
+    await userEvent.selectOptions(within(dialog).getByLabelText('Key signature'), '2')
+    await userEvent.click(within(dialog).getByRole('radio', { name: 'Several keys' }))
+    expect(within(dialog).getByLabelText('Level')).toBeTruthy()
+    expect(within(dialog).getByLabelText(/Up to this many sharps/)).toBeTruthy()
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).settings.keys.explicit).toBeUndefined()
+    await userEvent.click(within(dialog).getByRole('radio', { name: 'One key signature' }))
+    expect((within(dialog).getByLabelText('Key signature') as HTMLSelectElement).value).toBe('2')
   })
 
   it('picking a level fills the options in; changing one makes it Custom and keeps it next time', async () => {

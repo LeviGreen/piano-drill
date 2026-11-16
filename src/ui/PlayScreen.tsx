@@ -3,7 +3,12 @@ import type { RequestMidiAccess } from '../audio/inputs/MidiInput'
 import type { OnScreenKeyboardInput } from '../audio/inputs/OnScreenKeyboardInput'
 import { createLevelGenerator } from '../levels/levelGenerator'
 import { PRESET_LEVELS } from '../levels/presets'
-import { mergeSettings, parseSettings, type DifficultySettings } from '../levels/settings'
+import {
+  mergeSettings,
+  parseKeyName,
+  parseSettings,
+  type DifficultySettings,
+} from '../levels/settings'
 import { FlashController } from '../notation/flash'
 import { PianoKeyboard, type KeyMark } from '../notation/PianoKeyboard'
 import { renderGrandStaff } from '../notation/renderGrandStaff'
@@ -11,7 +16,7 @@ import { DrillSession, type SessionSnapshot } from '../session/DrillSession'
 import { summarize } from '../session/summary'
 import type { Storage } from '../storage'
 import type { Presenter, RepResult } from '../session/types'
-import { keySignature } from '../theory/keys'
+import { keyName, keySignature } from '../theory/keys'
 import { formatPitch } from '../theory/pitch'
 import type { Target } from '../theory/target'
 import { DifficultyFields } from './DifficultyFields'
@@ -26,6 +31,24 @@ import { useRemainingSeconds } from './useRemainingSeconds'
 /** A session is always this many targets. */
 const DEFAULT_REPS = 20
 const STORAGE_KEY = 'piano-drill.play-settings'
+/** The key signature last picked for "One key signature", kept so switching away and back remembers it. */
+const ONE_KEY_STORAGE = 'piano-drill.play-one-key'
+
+/** The sharps/flats of the one key signature the settings are set to, or null when they draw from several keys. */
+const oneKeySignature = (s: DifficultySettings): number | null => {
+  const name = s.keys.explicit?.[0]
+  return name === undefined ? null : (parseKeyName(name)?.accidentals ?? null)
+}
+
+const signatureLabel = (n: number): string => {
+  const names = `${keyName(keySignature(n, 'major'))} / ${keyName(keySignature(n, 'minor'))}`
+  const count =
+    n === 0
+      ? 'no sharps or flats'
+      : `${Math.abs(n)} ${n > 0 ? 'sharp' : 'flat'}${Math.abs(n) > 1 ? 's' : ''}`
+  return `${names} (${count})`
+}
+const SIGNATURES = Array.from({ length: 15 }, (_, i) => i - 7)
 
 /** The empty grand staff (both clefs, no notes) that is on screen before, between and after targets. */
 const drawEmptyStaff = (el: HTMLElement | null) => {
@@ -84,6 +107,17 @@ export function PlayScreen({ reps = DEFAULT_REPS, timing, storage, midiAccess }:
   const [levelId, setLevelId] = useState<number | 'custom'>(initial.levelId)
   const level = PRESET_LEVELS.find((l) => l.id === levelId)
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [lastSignature, setLastSignature] = useState<number>(() => {
+    const now = oneKeySignature(initial.settings)
+    if (now !== null) return now
+    try {
+      const n = Number(localStorage.getItem(ONE_KEY_STORAGE))
+      return Number.isInteger(n) && n >= -7 && n <= 7 ? n : 0
+    } catch {
+      return 0
+    }
+  })
+  const signature = oneKeySignature(settings)
   const [dismissed, setDismissed] = useState(false)
   const stage = useRef<HTMLDivElement>(null)
   const session = useRef<DrillSession | null>(null)
@@ -180,6 +214,26 @@ export function PlayScreen({ reps = DEFAULT_REPS, timing, storage, midiAccess }:
   const edit = (patch: Record<string, unknown>) => {
     const r = mergeSettings(settings, patch)
     if (r.ok) change({ ...r.settings, name: 'Custom' }, 'custom')
+  }
+  /** One key signature: the major key and its relative minor, so notes, intervals and chords come from both. */
+  const pickSignature = (n: number) => {
+    setLastSignature(n)
+    try {
+      localStorage.setItem(ONE_KEY_STORAGE, String(n))
+    } catch {
+      // Not remembered across visits.
+    }
+    edit({
+      keys: {
+        explicit: [keyName(keySignature(n, 'major')), keyName(keySignature(n, 'minor'))],
+      },
+    })
+  }
+  const pickKeyChoice = (value: string) => {
+    if (value === 'one') return pickSignature(lastSignature)
+    const { explicit: _gone, ...keys } = settings.keys
+    const r = parseSettings({ ...settings, name: 'Custom', keys })
+    if (r.ok) change(r.settings, 'custom')
   }
   const pickLevel = (value: string) => {
     if (value === 'custom') return setLevelId('custom')
@@ -313,24 +367,75 @@ export function PlayScreen({ reps = DEFAULT_REPS, timing, storage, midiAccess }:
         title="Play settings"
         centered
       >
-        <label>
-          Level
-          <select value={levelId} onChange={(e) => pickLevel(e.target.value)} disabled={running}>
-            <option value="custom">Custom</option>
-            {PRESET_LEVELS.map((l) => (
-              <option key={l.id} value={l.id}>
-                {l.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        {level && <small className="placeholder">{level.description}</small>}
+        <fieldset disabled={running}>
+          <legend>Keys</legend>
+          <div className="segmented" role="radiogroup" aria-label="Keys">
+            {(
+              [
+                ['several', 'Several keys'],
+                ['one', 'One key signature'],
+              ] as const
+            ).map(([value, label]) => {
+              const checked = (signature === null ? 'several' : 'one') === value
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  role="radio"
+                  aria-checked={checked}
+                  disabled={running}
+                  onClick={() => !checked && pickKeyChoice(value)}
+                >
+                  {label}
+                </button>
+              )
+            })}
+          </div>
+        </fieldset>
+        {/* Both stay in the layout (one over the other, the unused one invisible), so the modal never changes size. */}
+        <div className="overlay">
+          <div className={signature === null ? '' : 'unused'} aria-hidden={signature !== null}>
+            <label>
+              Level
+              <select
+                value={levelId}
+                onChange={(e) => pickLevel(e.target.value)}
+                disabled={running || signature !== null}
+              >
+                <option value="custom">Custom</option>
+                {PRESET_LEVELS.map((l) => (
+                  <option key={l.id} value={l.id}>
+                    {l.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {level && <small className="placeholder">{level.description}</small>}
+          </div>
+          <div className={signature === null ? 'unused' : ''} aria-hidden={signature === null}>
+            <label>
+              Key signature
+              <select
+                value={signature ?? lastSignature}
+                onChange={(e) => pickSignature(Number(e.target.value))}
+                disabled={running || signature === null}
+              >
+                {SIGNATURES.map((n) => (
+                  <option key={n} value={n}>
+                    {signatureLabel(n)}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        </div>
         <InputChoiceField value={piano.choice} onChange={piano.setChoice} disabled={running} />
         <DifficultyFields
           settings={settings}
           onEdit={edit}
           disabled={running}
           showKeys={false}
+          showAccidentals={signature === null}
           showTimeLimit
         />
         {running && <small className="placeholder">Settings are locked during a session.</small>}

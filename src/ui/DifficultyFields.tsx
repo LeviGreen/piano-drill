@@ -27,6 +27,7 @@ export function DifficultyFields({
   disabled = false,
   showKeys = true,
   showTimeLimit = false,
+  showAccidentals = true,
 }: {
   settings: DifficultySettings
   onEdit: (patch: Record<string, unknown>) => void
@@ -35,6 +36,8 @@ export function DifficultyFields({
   showKeys?: boolean
   /** The time limit per target. */
   showTimeLimit?: boolean
+  /** The "up to this many sharps/flats" choice. The Play screen hides it (but keeps its room, so the modal stays the same size) when set to one key signature. */
+  showAccidentals?: boolean
 }) {
   const limits = [5, 10, 20]
   const current = settings.timeoutSeconds
@@ -96,20 +99,22 @@ export function DifficultyFields({
         </small>
       </fieldset>
 
-      <label>
-        Up to this many sharps/flats
-        <select
-          value={settings.keys.maxAccidentals}
-          disabled={disabled}
-          onChange={(e) =>
-            onEdit({ keys: { maxAccidentals: Number(e.target.value), explicit: undefined } })
-          }
-        >
-          {[0, 1, 2, 3, 4, 5, 6, 7].map((n) => (
-            <option key={n}>{n}</option>
-          ))}
-        </select>
-      </label>
+      {
+        <label className={showAccidentals ? '' : 'unused'} aria-hidden={!showAccidentals}>
+          Up to this many sharps/flats
+          <select
+            value={settings.keys.maxAccidentals}
+            disabled={disabled || !showAccidentals}
+            onChange={(e) =>
+              onEdit({ keys: { maxAccidentals: Number(e.target.value), explicit: undefined } })
+            }
+          >
+            {[0, 1, 2, 3, 4, 5, 6, 7].map((n) => (
+              <option key={n}>{n}</option>
+            ))}
+          </select>
+        </label>
+      }
       {showKeys && (
         <label>
           Keys
