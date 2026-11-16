@@ -128,7 +128,7 @@ describe('answering by tap or typing', () => {
         { accidentals: 1, mode: 'major' },
       ],
       wrongPlayed: [],
-      method: 'tap',
+      method: 'wheel',
     })
     expect(r.presenter.log).not.toContain('reveal a') // solved: nothing to reveal
     expect(r.session.snapshot.given).toEqual({ accidentals: -3, mode: 'major' })
@@ -300,6 +300,20 @@ describe('the shared rep cycle', () => {
       await r.clock.advance(300)
     }
     expect(r.session.results.every((x) => x.outcome === 'correct')).toBe(true)
+  })
+})
+
+describe('recording how a question was answered', () => {
+  it('a correct answer is recorded as wheel or typed, by the view the session is in', async () => {
+    const r = rig({}, [question('a'), question('b')])
+    await r.session.start()
+    await r.clock.advance(3)
+    r.session.answer({ accidentals: -3, mode: 'major' })
+    expect(r.session.results[0].keyId?.method).toBe('wheel')
+    await r.clock.advance(1000)
+    r.session.setMethod('type')
+    r.session.answer({ accidentals: -3, mode: 'major' })
+    expect(r.session.results[1].keyId?.method).toBe('type')
   })
 })
 
@@ -595,12 +609,12 @@ describe('answering by playing the checklist', () => {
   it('can switch between tapping and playing at any time', async () => {
     const r = playRig()
     await begin(r)
-    r.session.setMethod('tap')
+    r.session.setMethod('wheel')
     await tap(r, UP[0]) // played notes are ignored while tapping
     expect(r.session.snapshot.checklist).toEqual([])
     r.session.answer({ accidentals: -3, mode: 'major' })
     expect(r.session.results[0]).toMatchObject({ outcome: 'correct' })
-    expect(r.session.results[0].keyId?.method).toBe('tap')
+    expect(r.session.results[0].keyId?.method).toBe('wheel')
     await r.clock.advance(1500)
     r.session.setMethod('play')
     expect(r.session.snapshot.method).toBe('play')

@@ -136,3 +136,48 @@ describe('a question answered by playing the checklist is a flat 250, with no sp
     expect(totalTimeMs(rs, 10)).toBe(35000 + 1000)
   })
 })
+
+describe('a question answered on the wheel is worth three quarters of one typed', () => {
+  const via = (method: 'wheel' | 'type', over: Partial<RepResult> = {}) =>
+    rep({ mode: 'keyid', keyId: { method } as RepResult['keyId'], ...over })
+
+  it('typing is the base: 200 for a fast one', () => {
+    expect(targetScore(via('type', { completionMs: 1000 }), 2)).toBe(200)
+  })
+
+  it('the wheel is 150 for a fast one, fading to 75, with the speed bonus scaled too', () => {
+    expect(targetScore(via('wheel', { completionMs: 1000 }), 2)).toBe(150)
+    expect(targetScore(via('wheel', { completionMs: 4000 }), 2)).toBe(75)
+  })
+
+  it('a wrong guess costs the same share of the question: a quarter of a wheel question is about 19', () => {
+    const slip = { outcome: 'correct_with_errors' as const, errors: [{ t: 1, notes: [] }] }
+    expect(targetScore(via('type', { completionMs: 1000, ...slip }), 2)).toBe(175)
+    expect(targetScore(via('wheel', { completionMs: 1000, ...slip }), 2)).toBe(131)
+  })
+
+  it('a perfect fast session is 3000 on the wheel, 4000 typed and 5000 played', () => {
+    const session = (r: () => RepResult) => sessionScore(Array.from({ length: 20 }, r), 2)
+    expect(session(() => via('wheel', { completionMs: 1000 }))).toBe(3000)
+    expect(session(() => via('type', { completionMs: 1000 }))).toBe(4000)
+    expect(
+      session(() =>
+        rep({ mode: 'keyid', keyId: { method: 'play' } as RepResult['keyId'], completionMs: 1000 }),
+      ),
+    ).toBe(5000)
+  })
+
+  it('the most a session can earn follows how each question was answered, and the last one for the rest', () => {
+    expect(maxScore(4, [via('wheel'), via('type')])).toBe(150 + 200 + 2 * 200)
+    expect(maxScore(3, [via('type'), via('wheel')])).toBe(200 + 150 + 150)
+  })
+
+  it('an old result saved as "tap" is scored like typing', () => {
+    expect(
+      targetScore(
+        rep({ mode: 'keyid', keyId: { method: 'tap' } as RepResult['keyId'], completionMs: 1000 }),
+        2,
+      ),
+    ).toBe(200)
+  })
+})

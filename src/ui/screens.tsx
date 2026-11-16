@@ -1,5 +1,7 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
+import { loadInputChoice, saveInputChoice } from '../audio/inputs/drillInput'
+import { InputChoiceField } from './InputChoiceField'
 import { NAV_ITEMS } from './nav'
 
 const DESCRIPTIONS: Record<string, string> = {
@@ -97,9 +99,20 @@ const TOOLS: { label: string; to: string; icon: ReactNode; enabled: boolean; not
 ]
 
 export function SettingsScreen() {
+  // The same remembered choice that Sight-Read uses; Key Signatures' MIDI view needs the MIDI piano chosen here.
+  const [choice, setChoice] = useState(loadInputChoice)
   return (
     <>
       <Placeholder title="Settings" ticket="PD-703" />
+      <div className="settings-fields">
+        <InputChoiceField
+          value={choice}
+          onChange={(c) => {
+            setChoice(c)
+            saveInputChoice(c)
+          }}
+        />
+      </div>
       <div className="card-grid">
         {TOOLS.map((tool) => {
           const body = (

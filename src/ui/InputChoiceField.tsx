@@ -5,13 +5,10 @@ export function InputChoiceField({
   value,
   onChange,
   disabled,
-  midiLabel = 'MIDI piano (the on-screen piano still works too)',
 }: {
   value: InputChoice
   onChange: (choice: InputChoice) => void
   disabled?: boolean
-  /** What the MIDI option says (Key Signatures's on-screen piano only mirrors the keys). */
-  midiLabel?: string
 }) {
   return (
     <label>
@@ -22,7 +19,7 @@ export function InputChoiceField({
         onChange={(e) => onChange(e.target.value as InputChoice)}
       >
         <option value="screen">On-screen piano</option>
-        <option value="midi">{midiLabel}</option>
+        <option value="midi">MIDI piano (the on-screen piano still works too)</option>
       </select>
     </label>
   )

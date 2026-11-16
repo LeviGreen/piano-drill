@@ -10,13 +10,14 @@ export type KeyIdSessionSettings = {
   timeoutSeconds: number | null
 }
 
-export type KeyIdAnswerMethod = 'tap' | 'play'
+/** The view the player is answering in: the wheel, the text box, or a MIDI piano. */
+export type KeyIdAnswerMethod = 'wheel' | 'type' | 'play'
 
 export type KeyIdSessionOptions = Omit<RepSessionOptions<KeyIdQuestion>, 'timeoutSeconds'> & {
   settings: KeyIdSessionSettings
   /** Where played notes come from. Needed for the 'play' method (answering by playing the checklist). */
   input?: NoteInput
-  /** How the player is answering to begin with (they can switch with `setMethod`). Default 'tap'. */
+  /** How the player is answering to begin with (they can switch with `setMethod`). Default 'wheel'. */
   method?: KeyIdAnswerMethod
 }
 
@@ -64,7 +65,7 @@ export class KeyIdSession extends RepSession<KeyIdQuestion, KeyIdSnapshot> {
   constructor(opts: KeyIdSessionOptions) {
     super({ ...opts, timeoutSeconds: opts.settings.timeoutSeconds })
     this.input = opts.input ?? null
-    this.method = opts.method ?? 'tap'
+    this.method = opts.method ?? 'wheel'
     if (this.method === 'play' && !this.input)
       throw new RangeError('The play answer method needs an input')
   }
@@ -82,7 +83,7 @@ export class KeyIdSession extends RepSession<KeyIdQuestion, KeyIdSnapshot> {
     }
   }
 
-  /** Switch between answering by tapping/typing and by playing. Playing needs an input. */
+  /** Switch between answering on the wheel, by typing and by playing. Playing needs an input. */
   setMethod(method: KeyIdAnswerMethod): void {
     if (method === 'play' && !this.input)
       throw new RangeError('The play answer method needs an input')
@@ -132,13 +133,13 @@ export class KeyIdSession extends RepSession<KeyIdQuestion, KeyIdSnapshot> {
 
   /** The player answered by tapping or typing. A wrong answer is recorded and they can try again. */
   answer(given: KeyIdAnswer): void {
-    if (this.state !== 'FLASHED' || !this.item || this.t0 === null || this.method !== 'tap') return
+    if (this.state !== 'FLASHED' || !this.item || this.t0 === null || this.method === 'play') return
     const now = this.clock.now()
     if (checkAnswer(this.item, given)) {
       this.given = given
       this.firstGuessAt ??= now
       this.solvedAt = now
-      this.solvedBy = 'tap'
+      this.solvedBy = this.method
       this.solved()
       return
     }

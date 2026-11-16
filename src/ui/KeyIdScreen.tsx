@@ -22,7 +22,6 @@ import { KeyAnswerInput, type AnswerFeedback, type AnswerView } from './KeyAnswe
 import { SettingsDrawer } from './SettingsDrawer'
 import { levelLabel } from './levelLabel'
 import { ScoreSummary } from './ScoreSummary'
-import { InputChoiceField } from './InputChoiceField'
 import { useCountdown } from './useCountdown'
 import { PHONE_QUERY, useMediaQuery } from './useMediaQuery'
 import { usePianoInput } from './usePianoInput'
@@ -84,7 +83,7 @@ export function KeyIdScreen({
   const [levelId, setLevelId] = useState<number | 'custom'>(initial.levelId)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [dismissed, setDismissed] = useState(false)
-  const [method, setMethod] = useState<KeyIdAnswerMethod>('tap')
+  const [method, setMethod] = useState<KeyIdAnswerMethod>('wheel')
   const stage = useRef<HTMLDivElement>(null)
   const session = useRef<KeyIdSession | null>(null)
   const [snap, setSnap] = useState<KeyIdSnapshot | null>(null)
@@ -140,7 +139,7 @@ export function KeyIdScreen({
       generator: new KeyIdGenerator(toQuestionConfig(settings), Math.floor(Math.random() * 1e6)),
       presenter,
       input: drill.midi ?? undefined, // the on-screen piano only mirrors the keys; it is not an input here
-      method: playable ? method : 'tap',
+      method: method === 'play' && !playable ? 'wheel' : method,
       totalReps: QUESTIONS,
       ...timing,
     })
@@ -152,11 +151,10 @@ export function KeyIdScreen({
     await s.start()
   }
 
-  /** Switching to the piano view means answering by playing; any other view means tapping or typing. */
+  /** The view being answered in is how the question is answered, and so how it is scored. */
   const onViewChange = (view: AnswerView) => {
-    const next: KeyIdAnswerMethod = view === 'play' ? 'play' : 'tap'
-    setMethod(next)
-    session.current?.setMethod(next)
+    setMethod(view)
+    session.current?.setMethod(view)
   }
 
   // ----- settings -----
@@ -358,19 +356,6 @@ export function KeyIdScreen({
           <small className="placeholder">
             {KEY_ID_LEVELS.find((l) => l.id === levelId)?.description}
           </small>
-        )}
-        {!phone && (
-          <>
-            <InputChoiceField
-              value={piano.choice}
-              onChange={piano.setChoice}
-              disabled={running}
-              midiLabel="MIDI piano (for the MIDI view)"
-            />
-            {piano.choice === 'screen' && (
-              <small className="placeholder">The MIDI view needs a MIDI piano.</small>
-            )}
-          </>
         )}
         <label>
           Up to this many sharps or flats

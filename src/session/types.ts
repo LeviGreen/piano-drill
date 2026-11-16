@@ -39,6 +39,12 @@ export type RepDims = PlayDims | KeyIdDims
  * Extra detail on a key-ID rep: what was right, and every wrong guess on the way (the data for a confusion matrix). A
  * wrong guess does not end the question: the player keeps guessing until they get it, time runs out, or they skip.
  */
+/**
+ * How a key-ID question was answered: tapped on the wheel, typed, or played on a MIDI piano ('tap' is from before the
+ * wheel and typing were told apart; it is scored like typing).
+ */
+export type KeyIdMethod = 'wheel' | 'type' | 'play' | 'tap'
+
 export type KeyIdDetail = {
   format: KeyIdFormat
   correct: KeyIdAnswer
@@ -46,9 +52,9 @@ export type KeyIdDetail = {
   given: KeyIdAnswer | null
   /** Every wrong key named (tapped or typed), in order. */
   wrong: KeyIdAnswer[]
-  /** Every wrong note played, in order (the play method: each one sent the player back to the start of the scale). */
+  /** Every wrong note played, in order (the play method: each one costs points). */
   wrongPlayed: number[]
-  method: 'tap' | 'play'
+  method: KeyIdMethod
 }
 
 /** One finished rep. `mode` lets key-ID reps share this shape (PD-503). */

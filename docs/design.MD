@@ -306,7 +306,7 @@ type RepResult = {
 
 ### 8.2 Scoring
 
-Arcade-style (decided 2026-11-12). Each target you get right earns 100 points plus a speed bonus of up to 100 (full if you finish within the level's goal time, fading to zero at twice the goal time), minus 25 per wrong note; a timeout, a skip or a wrong key-ID answer scores 0. A perfect, fast 20-target session is 4000. Each preset level has a top-ten board per mode, kept with three initials. Only finished sessions on preset levels are scored for a board. The level goals in §3.2 (median time, accuracy) still decide unlocking.
+Arcade-style (decided 2026-11-12). Each target you get right earns 100 points plus a speed bonus of up to 100 (full if you finish within the level's goal time, fading to zero at twice the goal time), minus 25 per wrong note; a timeout, a skip or a wrong key-ID answer scores 0. A perfect, fast 20-target session is 4000. **Key Signatures is weighted by the view the question was answered in (2026-11-16):** the wheel shows every key, so it is worth three quarters of typing (75 plus a speed bonus of up to 75, the wrong-guess penalty scaled the same, so a perfect session is 3000); typing is the base (4000); a played MIDI checklist is a flat 250 per question (5000). Each question is scored by the view that gave its correct answer, and results saved before this are scored like typing. Each preset level has a top-ten board per mode, kept with three initials. Only finished sessions on preset levels are scored for a board. The level goals in §3.2 (median time, accuracy) still decide unlocking.
 
 ### 8.3 Session summary
 

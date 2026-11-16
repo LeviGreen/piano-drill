@@ -102,7 +102,7 @@ describe('Play with a MIDI piano', () => {
     await screen.findByRole('dialog', { name: 'Session summary' })
   })
 
-  it('the input choice is in the settings, remembered, and shared with Key Signatures', async () => {
+  it('the input choice is in the settings, remembered, and used by Key Signatures', async () => {
     localStorage.clear()
     showPlay({ midiAccess: withAccess(new FakeMidiAccess()) })
     await userEvent.click(button('Settings'))
@@ -113,9 +113,8 @@ describe('Play with a MIDI piano', () => {
     cleanup()
     showKeyId({ midiAccess: withAccess(new FakeMidiAccess()) })
     await userEvent.click(button('Settings'))
-    expect(
-      (within(screen.getByRole('dialog')).getByLabelText('Input') as HTMLSelectElement).value,
-    ).toBe('midi')
+    // Key Signatures has no Input field of its own: the MIDI view follows the choice made elsewhere
+    expect(within(screen.getByRole('dialog')).queryByLabelText('Input')).toBeNull()
   })
 
   it('the input choice locks during a session', async () => {

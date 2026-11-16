@@ -40,12 +40,27 @@ export function drawNoteOverlays(
   const headLeft = note.getNoteHeadBeginX()
   const headRight = note.getNoteHeadEndX()
   const displaced = note.getKeyProps().some((k) => k.displaced)
-  const cx = (headLeft + headRight) / 2
+  // A note in a second sits on the other side of the stem, so each head has its own centre. Read it off the head as it
+  // was drawn (VexFlow's own x for a displaced head is not reliable once the note has been drawn).
+  const heads = note.noteHeads
+  const drawn = [
+    ...(svg
+      .querySelector(`[id="vf-${note.getAttribute('id')}"]`)
+      ?.querySelectorAll('.vf-notehead text') ?? []),
+  ]
+  const headCentre = (i: number): number => {
+    const x = Number(drawn[i]?.getAttribute('x'))
+    const width = heads[i]?.getWidth() ?? 0
+    return drawn.length === heads.length && Number.isFinite(x)
+      ? x + width / 2
+      : (headLeft + headRight) / 2
+  }
 
   const group = el('g', { class: 'note-overlays' })
 
   opts.states?.forEach((state, i) => {
     if (!state || state === 'missing' || ys[i] === undefined) return
+    const cx = headCentre(i)
     group.append(el('circle', { class: `note-halo ${state}`, cx, cy: ys[i], r: 9 }))
     if (state === 'heard') {
       const mark = el('text', { class: 'note-check', x: cx + 8, y: ys[i] - 7, stroke: 'none' })

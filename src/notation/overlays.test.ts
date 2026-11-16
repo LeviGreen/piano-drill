@@ -75,6 +75,20 @@ describe('per-note feedback states', () => {
     expect(ys[0]).toBeGreaterThan(ys[1]) // C4 is lower on the staff (larger y) than G4
   })
 
+  it('puts the halo of a note in a second on its own head, which sits beside the stem, not in the middle', () => {
+    const xs = (notes: string[]) =>
+      [
+        ...staff(notes, { states: ['heard', 'heard'] }).querySelectorAll<SVGCircleElement>(
+          '.note-halo',
+        ),
+      ].map((e) => Number(e.getAttribute('cx')))
+    const [third1, third2] = xs(['C4', 'E4'])
+    expect(third1).toBe(third2) // a third: both heads on one line
+    const [second1, second2] = xs(['C4', 'D4'])
+    expect(second2).not.toBe(second1) // a second: the upper head is on the other side of the stem (no font here, so the gap is tiny)
+    expect(second1).toBe(third1) // the undisplaced head stays where it was
+  })
+
   it('draws no overlay group when there is nothing to show', () => {
     expect(staff(['C4']).querySelectorAll('.note-overlays')).toHaveLength(0)
     expect(staff(['C4'], { states: [undefined] }).querySelectorAll('.note-halo')).toHaveLength(0)
