@@ -311,8 +311,8 @@ export function KeyIdScreen({
           playable
             ? undefined
             : phone
-              ? 'Playing the key is for desktop screens, with a MIDI piano.'
-              : 'Playing the key needs a MIDI piano: choose it under Input in Settings.'
+              ? 'The MIDI view is for desktop screens, with a MIDI piano.'
+              : 'The MIDI view needs a MIDI piano: choose it under Input in Settings.'
         }
         onViewChange={onViewChange}
       />
@@ -365,10 +365,10 @@ export function KeyIdScreen({
               value={piano.choice}
               onChange={piano.setChoice}
               disabled={running}
-              midiLabel="MIDI piano (to play the key)"
+              midiLabel="MIDI piano (for the MIDI view)"
             />
             {piano.choice === 'screen' && (
-              <small className="placeholder">Playing the key needs a MIDI piano.</small>
+              <small className="placeholder">The MIDI view needs a MIDI piano.</small>
             )}
           </>
         )}

@@ -101,14 +101,19 @@ export class Checklist {
       { id: 'first', label: 'First inversion', done: this.chords.first, progress: 0, total: 0 },
       { id: 'second', label: 'Second inversion', done: this.chords.second, progress: 0, total: 0 },
     ]
-    if (this.accClasses.length > 0)
-      rows.push({
-        id: 'accidentals',
-        label: this.q.answer.accidentals > 0 ? 'Sharps in order' : 'Flats in order',
-        done: this.acc.n === this.accClasses.length,
-        progress: this.acc.n,
-        total: this.accClasses.length,
-      })
+    // Always listed, so the list does not change shape from key to key; with none to play it starts ticked.
+    rows.push({
+      id: 'accidentals',
+      label:
+        this.q.answer.accidentals > 0
+          ? 'Sharps in order'
+          : this.q.answer.accidentals < 0
+            ? 'Flats in order'
+            : 'Sharps or flats in order',
+      done: this.acc.n === this.accClasses.length,
+      progress: this.acc.n,
+      total: this.accClasses.length,
+    })
     return rows
   }
 
@@ -122,25 +127,28 @@ export class Checklist {
   }
 
   /**
-   * A note was struck. `held` are the other keys down at that moment: a note struck while another key on this side is
-   * held belongs to a chord, so the scales and the sharps/flats row do not see it.
+   * A note was struck. `held` are the other keys down at that moment. Playing smoothly overlaps notes (the next key goes
+   * down before the last one is up), so a note that is exactly the next one a row expects always counts. Any other note
+   * struck while a key on this side is held belongs to a chord: it neither starts nor resets a row.
    */
   strike(midi: number, held: readonly number[]): void {
-    if (held.some((m) => m !== midi && onClefSide(this.q, m))) return
-    this.strikeUp(midi)
-    this.strikeDown(midi)
-    this.strikeAccidental(midi)
+    const chorded = held.some((m) => m !== midi && onClefSide(this.q, m))
+    this.strikeUp(midi, chorded)
+    this.strikeDown(midi, chorded)
+    this.strikeAccidental(midi, chorded)
   }
 
   private startsScale(midi: number, lowest = midi): boolean {
     return mod12(midi) === this.tonicPc && onClefSide(this.q, lowest)
   }
 
-  private strikeUp(midi: number) {
+  private strikeUp(midi: number, chorded: boolean) {
     const u = this.up
     if (u.n === 8) return
     if (u.tonic !== null && midi === u.tonic + this.steps[u.n]) {
       u.n++
+    } else if (chorded) {
+      return
     } else if (this.startsScale(midi)) {
       u.tonic = midi
       u.n = 1
@@ -151,11 +159,13 @@ export class Checklist {
   }
 
   /** Going down starts on the octave; the lowest note, the tonic an octave below, is the one on the clef's side. */
-  private strikeDown(midi: number) {
+  private strikeDown(midi: number, chorded: boolean) {
     const d = this.down
     if (d.n === 8) return
     if (d.base !== null && midi === d.base + this.steps[7 - d.n]) {
       d.n++
+    } else if (chorded) {
+      return
     } else if (this.startsScale(midi, midi - 12)) {
       d.base = midi - 12
       d.n = 1
@@ -165,29 +175,34 @@ export class Checklist {
     }
   }
 
-  private strikeAccidental(midi: number) {
+  private strikeAccidental(midi: number, chorded: boolean) {
     const a = this.acc
     const list = this.accClasses
     if (list.length === 0 || a.n === list.length || !onClefSide(this.q, midi)) return
     const pc = mod12(midi)
     if (pc === list[a.n]) a.n++
-    else a.n = pc === list[0] ? 1 : 0
+    else if (!chorded) a.n = pc === list[0] ? 1 : 0
   }
 
   /**
-   * The keys now held. The lowest one on the clef's side anchors a chord: it and whatever is held within an octave above
-   * it must be exactly the three notes of the tonic chord, and the lowest decides which inversion it is.
+   * The keys now held. The lowest one on the clef's side of middle C is the bottom of a chord (if none is on that side,
+   * as when a bass inversion climbs past middle C, the lowest one held): it and whatever is held within an octave above
+   * it must be exactly the three notes of the tonic chord, and the bottom one says which inversion it is. The chord
+   * counts when the root-position chord it comes from starts on the clef's side, so in the bass a rising run of root
+   * position and inversions still counts when the inversions climb above middle C.
    */
   hold(held: readonly number[]): void {
     const side = held.filter((m) => onClefSide(this.q, m))
-    if (side.length === 0) return
-    const bass = Math.min(...side)
-    const chord = held.filter((m) => m >= bass && m <= bass + 12)
+    const pool = side.length > 0 ? side : held
+    if (pool.length === 0) return
+    const bottom = Math.min(...pool)
+    const chord = held.filter((m) => m >= bottom && m <= bottom + 12)
     if (chord.length !== 3) return
     const want = new Set([0, this.thirdSemitones, 7])
     const have = new Set(chord.map((m) => mod12(m - this.tonicPc)))
     if (have.size !== 3 || ![...have].every((r) => want.has(r))) return
-    const lowest = mod12(bass - this.tonicPc)
+    const lowest = mod12(bottom - this.tonicPc)
+    if (!onClefSide(this.q, bottom - lowest)) return
     if (lowest === 0) this.chords.root = true
     else if (lowest === this.thirdSemitones) this.chords.first = true
     else this.chords.second = true

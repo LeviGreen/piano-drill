@@ -368,10 +368,12 @@ describe('answering by playing the checklist', () => {
     expect(r.session.snapshot.checklist.every((x) => !x.done)).toBe(true)
   })
 
-  it('a key with no sharps or flats has no sharps/flats row', async () => {
+  it('a key with no sharps or flats still lists the row, already ticked', async () => {
     const r = playRig(question('c', 'major', 0))
     await begin(r)
-    expect(r.session.snapshot.checklist.map((x) => x.id)).not.toContain('accidentals')
+    expect(rows(r).accidentals.done).toBe(true)
+    expect(rows(r).accidentals.label).toBe('Sharps or flats in order')
+    expect(r.session.snapshot.checklist).toHaveLength(6)
   })
 
   it('finishing every row, in any order, answers correctly, with the time of the last one', async () => {
@@ -496,6 +498,46 @@ describe('answering by playing the checklist', () => {
     expect(r.session.snapshot.wrongPlayed).toEqual([])
     await chord(r, [59, 63, 66]) // B3 D#4 F#4: root position, the lowest note below middle C
     expect(rows(r).root.done).toBe(true)
+  })
+
+  it('a smooth scale counts: the next key may go down before the last one is up', async () => {
+    const r = playRig()
+    await begin(r)
+    for (const m of UP) {
+      r.input.noteOn(m, r.clock.now())
+      await r.clock.advance(30)
+    }
+    for (const m of UP) r.input.noteOff(m, r.clock.now())
+    expect(rows(r).up.done).toBe(true)
+    await r.clock.advance(50)
+    // and back down, each key still held when the next one goes down
+    for (const m of DOWN) {
+      r.input.noteOn(m, r.clock.now())
+      await r.clock.advance(30)
+    }
+    for (const m of DOWN) r.input.noteOff(m, r.clock.now())
+    expect(rows(r).down.done).toBe(true)
+    expect(r.session.snapshot.wrongPlayed).toEqual([])
+  })
+
+  it('in the bass, the inversions count when they climb above middle C from a root position below it', async () => {
+    const g = { ...question('g', 'major', 1), clef: 'bass' as const } // G major
+    const r = playRig(g)
+    await begin(r)
+    await chord(r, [55, 59, 62]) // G3 B3 D4
+    await chord(r, [59, 62, 67]) // B3 D4 G4
+    await chord(r, [62, 67, 71]) // D4 G4 B4: all at or above middle C
+    expect(rows(r).root.done).toBe(true)
+    expect(rows(r).first.done).toBe(true)
+    expect(rows(r).second.done).toBe(true)
+  })
+
+  it('in the bass, a chord whose root position is above middle C does not count', async () => {
+    const g = { ...question('g', 'major', 1), clef: 'bass' as const }
+    const r = playRig(g)
+    await begin(r)
+    await chord(r, [67, 71, 74]) // G4 B4 D5
+    expect(rows(r).root.done).toBe(false)
   })
 
   it('shows the keys being held, red if they are out of key', async () => {

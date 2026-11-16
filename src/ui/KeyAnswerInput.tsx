@@ -36,7 +36,7 @@ type Props = {
     marks: { midi: number; kind: 'held' | 'wrong' | 'target' }[]
     hand: 'left' | 'right'
   }
-  /** Why the Play view cannot be used (no MIDI piano chosen, or a phone): it is then shown greyed out, with this hint. */
+  /** Why the MIDI view cannot be used (no MIDI piano chosen, or a phone): it is then shown greyed out, with this hint. */
   playUnavailable?: string
   /** Told when the player switches between wheel, type and play. */
   onViewChange?: (view: AnswerView) => void
@@ -176,7 +176,7 @@ export function KeyAnswerInput({
   const accepted = feedback
     ? (feedback.ok ?? (feedback.given !== null && sameAnswer(feedback.given, feedback.correct)))
     : null
-  // Time ran out (or they skipped) without the right answer: it is shown, in the "to play" colour like in Play.
+  // Time ran out (or they skipped) without the right answer: it is shown, in the "to play" colour like in the MIDI view.
   const revealed = accepted === false && feedback?.given === null
   const wasWrong = (a: KeyIdAnswer) => wrong.some((w) => sameAnswer(w, a))
   const lastWrong = wrong.at(-1) ?? null
@@ -192,7 +192,7 @@ export function KeyAnswerInput({
   const viewLabel: Record<AnswerView, string> = {
     wheel: 'Wheel',
     type: 'Type',
-    play: 'Play',
+    play: 'MIDI',
   }
 
   const playMarks = new Map<number, KeyMark>()

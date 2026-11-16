@@ -42,7 +42,7 @@ Cross out a row (`~~text~~` in each cell) when its ticket is Done. Rows that are
 | ~~3 Input & Verification~~ | ~~PD-306~~ | ~~Test corpus & benchmark harness~~ |
 | ~~3 Input & Verification~~ | ~~PD-313~~ | ~~MIDI keyboard input (`MidiInput`) & test screen~~ |
 | ~~3 Input & Verification~~ | ~~PD-314~~ | ~~MIDI-driven Play and Key ID~~ |
-| 3 Input & Verification | PD-315 | Key ID Play view: a checklist on a MIDI piano (in progress) |
+| 3 Input & Verification | PD-315 | Key ID MIDI view: a checklist on a MIDI piano (in progress) |
 | ~~4 Drill Session (Play Mode)~~ | ~~PD-401~~ | ~~Session state machine & timing core~~ |
 | ~~4 Drill Session (Play Mode)~~ | ~~PD-402~~ | ~~Drill screen UI~~ |
 | ~~4 Drill Session (Play Mode)~~ | ~~PD-403~~ | ~~Session results & high scores~~ |
@@ -417,20 +417,20 @@ Use `MidiInput` in the drill loop. An input chooser on the Play screen (on-scree
 
 **Key ID scale play (replaced by the checklist in PD-315; kept here as history):** `src/keyid/scalePlay.ts` (the notes, the hand, the 8 s grace), `KeyIdSession` (progress through the scale; a wrong note restarts it, unless the wrong note could itself start the scale, which counts as a fresh start; the limit is fixed when the question appears, from the way it is being answered then; `limitSeconds` is in the snapshot so the screen's clock follows it). A MIDI message cannot say which hand played, so the hand is enforced by register: the first note must be the tonic on the clef's side of middle C, and it fixes the octave of the scale (`startsScale`; before it, the screen shows the tonic nearest middle C). **Scoring** (`src/scoring/score.ts`): a question answered by playing the scale is worth 150 (not 100) plus the same up-to-100 speed bonus, measured against the level's goal time plus the 8 s grace; each restart costs 25; a perfect, fast session is 5000 (4000 for the other views). They share the one high-score board per level. The on-screen piano also works in this view (a key click holds the note for 120 ms, so the same note cannot be struck twice within that).
 
-### PD-315: Key ID Play view: a checklist on a MIDI piano
+### PD-315: Key ID MIDI view: a checklist on a MIDI piano
 
 **Size:** M  
 **Deps:** PD-314  
 **Status:** In progress (built and tested with a fake piano; awaiting a check with a real one)
 
-Replaces PD-314's "play the scale" with a checklist, played on a MIDI piano with the hand that reads the clef shown (treble: right hand, at or above middle C; bass: left hand, below it). The rows can be done in any order and tick off as they are met: **scale up** (8 notes, from the tonic in any octave on the clef's side), **scale down** (8 notes, its own octave), **the tonic chord** and its **first and second inversions** (exactly the three notes held together, the lowest note says which), and **the sharps or flats in the order they are written** (any octave, one after another; no row for C major / A minor). Minor keys are natural minor with a minor tonic chord. The labels never say which key. The Play view works **only with a MIDI piano chosen under Input and on a desktop screen** (wider than 640 px); otherwise the tab is greyed out with a hint. The on-screen piano in the Play view only mirrors the keys held (green; red if out of key), it cannot be clicked, and what it lit does not stay lit.
+Replaces PD-314's "play the scale" with a checklist, played on a MIDI piano with the hand that reads the clef shown (treble: right hand, at or above middle C; bass: left hand, below it). The rows can be done in any order and tick off as they are met: **scale up** (8 notes, from the tonic in any octave on the clef's side), **scale down** (8 notes, its own octave), **the tonic chord** and its **first and second inversions** (exactly the three notes held together, the lowest note says which), and **the sharps or flats in the order they are written** (any octave, one after another; C major / A minor still list the row, already ticked, so the list never changes shape). Minor keys are natural minor with a minor tonic chord. The labels never say which key. The Play view works **only with a MIDI piano chosen under Input and on a desktop screen** (wider than 640 px); otherwise the tab is greyed out with a hint. The on-screen piano in the Play view only mirrors the keys held (green; red if out of key), it cannot be clicked, and what it lit does not stay lit. The tab is named **MIDI**. Notes may overlap (the next key down before the last is up) without breaking a scale. Chords count when the root-position chord they come from starts on the clef's side, so in the bass a rising root position and inversions still count when the inversions climb above middle C.
 
 **Rules:** a slip resets only the row in progress (ticked rows are kept); only a note on the clef's side that is not in the key costs a wrong note (25 points); notes on the other side of middle C are ignored completely (no reset, no cost), so the other hand is free. A note struck while another key on the clef's side is held belongs to a chord and is not seen by the scale or sharps/flats rows. A bass scale may climb past middle C (a note up there counts only if it is the next one expected). **Scoring:** a finished question is a flat 250 points with no speed bonus (a perfect session is 5000), a wrong note costs 25, a timeout scores 0; the time limit is 25 seconds longer. Of equal scores on a board the faster session ranks higher (then the earlier).
 
 **Acceptance:**
-- [ ] Key ID's Play view works with a real piano over MIDI: every row can be ticked, in any order, and the on-screen piano follows the keys held.
+- [ ] Key ID's MIDI view works with a real piano over MIDI: every row can be ticked, in any order, and the on-screen piano follows the keys held.
 - [x] The rows, the hand/register rule, wrong-note and slip handling, the +25 s limit and the flat 250 score are covered by tests (with a fake piano).
-- [x] With the on-screen piano chosen, or on a phone-width screen, the Play tab is greyed out with a hint, and there is no Input setting on a phone.
+- [x] With the on-screen piano chosen, or on a phone-width screen, the MIDI tab is greyed out with a hint, and there is no Input setting on a phone.
 - [x] Ties on a high-score board go to the faster session.
 
 **Notes:** `src/keyid/checklist.ts` (the rows, `Checklist`), `KeyIdSession` (feeds it every note struck and the keys held; `checklist` and `held` are in the snapshot), `KeyAnswerInput` / `KeyIdScreen` (the checklist and the mirror piano). Replaces `scalePlay.ts` and the 150-point scale scoring. A chord is checked whenever a key goes down (not when keys are let go), so a four-note chord struck one note at a time counts as the chord once its first three notes are held.

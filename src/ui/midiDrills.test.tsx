@@ -257,7 +257,7 @@ describe('Key ID with a MIDI piano', () => {
   it('in the Play view, the checklist played on the real piano answers the question', async () => {
     const piano = new FakePort('p', 'MM8')
     showKeyId({ midiAccess: withAccess(new FakeMidiAccess(piano)) })
-    await userEvent.click(button('Play'))
+    await userEvent.click(button('MIDI'))
     expect(document.querySelectorAll('svg.keyboard [data-midi]')).toHaveLength(49) // as wide as Play mode's
     await userEvent.click(button('Start'))
     const q = upcoming()

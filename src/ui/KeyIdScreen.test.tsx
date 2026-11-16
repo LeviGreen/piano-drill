@@ -472,7 +472,7 @@ describe('the Play view needs a MIDI piano and a desktop screen', () => {
 
   it('with the on-screen piano chosen (the default), Play is greyed out, with a hint', async () => {
     show()
-    const play = button('Play') as HTMLButtonElement
+    const play = button('MIDI') as HTMLButtonElement
     expect(play.disabled).toBe(true)
     expect(screen.getByText(/needs a MIDI piano/i)).toBeTruthy()
     await userEvent.click(play)
@@ -482,14 +482,14 @@ describe('the Play view needs a MIDI piano and a desktop screen', () => {
   it('with a MIDI piano chosen, Play is available', () => {
     localStorage.setItem('piano-drill.input', 'midi')
     show()
-    expect((button('Play') as HTMLButtonElement).disabled).toBe(false)
+    expect((button('MIDI') as HTMLButtonElement).disabled).toBe(false)
   })
 
   it('on a phone, Play is greyed out whatever is chosen, and there is no Input setting', async () => {
     asPhone()
     localStorage.setItem('piano-drill.input', 'midi')
     show()
-    expect((button('Play') as HTMLButtonElement).disabled).toBe(true)
+    expect((button('MIDI') as HTMLButtonElement).disabled).toBe(true)
     expect(screen.getByText(/for desktop screens/i)).toBeTruthy()
     await userEvent.click(button('Settings'))
     expect(within(screen.getByRole('dialog')).queryByLabelText('Input')).toBeNull()

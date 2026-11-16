@@ -141,11 +141,11 @@ describe('Type mode: no wheel to count around', () => {
   it('offers Wheel and Type, and Play only when the screen can listen for a MIDI piano (else greyed out, with a hint)', () => {
     setup('key', { playUnavailable: 'Needs a MIDI piano.' })
     expect(['Wheel', 'Type'].every((n) => screen.getByRole('button', { name: n }))).toBe(true)
-    expect((screen.getByRole('button', { name: 'Play' }) as HTMLButtonElement).disabled).toBe(true)
+    expect((screen.getByRole('button', { name: 'MIDI' }) as HTMLButtonElement).disabled).toBe(true)
     expect(screen.getByText('Needs a MIDI piano.')).toBeTruthy()
     cleanup()
     setup('key', { play: { checklist: [], hand: 'right' as const, marks: [] } })
-    expect((screen.getByRole('button', { name: 'Play' }) as HTMLButtonElement).disabled).toBe(false)
+    expect((screen.getByRole('button', { name: 'MIDI' }) as HTMLButtonElement).disabled).toBe(false)
   })
 
   it('removes every visual cue: no wheel sectors, just a text box', async () => {
@@ -307,7 +307,7 @@ describe('the Play view: answering by playing a checklist on a MIDI piano', () =
       play: { checklist: rows, marks: [], hand: 'right' as const },
       onViewChange,
     })
-    await userEvent.click(screen.getByRole('button', { name: 'Play' }))
+    await userEvent.click(screen.getByRole('button', { name: 'MIDI' }))
     expect(onViewChange).toHaveBeenLastCalledWith('play')
     expect(screen.queryByRole('group', { name: /circle of fifths/i })).toBeNull()
     const keys = screen
@@ -322,7 +322,7 @@ describe('the Play view: answering by playing a checklist on a MIDI piano', () =
     const onAnswer = setup('major', {
       play: { checklist: rows, marks: [], hand: 'right' as const },
     })
-    await userEvent.click(screen.getByRole('button', { name: 'Play' }))
+    await userEvent.click(screen.getByRole('button', { name: 'MIDI' }))
     await userEvent.click(document.querySelector('[data-midi="60"]')!)
     expect(onAnswer).not.toHaveBeenCalled()
     expect(document.querySelectorAll('svg.keyboard .kb-key.heard')).toHaveLength(0)
@@ -330,7 +330,7 @@ describe('the Play view: answering by playing a checklist on a MIDI piano', () =
 
   it('lists what is to play, ticking off what is done, with the count for a row of notes', async () => {
     setup('major', { play: { checklist: rows, marks: [], hand: 'right' as const } })
-    await userEvent.click(screen.getByRole('button', { name: 'Play' }))
+    await userEvent.click(screen.getByRole('button', { name: 'MIDI' }))
     const list = screen.getByRole('list', { name: /to play/i })
     const items = within(list).getAllByRole('listitem')
     expect(items.map((i) => i.getAttribute('aria-label'))).toEqual([
@@ -347,7 +347,7 @@ describe('the Play view: answering by playing a checklist on a MIDI piano', () =
     const onAnswer = setup('major', {
       play: { checklist: rows, hand: 'right' as const, marks: [] },
     })
-    await userEvent.click(screen.getByRole('button', { name: 'Play' }))
+    await userEvent.click(screen.getByRole('button', { name: 'MIDI' }))
     await userEvent.keyboard('c{Enter}')
     expect(onAnswer).not.toHaveBeenCalled()
     expect(
@@ -357,7 +357,7 @@ describe('the Play view: answering by playing a checklist on a MIDI piano', () =
 
   it('says which hand and side for the bass clef', async () => {
     setup('major', { play: { checklist: rows, marks: [], hand: 'left' as const } })
-    await userEvent.click(screen.getByRole('button', { name: 'Play' }))
+    await userEvent.click(screen.getByRole('button', { name: 'MIDI' }))
     expect(screen.getByText(/with your left hand, in any order, below middle C/)).toBeTruthy()
   })
 
@@ -372,7 +372,7 @@ describe('the Play view: answering by playing a checklist on a MIDI piano', () =
         ],
       },
     })
-    await userEvent.click(screen.getByRole('button', { name: 'Play' }))
+    await userEvent.click(screen.getByRole('button', { name: 'MIDI' }))
     const cls = (m: number) =>
       document.querySelector(`[data-midi="${m}"]`)?.getAttribute('class') ?? ''
     expect(cls(60)).toMatch(/wrong/)
@@ -428,7 +428,7 @@ describe('wrong guesses while the question is still open', () => {
         ],
       },
     })
-    await userEvent.click(screen.getByRole('button', { name: 'Play' }))
+    await userEvent.click(screen.getByRole('button', { name: 'MIDI' }))
     const cls = (m: number) =>
       document.querySelector(`[data-midi="${m}"]`)?.getAttribute('class') ?? ''
     expect(cls(60)).toMatch(/wrong/)
@@ -469,7 +469,7 @@ describe('when time runs out the right answer is shown in the "to play" colour, 
       ...timedOut,
       play: { checklist: [], hand: 'right' as const, marks: [{ midi: 62, kind: 'target' }] },
     })
-    await userEvent.click(screen.getByRole('button', { name: 'Play' }))
+    await userEvent.click(screen.getByRole('button', { name: 'MIDI' }))
     expect(document.querySelector('[data-midi="62"]')?.getAttribute('class')).toMatch(/target/)
   })
 
