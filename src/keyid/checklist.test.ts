@@ -20,21 +20,6 @@ function ask(accidentals: number, mode: 'major' | 'minor', clef: 'treble' | 'bas
 const midis = (...names: string[]) => names.map((n) => parsePitch(n).midi)
 
 describe('the checklist rows', () => {
-  it('has the sharps in the order they are written, then flats in theirs', () => {
-    const sharps = new Checklist(ask(2, 'major', 'treble')) // D major: F♯ C♯
-    for (const m of midis('F#4', 'C#5')) sharps.strike(m, [])
-    expect(sharps.rows().find((r) => r.id === 'accidentals')).toMatchObject({
-      done: true,
-      total: 2,
-    })
-    const wrongOrder = new Checklist(ask(2, 'major', 'treble'))
-    for (const m of midis('C#4', 'F#4')) wrongOrder.strike(m, [])
-    expect(wrongOrder.rows().find((r) => r.id === 'accidentals')?.done).toBe(false)
-    const flats = new Checklist(ask(-2, 'major', 'treble')) // B♭ major: B♭ E♭
-    for (const m of midis('Bb4', 'Eb4')) flats.strike(m, [])
-    expect(flats.rows().find((r) => r.id === 'accidentals')?.done).toBe(true)
-  })
-
   it('a minor key has the minor tonic chord', () => {
     const c = new Checklist(ask(-3, 'minor', 'treble')) // C minor
     c.hold(midis('C4', 'Eb4', 'G4'))

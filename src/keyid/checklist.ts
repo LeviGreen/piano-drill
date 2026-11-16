@@ -1,11 +1,10 @@
 import type { KeyIdQuestion } from './questions'
-import { FLAT_ORDER, keySignature, SHARP_ORDER } from '../theory/keys'
+import { keySignature } from '../theory/keys'
 import { pitch } from '../theory/pitch'
 
 /**
  * Answering a key-ID question by playing (PD-315): instead of naming the key, the player plays a checklist on a MIDI
- * piano, in any order: the key's scale up, the scale down, the tonic chord and its two inversions, and the sharps or
- * flats of the signature in the order they are written. Every row ticks off by itself and a slip costs only the row it
+ * piano, in any order: the key's scale up, the scale down, the tonic chord and its two inversions. Every row ticks off by itself and a slip costs only the row it
  * was in. A hand cannot be told from a MIDI message, so the hand is enforced by register: everything is played on the
  * clef's side of middle C (treble: at or above it; bass: below it), and notes on the other side are ignored, so the
  * other hand is free to do anything.
@@ -21,7 +20,7 @@ const MIDDLE_C = 60
 const MAJOR_STEPS = [0, 2, 4, 5, 7, 9, 11, 12]
 const MINOR_STEPS = [0, 2, 3, 5, 7, 8, 10, 12]
 
-export type RowId = 'up' | 'down' | 'root' | 'first' | 'second' | 'accidentals'
+export type RowId = 'up' | 'down' | 'root' | 'first' | 'second'
 
 export type ChecklistRow = {
   id: RowId
@@ -49,13 +48,6 @@ export function scaleToShow(q: KeyIdQuestion): number[] {
   return (key.mode === 'major' ? MAJOR_STEPS : MINOR_STEPS).map((s) => tonic + s)
 }
 
-/** The pitch classes (0..11) of the signature's sharps or flats, in the order they are written on the staff. */
-function accidentalClasses(accidentals: number): number[] {
-  const order = accidentals > 0 ? SHARP_ORDER : FLAT_ORDER
-  const acc = accidentals > 0 ? 1 : -1
-  return order.slice(0, Math.abs(accidentals)).map((l) => pitch(l, acc, 4).midi % 12)
-}
-
 const mod12 = (n: number) => ((n % 12) + 12) % 12
 
 /** One question's checklist: feed it every note struck and the keys held, and it says what is done. */
@@ -64,11 +56,9 @@ export class Checklist {
   private readonly steps: number[]
   private readonly tonicPc: number
   private readonly keyClasses: Set<number>
-  private readonly accClasses: number[]
   private readonly thirdSemitones: number
   private up = { tonic: null as number | null, n: 0 }
   private down = { base: null as number | null, n: 0 }
-  private acc = { n: 0 }
   private chords = { root: false, first: false, second: false }
 
   constructor(q: KeyIdQuestion) {
@@ -77,7 +67,6 @@ export class Checklist {
     this.steps = key.mode === 'major' ? MAJOR_STEPS : MINOR_STEPS
     this.tonicPc = pitch(key.tonic.letter, key.tonic.accidental, 4).midi % 12
     this.keyClasses = new Set(this.steps.map((s) => mod12(this.tonicPc + s)))
-    this.accClasses = accidentalClasses(q.answer.accidentals)
     this.thirdSemitones = key.mode === 'major' ? 4 : 3
   }
 
@@ -101,19 +90,6 @@ export class Checklist {
       { id: 'first', label: 'First inversion', done: this.chords.first, progress: 0, total: 0 },
       { id: 'second', label: 'Second inversion', done: this.chords.second, progress: 0, total: 0 },
     ]
-    // Always listed, so the list does not change shape from key to key; with none to play it starts ticked.
-    rows.push({
-      id: 'accidentals',
-      label:
-        this.q.answer.accidentals > 0
-          ? 'Sharps in order'
-          : this.q.answer.accidentals < 0
-            ? 'Flats in order'
-            : 'Sharps or flats in order',
-      done: this.acc.n === this.accClasses.length,
-      progress: this.acc.n,
-      total: this.accClasses.length,
-    })
     return rows
   }
 
@@ -135,7 +111,6 @@ export class Checklist {
     const chorded = held.some((m) => m !== midi && onClefSide(this.q, m))
     this.strikeUp(midi, chorded)
     this.strikeDown(midi, chorded)
-    this.strikeAccidental(midi, chorded)
   }
 
   private startsScale(midi: number, lowest = midi): boolean {
@@ -173,15 +148,6 @@ export class Checklist {
       d.base = null
       d.n = 0
     }
-  }
-
-  private strikeAccidental(midi: number, chorded: boolean) {
-    const a = this.acc
-    const list = this.accClasses
-    if (list.length === 0 || a.n === list.length || !onClefSide(this.q, midi)) return
-    const pc = mod12(midi)
-    if (pc === list[a.n]) a.n++
-    else if (!chorded) a.n = pc === list[0] ? 1 : 0
   }
 
   /**

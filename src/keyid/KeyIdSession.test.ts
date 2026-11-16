@@ -310,7 +310,6 @@ describe('answering by playing the checklist', () => {
   const ROOT = ['Eb4', 'G4', 'Bb4'].map((n) => parsePitch(n).midi)
   const FIRST = ['G4', 'Bb4', 'Eb5'].map((n) => parsePitch(n).midi)
   const SECOND = ['Bb4', 'Eb5', 'G5'].map((n) => parsePitch(n).midi)
-  const FLATS = ['Bb4', 'Eb4', 'Ab4'].map((n) => parsePitch(n).midi)
 
   const playRig = (
     q = question('a', 'major'),
@@ -363,17 +362,8 @@ describe('answering by playing the checklist', () => {
       'Tonic chord',
       'First inversion',
       'Second inversion',
-      'Flats in order',
     ])
     expect(r.session.snapshot.checklist.every((x) => !x.done)).toBe(true)
-  })
-
-  it('a key with no sharps or flats still lists the row, already ticked', async () => {
-    const r = playRig(question('c', 'major', 0))
-    await begin(r)
-    expect(rows(r).accidentals.done).toBe(true)
-    expect(rows(r).accidentals.label).toBe('Sharps or flats in order')
-    expect(r.session.snapshot.checklist).toHaveLength(6)
   })
 
   it('finishing every row, in any order, answers correctly, with the time of the last one', async () => {
@@ -381,7 +371,6 @@ describe('answering by playing the checklist', () => {
     await begin(r)
     await chord(r, SECOND)
     await run(r, DOWN) // going down first
-    await run(r, FLATS)
     await chord(r, ROOT)
     await run(r, UP)
     expect(rows(r).up.done && rows(r).down.done && rows(r).root.done).toBe(true)
@@ -432,7 +421,6 @@ describe('answering by playing the checklist', () => {
     await chord(r, ROOT)
     await chord(r, FIRST)
     await chord(r, SECOND)
-    await run(r, FLATS)
     const rep = r.session.results[0]
     expect(rep.outcome).toBe('correct_with_errors')
     expect(rep.errors.map((e) => e.notes)).toEqual([[parsePitch('E4').midi]])
@@ -469,20 +457,6 @@ describe('answering by playing the checklist', () => {
       await r.clock.advance(60)
     }
     expect(rows(r).root.done).toBe(true)
-  })
-
-  it('the sharps or flats are played in the order they are written, in any octave, one after another', async () => {
-    const r = playRig()
-    await begin(r)
-    await tap(r, parsePitch('Bb4').midi)
-    await tap(r, parsePitch('Eb6').midi)
-    expect(rows(r).accidentals.progress).toBe(2)
-    await tap(r, parsePitch('F5').midi) // a note between them: back to the start
-    expect(rows(r).accidentals.progress).toBe(0)
-    await tap(r, parsePitch('Eb5').midi) // out of order
-    expect(rows(r).accidentals.progress).toBe(0)
-    await run(r, [parsePitch('Bb5').midi, parsePitch('Eb5').midi, parsePitch('Ab4').midi])
-    expect(rows(r).accidentals.done).toBe(true)
   })
 
   it('a bass question is played below middle C, and the scale can climb past it', async () => {
@@ -588,7 +562,6 @@ describe('answering by playing the checklist', () => {
     await run(r, [...UP, ...DOWN.slice(1)])
     await chord(r, ROOT)
     await chord(r, FIRST)
-    await run(r, FLATS)
     r.input.noteOn(SECOND[0], r.clock.now()) // the last row's notes: held down...
     r.input.noteOn(SECOND[1], r.clock.now())
     r.input.noteOn(SECOND[2], r.clock.now())

@@ -14,8 +14,6 @@ import { KeyIdGenerator, type KeyIdQuestion } from '../keyid/questions'
 import { toQuestionConfig } from '../keyid/settings'
 import { createLevelGenerator } from '../levels/levelGenerator'
 import { PRESET_LEVELS } from '../levels/presets'
-import { FLAT_ORDER, SHARP_ORDER } from '../theory/keys'
-import { pitch } from '../theory/pitch'
 import { FakeMidiAccess, FakePort } from '../test-utils/fakeMidi'
 import type { Target } from '../theory/target'
 import { KeyIdScreen } from './KeyIdScreen'
@@ -226,15 +224,6 @@ function createKey(q: KeyIdQuestion) {
   // A chord's lowest note has to be on the clef's side of middle C: for the bass clef, below it.
   const onSide = (c: number[]) => (q.clef === 'bass' && c[0] >= 60 ? c.map((m) => m - 12) : c)
   const root = [t, t + third, t + 7]
-  const order = q.answer.accidentals > 0 ? SHARP_ORDER : FLAT_ORDER
-  const accidentals = order
-    .slice(0, Math.abs(q.answer.accidentals))
-    .map((l) => pitch(l, q.answer.accidentals > 0 ? 1 : -1, 4).midi % 12)
-    .map((pc) => {
-      let m = t + ((pc - t) % 12) // in the octave above the tonic, which is on the clef's side
-      while (m <= t) m += 12
-      return m
-    })
   const inKey = new Set(up.map((m) => m % 12))
   const outOfKey = [t + 1, t + 6, t + 11].find((m) => !inKey.has(m % 12))!
   return {
@@ -243,7 +232,6 @@ function createKey(q: KeyIdQuestion) {
     root,
     first: onSide([root[1], root[2], root[0] + 12]),
     second: onSide([root[2], root[0] + 12, root[1] + 12]),
-    accidentals,
     outOfKey,
   }
 }
@@ -291,7 +279,6 @@ describe('Key ID with a MIDI piano', () => {
       for (const m of c) act(() => piano.noteOn(m, performance.now()))
       for (const m of c) act(() => piano.noteOff(m, performance.now()))
     }
-    for (const m of key.accidentals) strike(m)
     await screen.findByText(/Question 2 of 3/)
   })
 
