@@ -1,7 +1,5 @@
 import { Route, Routes } from 'react-router'
 import { AppShell } from './ui/AppShell'
-import { CorpusRecorderScreen } from './ui/CorpusRecorderScreen'
-import { MicTestScreen } from './ui/MicTestScreen'
 import { MidiTestScreen } from './ui/MidiTestScreen'
 import { KeyIdScreen } from './ui/KeyIdScreen'
 import { PlayScreen } from './ui/PlayScreen'
@@ -18,8 +16,6 @@ export default function App() {
         <Route path="scores" element={<ScoresScreen />} />
         <Route path="settings" element={<SettingsScreen />} />
         <Route path="settings/midi-test" element={<MidiTestScreen />} />
-        <Route path="settings/mic-test" element={<MicTestScreen />} />
-        <Route path="settings/corpus-recorder" element={<CorpusRecorderScreen />} />
 
         <Route path="*" element={<NotFoundScreen />} />
       </Route>

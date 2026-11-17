@@ -590,13 +590,6 @@ select {
   fill-opacity: 0.9;
 }
 
-/* A checkbox and its label on one line (the default form label layout stacks them). */
-.recorder-form .check {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
 fieldset {
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -971,18 +964,6 @@ fieldset {
   gap: 0.5rem;
 }
 
-/* Corpus recorder */
-.recorder-form {
-  display: grid;
-  gap: 0.5rem;
-  margin-bottom: var(--space);
-}
-
-.recorder-form label {
-  display: grid;
-  gap: 0.25rem;
-}
-
 input {
   font: inherit;
   color: var(--text);
@@ -990,64 +971,6 @@ input {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 0.4rem 0.6rem;
-}
-
-/* Mic test screen */
-.onset-badge {
-  display: inline-block;
-  padding: 0.35rem 0.9rem;
-  margin-bottom: 0.5rem;
-  border: 2px solid var(--border);
-  border-radius: var(--radius);
-  color: var(--text-muted);
-}
-
-.onset-badge[data-on='true'] {
-  background: var(--accent);
-  color: var(--accent-text);
-  border-color: var(--accent);
-  font-weight: 700;
-}
-
-.meter {
-  position: relative;
-  height: 1.5rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface);
-  overflow: hidden;
-  margin-bottom: 0.25rem;
-}
-
-.meter-rms {
-  height: 100%;
-  width: 0;
-  background: var(--accent);
-}
-
-.meter-peak {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 3px;
-  left: 0;
-  background: var(--text);
-}
-
-.mic-readout {
-  margin: 0 0 var(--space);
-  padding: 0.75rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface);
-  font-size: 0.875rem;
-  overflow-x: auto;
-}
-
-.mic-error {
-  padding: 0.75rem;
-  border: 2px solid var(--text);
-  border-radius: var(--radius);
 }
 
 button {

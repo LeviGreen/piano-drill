@@ -58,22 +58,6 @@ const PianoIcon = () => (
   </svg>
 )
 
-/** A microphone. */
-const MicIcon = () => (
-  <svg {...iconProps}>
-    <rect x="9" y="3" width="6" height="11" rx="3" />
-    <path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6" />
-  </svg>
-)
-
-/** A record button. */
-const RecordIcon = () => (
-  <svg {...iconProps}>
-    <circle cx="12" cy="12" r="9" />
-    <circle cx="12" cy="12" r="3.5" fill="currentColor" />
-  </svg>
-)
-
 const TOOLS: { label: string; to: string; icon: ReactNode; enabled: boolean; note: string }[] = [
   {
     label: 'MIDI Test',
@@ -81,20 +65,6 @@ const TOOLS: { label: string; to: string; icon: ReactNode; enabled: boolean; not
     icon: <PianoIcon />,
     enabled: true,
     note: 'Check that your piano is connected.',
-  },
-  {
-    label: 'Mic Test',
-    to: '/settings/mic-test',
-    icon: <MicIcon />,
-    enabled: false,
-    note: 'Shelved for now.',
-  },
-  {
-    label: 'Corpus Recorder',
-    to: '/settings/corpus-recorder',
-    icon: <RecordIcon />,
-    enabled: false,
-    note: 'Shelved for now.',
   },
 ]
 

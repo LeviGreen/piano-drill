@@ -3,13 +3,13 @@
 **Status:** Draft v1
 **Name:** Piano Drill
 
-> **Direction change (2026-11-12):** the MVP reads notes from **a digital piano over MIDI** on desktop Chromium, not from a microphone. The mic design in §6 (verification, calibration, tuning profiles) is kept as the plan for a later version: the mic spike verified mid-range notes well but could not reliably hear low notes or the top note on a laptop mic, and the MVP should not depend on that. Wherever this document says "the mic" or "listens", read "MIDI" for the MVP. See docs/tickets.md (PD-313, PD-314) and docs/benchmark.md for the findings.
+> **Input (decided 2026-11-12, final 2026-11-17):** the app reads notes from **a digital piano over MIDI** on desktop Chromium, or from an on-screen piano. Microphone input was tried, did not reach the bar, and was cut from the project completely on 2026-11-17. See docs/tickets.md (PD-313, PD-314) and docs/midi.md.
 
 ---
 
 ## 1. Overview
 
-A practice app that trains **instant sight-reading of small musical units** (a single interval or chord) rather than whole pieces. A bit of notation is flashed on screen, the user finds and plays it on a real piano, and the app listens through the microphone, verifies the notes, and records how long it took.
+A practice app that trains **instant sight-reading of small musical units** (a single interval or chord) rather than whole pieces. A bit of notation is flashed on screen, the user finds and plays it on a digital piano (or an on-screen one), and the app reads the notes over MIDI and records how long it took.
 
 The core idea is the same as flashcards: short, repeated, timed reps on the exact skill that is weak (e.g. "bass clef, 4 flats, root-position triad"), with difficulty that can be tuned.
 
@@ -18,7 +18,7 @@ A second, separate mode drills **key signature recognition** with no playing inv
 ### 1.1 Goals
 
 - Fast, low-friction drill loop: flash → play → result → next, with no taps between reps.
-- Accurate enough microphone verification of *which notes* were played, using an acoustic piano.
+- Exact note detection from a digital piano over MIDI.
 - Accurate-enough timing that improvement over days/weeks is visible and meaningful.
 - Rich difficulty customization (clef, hand, note count, key signature complexity, chord/interval types), packaged into preset levels.
 - Musically sensible content: two-hand material forms real chords/voicings, not random note clusters.
@@ -29,15 +29,15 @@ A second, separate mode drills **key signature recognition** with no playing inv
 - Rhythm reading, note-length evaluation, or playing in time.
 - Reading whole phrases or pieces.
 - Dynamics/touch evaluation.
-- Telling *which hand* played a note (a mic cannot know; see §6.6).
+- Telling *which hand* played a note (MIDI reports pitches, not hands; see §6.6).
 - Stats screens, charts, and adaptive (weak-spot) practice — cut from the MVP.
-- MIDI / digital-piano input (acoustic piano via microphone only) — cut from the MVP.
+- Acoustic-piano input (microphone) — cut from the project.
 - Accounts/cloud sync/social features (local-only storage in v1).
 - Teaching theory from scratch (some in-app hints, but not a curriculum).
 
 ### 1.3 Target user
 
-An intermediate learner or returning pianist who can read slowly and wants to get *fast*, and who has a real piano or keyboard in the same room as their phone/laptop.
+An intermediate learner or returning pianist who can read slowly and wants to get *fast*, and who has a digital piano or keyboard connected to their laptop.
 
 ---
 
@@ -65,7 +65,7 @@ Timeout (configurable, default 10 s): the target is revealed with note names + a
 
 - Pick a preset level, or open **Custom** to edit every dimension.
 - Save custom presets.
-- Test microphone / calibrate (see §6.7).
+- Test the MIDI connection.
 
 ---
 
@@ -102,7 +102,7 @@ Difficulty is a combination of independent dimensions. Presets (levels) are just
 | 9 | Both hands | 2–3 + 3–4 | ≤5 accidentals | Triads/7ths, inversions, ledger lines |
 | 10 | Both hands | up to 5 + 5 | all 15 keys | Full range, accidentals, 7ths |
 
-> **MVP range: C2–C6** (decided 2026-11-12, replacing the mic-era G2–F5). Each hand reads its own clef and may go up to two ledger lines past the staff: C6 is on the second ledger line above the treble staff and C2 on the second below the bass staff. Levels 1 and 2 use one ledger line, levels 3 to 10 use two. It is not a setting in Play.
+> **MVP range: C2–C6** (decided 2026-11-12, replacing the earlier G2–F5). Each hand reads its own clef and may go up to two ledger lines past the staff: C6 is on the second ledger line above the treble staff and C2 on the second below the bass staff. Levels 1 and 2 use one ledger line, levels 3 to 10 use two. It is not a setting in Play.
 
 Levels are data (JSON), not code, so they can be tuned without a release.
 
@@ -186,7 +186,7 @@ Requirements:
 
 ---
 
-## 6. Input & Verification (the hard part)
+## 6. Input & Verification
 
 ### 6.1 Input abstraction
 
@@ -206,67 +206,29 @@ Implementations:
 1. **`MidiInput`** — a digital piano over Web MIDI (the MVP's primary input; exact notes and timing, so no verification is needed).
 2. **`OnScreenKeyboardInput`** — tap keys on screen (fallback/dev/demo; also lets people try the app without a piano).
 3. **`ScriptedInput`** — test harness that feeds recorded/synthetic note events.
-4. **`MicInput`** — Web Audio + DSP (deferred past the MVP; see the direction change at the top and the rest of this section).
 
-### 6.2 Verification, not transcription
+### 6.2 Verification
 
-General polyphonic transcription from a mic is hard. But we have a big advantage: **we know the target.** So the matcher is designed as a *verifier*:
+With MIDI there is nothing to transcribe: a note-on message carries the exact pitch and a timestamp. A target is **satisfied** when every expected pitch has been played (each is latched once heard, with an onset after t₀). **The goal is to get all the notes, not a perfectly synchronized chord:** notes can be played together, rolled or re-played individually. Unexpected notes are logged as errors but do not undo notes already heard. The UI shows per-note progress (see **Per-note feedback** in §10).
 
-- For each expected pitch, compute a **presence score** from spectral energy at its fundamental and first several harmonics (using the expected spectral envelope of a piano), compared to the local noise/neighbor-bin energy.
-- Compute an **extra-note score**: after "explaining away" energy from the expected notes (and their harmonics), is there significant remaining energy at other pitch-class bins consistent with a different note?
-- An expected pitch is **heard** once its presence is above threshold for ≥ K consecutive analysis frames (to reject transients), with an onset after t₀. A heard note stays heard for the rest of the attempt.
-- A target is **satisfied** when every expected pitch has been heard. **The goal is to get all the notes, not a perfectly synchronized chord:** a user whose mic misses a note can replay that note louder or on its own and it still counts. Unexpected strong notes are logged as errors but do not undo notes already heard.
-- The UI shows per-note progress so the user can see exactly which note the mic still needs (see **Per-note feedback** in §10).
+### 6.3 Hard cases
 
-This is far more robust than blind transcription, particularly for chords where harmonics overlap (e.g. C and G share harmonics; octave doublings fully overlap).
-
-### 6.3 Handling hard cases
-
-| Problem | Mitigation |
+| Problem | Handling |
 |---|---|
-| **Octave errors** (a C4 vs C5 look similar due to harmonics) | Weight lower harmonics' relative energy pattern; use expected-envelope template match; compare energy of octave-below candidate. Strict octave required by default; setting for "any octave" fallback. |
-| **Low bass notes** (poor frequency resolution) | Larger FFT/CQT window for the bass band (multi-resolution analysis), parabolic interpolation, sub-bin phase info; accept slightly longer settle time for low notes. |
-| **Piano inharmonicity** | Allow slightly stretched harmonic positions (partial frequencies drift sharp for high partials). |
-| **Detuned piano** | Estimate user's tuning offset (e.g. A=438–445) during calibration and shift bins. Real pianos are also out of tune note-by-note, so a calibration mode builds a per-note tuning profile (see PD-312) that the verifier uses to shift expected bins. |
-| **Room noise / other sounds** | Noise-floor estimate; calibrating gate; ignore frames below energy threshold. |
-| **Sympathetic resonance / sustained previous notes** | Detect *onsets* (spectral flux) after flash; only notes whose onset is after t0 count. Ask user to release/dampen before the next flash (auto-wait until silence detected). |
-| **Sustain pedal** | Same as above; recommend no pedal; "wait for quiet" before next flash. |
-| **Extra notes / wrong notes** | Logged as errors; they do **not** pass verification; timer continues. Brief wrong-note tolerance: a wrong note followed by correction still counts as an error rep. |
-| **Chord not struck simultaneously (rolled), or a note the mic misses** | Accepted by design: each expected note is latched when heard (§6.2), so notes can be played together, rolled, or re-played individually. |
-| **Digital piano through speakers** | Works; headphone-out into the device is not supported via mic (a MIDI connection would, but MIDI input is not supported). |
+| **Wrong or extra notes** | Logged as errors; they do **not** pass verification; the timer continues. |
+| **Ring-out from the previous rep** | MIDI has no ring-out; only note-ons after t₀ count. |
+| **Sustain pedal** | Pedal messages are ignored. |
+| **Piano unplugged mid-session** | The drill pauses with a clear message and resumes when the piano is back. |
+| **Browsers without Web MIDI** | Reported in words; the on-screen piano still works (see docs/midi.md). |
 
 ### 6.4 Timing
 
-- **t₀** = timestamp of the frame where the target is first painted: record `performance.now()` inside `requestAnimationFrame` after the DOM/SVG swap, and map to the audio clock via `AudioContext.getOutputTimestamp()` / `currentTime` correlation.
-- **t_first** = estimated onset of the first note of the attempt ("reaction time").
-- **t_complete** = estimated onset of the note that completed the set, i.e. the last expected note to be heard ("completion time"). The **headline number** is `t_complete − t₀`.
-- **Latency compensation:** subtract analysis-window delay (and calibrated input latency) so reported time reflects when the keys were struck, not when the algorithm became confident. Onset times are estimated from spectral flux peaks rather than from the moment the verifier fired.
-- Show both *reaction* and *completion* in the detailed result; the session summary uses completion time.
-- Verification itself must have low latency (target: < ~100 ms from keystroke to feedback) so the app feels responsive. Use short hops (e.g. 512–1024 samples) with overlapping, multi-resolution windows.
+- **t₀** = timestamp of the frame where the target is first painted: `performance.now()` inside `requestAnimationFrame` after the DOM/SVG swap. A MIDI message's timestamp is on the same clock.
+- **t_complete** = onset of the note that completed the set, i.e. the last expected note to be heard. The **headline number** is `t_complete − t₀`.
 
-**Accuracy target:** ± 50 ms on timing is fine for a 1–5 s task; because the unit being trained is reading speed, systematic latency is less important than *consistency*, but keep it consistent across sessions (calibrate per device).
+### 6.5 Hand identification
 
-### 6.5 Tech for audio
-
-- `getUserMedia` with `echoCancellation`, `noiseSuppression`, `autoGainControl` **disabled** (these distort musical signals).
-- `AudioWorklet` for the capture + frame pipeline (off main thread); FFT in a worker or WASM.
-- Candidate algorithms to spike: (a) template matching against expected note set (primary), (b) constant-Q / chromagram with harmonic weighting, (c) an on-device ML polyphonic model (e.g. Spotify's Basic Pitch / TF.js) as a comparison or fallback. Decision criterion: accuracy on a recorded test corpus vs. latency vs. battery/CPU.
-
-### 6.6 Hand identification
-
-The mic can only report pitches, not which hand played them. The app therefore verifies *pitches* and trusts that the user used the right hands. For two-hand targets, it checks the union of both parts.
-
-### 6.7 Calibration & onboarding
-
-A short wizard:
-
-1. Mic permission and level check (play a note; show meter).
-2. Noise floor measurement (silence for 2 s).
-3. Tuning offset detection (play A, or a few notes).
-4. Range check: play lowest and highest comfortably played note to confirm low-note detection works on this piano/device.
-5. Latency estimation (optional: tap-to-click test or loopback metronome).
-
-Results stored per input device.
+MIDI reports pitches, not which hand played them. The app verifies *pitches* and trusts that the user used the right hands. For two-hand targets, it checks the union of both parts.
 
 ---
 
@@ -324,11 +286,11 @@ Local only for v1: IndexedDB (via Dexie or similar). Export/import JSON for back
 
 **Progressive Web App** (TypeScript + React/Vite):
 
-- Runs on phones/tablets/laptops (the device sits on the piano music stand).
-- `getUserMedia`, `AudioWorklet`, IndexedDB, installable, offline-capable.
-- No app store friction; fastest iteration on the DSP using browser tooling.
+- Runs on phones/tablets/laptops (the device sits on or near the piano).
+- Web MIDI (desktop Chromium), IndexedDB, installable, offline-capable.
+- No app store friction.
 
-*Alternative:* native iOS/Android (Swift/Kotlin) for better audio latency control and Apple's `AVAudioEngine`/Accelerate; revisit if mobile web latency or Safari audio quirks are a blocker. The core logic (theory engine, scoring) is platform-independent TypeScript, which could be reused via React Native or ported.
+*Alternative:* native iOS/Android (Swift/Kotlin), which would be needed for MIDI on iPhone/iPad (Safari has no Web MIDI). The core logic (theory engine, scoring) is platform-independent TypeScript, which could be reused via React Native or ported.
 
 ### 9.2 Module layout
 
@@ -338,15 +300,12 @@ Local only for v1: IndexedDB (via Dexie or similar). Export/import JSON for back
   /levels        // level/preset definitions (JSON) + validation
   /notation      // staff rendering (VexFlow wrapper), layout, overlays
   /audio
-    /capture     // getUserMedia, AudioWorklet, ring buffer
-    /dsp         // FFT/CQT, onset detection, template matcher, noise floor
-    /inputs      // NoteInput implementations: Mic, OnScreen, Scripted
-    /calibration
+    /inputs      // NoteInput implementations: Midi, OnScreen, Scripted, Merged
   /session       // drill state machine, timing, scoring
   /keyid         // key-identification mode logic + UI
   /storage       // IndexedDB repositories
   /ui            // screens, components, theming, a11y
-  /test-utils    // synthetic audio generator, fixtures, ScriptedInput
+  /test-utils    // fixtures, fake MIDI, ScriptedInput
 ```
 
 ### 9.3 Drill state machine
@@ -356,12 +315,11 @@ IDLE → READY → FLASHED → (WRONG_NOTE → FLASHED)* → SUCCESS | TIMEOUT |
                     ↘ (PAUSE / END_SESSION)
 ```
 
-`READY` waits for "silence" (from the input) and an optional delay before flashing, so leftover ring-out from the previous rep doesn't count.
+`READY` waits for an optional delay before flashing.
 
 ### 9.4 Performance budget
 
 - Target paint time < 1 frame (16 ms) for notation swap (pre-render).
-- DSP frame processing < ~5 ms on a mid-range phone.
 - End-to-end key-strike → UI feedback < ~150 ms.
 
 ---
@@ -372,13 +330,12 @@ IDLE → READY → FLASHED → (WRONG_NOTE → FLASHED)* → SUCCESS | TIMEOUT |
 - Keyboard/touch shortcuts: Space = skip/next, Esc = end session; big touch targets for mid-session controls.
 - A fixed **"Get ready"**: 4 seconds at the start of a session (and after a resume), then 1 second between targets, with the room quiet each time. Not a setting.
 - **Per-note feedback** (the point is to tell the user *which* note to fix, and how):
-  - Each expected note is in one of three states: **heard** (solid green halo plus a check mark), **almost** (dashed outline, shown when the mic has a weak signal for it), or **missing** (no marking). Never color alone.
-  - A small keyboard strip beside the staff lights the keys the mic actually detected, including wrong ones, so "I'm hearing F♯4, not G4" is visible.
-  - Help escalates: if one note stays missing it gently pulses with a short hint ("G4: try playing it louder, or on its own"); if several low notes keep failing it suggests moving the mic closer. No pulsing when reduced motion is on.
+  - Each expected note is **heard** (solid green halo plus a check mark) or **missing** (no marking). Never color alone.
+  - Wrong notes are marked ✕.
   - A "3 / 5 notes" counter; the timer stops on the last note.
 - Reveal on miss: show note names + a piano keyboard diagram highlighting target keys.
 - Accessibility: high-contrast theme, large staff option, color-blind-safe feedback (don't rely on red/green only), reduced motion option.
-- Sound effects optional (off by default since the mic is open — avoid feedback loops; and no audio playback during listening).
+- Sound effects optional (off by default).
 
 ---
 
@@ -386,9 +343,8 @@ IDLE → READY → FLASHED → (WRONG_NOTE → FLASHED)* → SUCCESS | TIMEOUT |
 
 - **Theory engine:** unit tests for spelling, key signatures, chord construction, voicing validity (span, crossing), and property-based tests ("every generated target is readable and playable under the level's constraints").
 - **Notation:** snapshot tests for a matrix of keys × clefs × chord shapes; manual visual review for engraving edge cases (seconds, ledger lines).
-- **DSP:** a corpus of recordings: real piano (several instruments/rooms, phone positions), digital piano via speaker, plus synthetic audio (sampled piano rendered from MIDI) for deterministic regression tests. Measure: note-set precision/recall, octave-error rate, onset-time error, latency; run as a CI benchmark with thresholds.
 - **Session logic:** deterministic tests using `ScriptedInput` and a fake clock.
-- **Manual:** device matrix (iPhone Safari, Android Chrome, laptop Chrome/Firefox), low/high noise rooms.
+- **Manual:** desktop Chromium with a real digital piano; phone layout checks.
 
 ---
 
@@ -396,14 +352,7 @@ IDLE → READY → FLASHED → (WRONG_NOTE → FLASHED)* → SUCCESS | TIMEOUT |
 
 | Risk / Question | Notes / Plan |
 |---|---|
-| **Polyphonic detection accuracy on phones** | Biggest risk. Front-load with a spike (Epic 3) before building the rest on top. On-screen input keeps the product developable regardless. |
-| **Low-register detection** | Bass notes below ~C2 may be unreliable (confirmed on a laptop mic). **MVP range is G2–F5** (the bass and treble staves); anything outside is out of scope. |
-| **iOS Safari audio quirks** (AudioWorklet, autoplay/permissions, background throttling) | Test early; consider native wrapper if blocking. |
-| **Timing honesty** (display latency, mic latency) | Calibrate; be explicit that absolute times are approximate and consistent per device. |
 | **Major/minor ambiguity in key ID** | Decide default (see §7). Proposed default: ask for major key name; minor optional with tonic hint. |
-| **What counts as "correct" when extra notes ring?** | Proposed: any unexpected strong note = error unless it's a rolled-chord overlap/sympathetic resonance below threshold. Tunable. |
-| **Pedal / sustain** | Recommend no pedal; app waits for silence. |
-| **Strict octave vs any octave** | Default strict; setting to relax. |
 | **Whole vs quarter notes** | Decided: whole notes only. |
 | **Name / brand** | TBD. |
 
@@ -413,10 +362,10 @@ IDLE → READY → FLASHED → (WRONG_NOTE → FLASHED)* → SUCCESS | TIMEOUT |
 
 | Milestone | Contents | Exit criterion |
 |---|---|---|
-| **M0 — Feasibility** | Theory-engine skeleton, staff rendering demo, **mic verification spike** | Mic matcher correctly verifies single notes + triads on a real piano ≥ 90% in a quiet room |
-| **M1 — Playable MVP** | Single/interval/triad drills, one-hand, key sigs, timing, results, with Mic + on-screen input | A user can run a full session at levels 1–6 |
+| **M0 — Feasibility** | Theory-engine skeleton, staff rendering demo, **MIDI input** | Notes played on a real digital piano arrive with the right pitch and timing |
+| **M1 — Playable MVP** | Single/interval/triad drills, one-hand, key sigs, timing, results, with MIDI + on-screen input | A user can run a full session at levels 1–6 |
 | **M2 — Two hands + Key Signatures** | Two-hand voicings, grand staff, key identification mode | Levels 7–10 and Key Signatures mode work end-to-end |
-| **M3 — Polish** | Calibration wizard, custom presets, PWA, a11y | Beta-ready |
+| **M3 — Polish** | Custom presets, PWA, a11y | Beta-ready |
 
 ---
 
@@ -542,8 +491,6 @@ Staff size setting, high-contrast mode, non-color-only feedback styles.
 
 ## Epic 3 — Input & Verification
 
-> **Risk-first epic.** PD-301–PD-304 should start early; PD-307 is the make-or-break spike.
-
 ### PD-301: `NoteInput` interface & `ScriptedInput`
 **Size:** S · **Deps:** PD-001
 Define the interface from §6.1 and a scripted/fake implementation with controllable timestamps for tests.
@@ -556,53 +503,13 @@ Tap/click keyboard implementing `NoteInput` (multi-touch for chords). Also acts 
 **Acceptance:**
 - Multi-touch chord produces the combined active note set.
 
-### PD-304: Mic capture pipeline
-**Size:** L · **Deps:** PD-301
-`getUserMedia` with processing disabled, `AudioWorklet` capture into a ring buffer, device selection, permission/error states, audio clock ↔ `performance.now()` mapping.
-**Acceptance:**
-- Level meter works on desktop and mobile; clock mapping error measured and documented.
 
-### PD-305: Spectral analysis core
-**Size:** L · **Deps:** PD-304
-Multi-resolution FFT (or CQT) pipeline, windowing, parabolic interpolation, noise floor estimation, spectral flux onset detector. Runs off the main thread (worker/WASM as needed).
-**Acceptance:**
-- On synthetic piano audio, onset times within ±30 ms; pipeline runs < 5 ms/frame on target device.
 
-### PD-306: Test corpus & benchmark harness
-**Size:** L · **Deps:** PD-301
-Record and label a corpus (acoustic piano, various phones/positions/rooms, plus digital piano/speaker and synthetic renders): single notes, intervals, triads, two-hand chords across the full range, plus negative cases (wrong note, extra note, silence, room noise). Harness computes precision/recall, octave-error rate, onset error, latency; CI regression thresholds.
-**Acceptance:**
-- One command produces a report; baseline numbers committed.
 
-### PD-307: SPIKE — Target-aware note verifier
-**Size:** XL · **Deps:** PD-305, PD-306
-Implement the verifier of §6.2: expected-note presence scoring with harmonic templates, explaining-away residual for unexpected notes, temporal consistency (K frames), octave disambiguation, inharmonicity tolerance. Compare against alternatives (chromagram, Basic Pitch) on the corpus; write up a decision.
-**Acceptance:**
-- Meets the M0 exit criterion (≥ 90% correct verification on single notes + triads in a quiet room), < 100 ms detection latency, false-accept rate on wrong-note cases < 5%. Written findings and recommended thresholds.
 
-### PD-308: Mic input implementation (`MicInput`)
-**Size:** M · **Deps:** PD-307
-Wrap capture + verifier as a `NoteInput`; support "expected set" being supplied to the verifier; emit satisfied/unexpected-note events with onset timestamps; "wait for silence" signal.
-**Acceptance:**
-- End-to-end: playing a target on a piano triggers success events with correct onset timing.
 
-### PD-309: Onset-based timing & latency compensation
-**Size:** M · **Deps:** PD-308
-Compute reaction and completion times from onset estimates (not verifier fire time); subtract calibrated device latency; handle rolled chords and re-struck notes.
-**Acceptance:**
-- Timing error vs. ground truth (MIDI-synced recordings) within ±50 ms on corpus.
 
-### PD-310: Low-register & octave robustness
-**Size:** L · **Deps:** PD-307
-Improvements for bass notes and octave confusion: low-band long windows, octave-ambiguity checks, per-note confidence, configurable range cap and strict/relaxed octave modes.
-**Acceptance:**
-- Octave-error rate on corpus < 3%; bass-clef notes down to the supported range pass benchmark thresholds; documented supported range.
 
-### PD-311: Calibration wizard
-**Size:** M · **Deps:** PD-308
-Flow from §6.7: permission, level, noise floor, tuning offset, range check, optional latency test; per-device storage of results; "recalibrate" entry point.
-**Acceptance:**
-- A new user finishes calibration in < 90 s; results measurably reduce false rejects on a detuned test piano.
 
 ---
 
@@ -610,7 +517,7 @@ Flow from §6.7: permission, level, noise floor, tuning offset, range check, opt
 
 ### PD-401: Session state machine & timing core
 **Size:** M · **Deps:** PD-301, PD-204
-Implement states from §9.3 with a fake-clock-friendly design; start/pause/end; timeout; skip; wrong-note logging; "wait for silence" gating; t₀ capture.
+Implement states from §9.3 with a fake-clock-friendly design; start/pause/end; timeout; skip; wrong-note logging; t₀ capture.
 **Acceptance:**
 - Deterministic tests cover success, wrong-then-right, timeout, skip, and pause paths.
 
@@ -638,11 +545,6 @@ Evaluate level targets from §3.2 after each session; unlock next level; surface
 **Acceptance:**
 - Seeded session data unlocks as expected; free-play bypass works.
 
-### PD-406: Mic-driven play end-to-end integration
-**Size:** M · **Deps:** PD-308, PD-309, PD-402
-Wire `MicInput` into drill loop; handle permission-denied, mic loss, noisy environment warnings, input switching mid-session.
-**Acceptance:**
-- Complete a 20-rep session on a real piano using only the mic.
 
 ---
 
@@ -667,10 +569,10 @@ Flash → answer → timed result; reuse session machine/summary; record confusi
 - Full session works; results stored with the same `RepResult` shape (mode flag).
 
 ### PD-504: Play-the-tonic answer option
-**Size:** S · **Deps:** PD-503, PD-308
-Alternative answer method: play the tonic note on the piano and verify via the mic.
+**Size:** S · **Deps:** PD-503
+Alternative answer method: play on a MIDI piano.
 **Acceptance:**
-- Works with the mic input; settings toggle between tap and play.
+- Works with the MIDI input; toggles between tap and play.
 
 ### PD-505: Key-signature settings & levels
 **Size:** S · **Deps:** PD-503, PD-404
@@ -683,8 +585,8 @@ Presets (e.g. ≤2 accidentals → all keys; major → minor), custom options UI
 ## Epic 7 — Polish, Quality & Release
 
 ### PD-701: Onboarding & first-run flow
-**Size:** M · **Deps:** PD-311, PD-404
-Intro, how to place the device, calibration, choice of input method, first level suggestion.
+**Size:** M · **Deps:** PD-404
+Intro, how to connect the piano, choice of input method, first level suggestion.
 **Acceptance:**
 - New user can reach their first rep in < 3 minutes.
 
@@ -701,22 +603,22 @@ Input device, timeout default, notation size, sound effects, data export/import/
 - Settings persist and take effect without reload.
 
 ### PD-704: Cross-device/browser QA & fixes
-**Size:** L · **Deps:** PD-406, PD-503
-Test matrix per §11; fix iOS Safari audio, permission, throttling, and layout bugs; document known limitations.
+**Size:** L · **Deps:** PD-503
+Test matrix per §11; fix permission and layout bugs; document known limitations.
 **Acceptance:**
 - Checklist passes on the device matrix; issues triaged.
 
 ### PD-705: Performance & battery pass
-**Size:** M · **Deps:** PD-406
-Profile DSP on low-end devices, reduce CPU, pause analysis when idle, verify memory stability over a 30-minute session.
+**Size:** M · **Deps:** PD-503
+Profile rendering and input handling on low-end devices, reduce CPU, verify memory stability over a 30-minute session.
 **Acceptance:**
 - Meets §9.4 budget on the lowest-spec target device.
 
 ### PD-706: Documentation & help content
 **Size:** S · **Deps:** PD-701
-In-app help (mic placement, pedal advice, troubleshooting) and developer README (architecture, running benchmarks, adding levels/voicings).
+In-app help (troubleshooting) and developer README (architecture, adding levels/voicings).
 **Acceptance:**
-- Docs reviewed; troubleshooting covers each calibration failure mode.
+- Docs reviewed; troubleshooting covers each MIDI connection failure mode.
 
 ---
 
@@ -726,11 +628,10 @@ In-app help (mic placement, pedal advice, troubleshooting) and developer README 
 2. In parallel:
    - **Theory:** PD-101 → PD-105 → PD-108
    - **Notation:** PD-201 → PD-202 → PD-204
-   - **Mic risk spike:** PD-301 → PD-304 → PD-305 → PD-306 → **PD-307**
-3. **M0 gate:** decide go/no-go on mic approach (fallback: ship on-screen first, keep mic as beta).
-4. **M1:** PD-302, PD-401 → PD-403, PD-308 → PD-309, PD-404 → PD-406
-5. **M2:** PD-106, PD-107, PD-203, then Epic 5
-6. **M3:** PD-310, PD-311, Epic 7
+   - **Input:** PD-301 → PD-302, then PD-313 → PD-315 (MIDI)
+3. **M1:** PD-401 → PD-404
+4. **M2:** PD-106, PD-107, PD-203, then Epic 5
+5. **M3:** Epic 7
 
 ## Ticket Index
 
@@ -739,7 +640,7 @@ In-app help (mic placement, pedal advice, troubleshooting) and developer README 
 | 0 Foundations | PD-001 – PD-003 |
 | 1 Theory Engine | PD-101 – PD-108 |
 | 2 Notation | PD-201 – PD-206 |
-| 3 Input & Verification | PD-301 – PD-312 (PD-303 cut) |
-| 4 Drill Session | PD-401 – PD-406 |
+| 3 Input & Verification | PD-301, PD-302, PD-313 – PD-315 (PD-303 cut) |
+| 4 Drill Session | PD-401 – PD-405 |
 | 5 Key Signatures Mode | PD-501 – PD-505 |
 | 7 Polish & Release | PD-701 – PD-706 |

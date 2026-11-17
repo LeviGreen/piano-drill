@@ -10,10 +10,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "format": "prettier --write .",
-    "bench": "vitest run --config vitest.bench.config.ts",
-    "bench:update": "BENCH_UPDATE=1 vitest run --config vitest.bench.config.ts",
-    "corpus:split": "vitest run --config vitest.bench.config.ts src/bench/splitSequences.run.test.ts"
+    "format": "prettier --write ."
   },
   "dependencies": {
     "dexie": "^4.4.7",

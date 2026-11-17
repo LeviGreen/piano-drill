@@ -1,18 +1,18 @@
 # MIDI input (PD-313)
 
 The MVP takes its notes from a **digital piano connected to the computer**, read with the browser's Web MIDI API.
-Unlike the microphone, nothing has to be listened for: a key going down is a message with the exact note, so the
+A key going down is a message with the exact note, so the
 notes and their timing are exact.
 
 ## What works where
 
-| Browser | Works? |
-|---|---|
-| Chrome, Edge, Opera (computer) | Yes |
-| Firefox (computer) | Not by default; it needs an add-on to allow MIDI |
-| Safari (Mac, iPhone, iPad) | No: Safari does not support Web MIDI |
-| Any browser on an iPhone or iPad | No (they all use Safari's engine) |
-| Chrome on Android | Yes, with a USB or Bluetooth keyboard |
+| Browser                          | Works?                                           |
+| -------------------------------- | ------------------------------------------------ |
+| Chrome, Edge, Opera (computer)   | Yes                                              |
+| Firefox (computer)               | Not by default; it needs an add-on to allow MIDI |
+| Safari (Mac, iPhone, iPad)       | No: Safari does not support Web MIDI             |
+| Any browser on an iPhone or iPad | No (they all use Safari's engine)                |
+| Chrome on Android                | Yes, with a USB or Bluetooth keyboard            |
 
 The page must be on `localhost` or HTTPS, which it is when running the dev server or from GitHub Pages. The browser asks
 once for permission to use MIDI devices; if you say no, you can allow it in the site settings.
@@ -40,12 +40,12 @@ once for permission to use MIDI devices; if you say no, you can allow it in the 
 
 ## Troubleshooting
 
-- *"Can't read MIDI"*: use Chrome, Edge or Opera on a computer.
-- *"MIDI access was blocked"*: click the lock icon next to the address, allow MIDI devices, then press Connect again.
-- *"No MIDI device was found"*: check the cable and that the piano is switched on. Some pianos need "USB MIDI" turned
+- _"Can't read MIDI"_: use Chrome, Edge or Opera on a computer.
+- _"MIDI access was blocked"_: click the lock icon next to the address, allow MIDI devices, then press Connect again.
+- _"No MIDI device was found"_: check the cable and that the piano is switched on. Some pianos need "USB MIDI" turned
   on in their settings. Another program that has the piano open (some music software) can stop the browser from using it.
-- *Notes show on the MIDI test page but not in a drill*: open the Play or Key ID settings and set **Input** to "MIDI piano" (the on-screen piano is the default). The piano is connected when you press Start; if it says no piano was found, plug it in and press Start again.
-- *The drill paused by itself*: the piano was disconnected (a loose cable, or it went to sleep). Plug it back in and press Resume.
+- _Notes show on the MIDI test page but not in a drill_: open the Play or Key ID settings and set **Input** to "MIDI piano" (the on-screen piano is the default). The piano is connected when you press Start; if it says no piano was found, plug it in and press Start again.
+- _The drill paused by itself_: the piano was disconnected (a loose cable, or it went to sleep). Plug it back in and press Resume.
 
 ## A piano that needs a driver
 
