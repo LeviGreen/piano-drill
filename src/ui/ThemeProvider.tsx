@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { ThemeContext, THEME_STORAGE_KEY, loadTheme, type Theme } from './theme'
 
-// Temporary home for the preference: PD-003 (storage layer) / PD-703 (settings) may move it.
+// Home of the theme preference (RF-201 may move it into the shared preferences helper).
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>(loadTheme)
 

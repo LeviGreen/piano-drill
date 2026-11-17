@@ -1,6 +1,8 @@
-# Piano Drill — Ticket Tracker
+# Piano Drill — Initiative 1: the MVP (Complete)
 
-This file is the **only** task tracker for the project (no GitHub Issues, Jira, etc.). It was built from the "Implementation Tickets" section of [design.MD](design.MD). It is a living document: tickets, wording, and dependencies may evolve as the design does, so edit freely, and keep this file in sync with the code.
+> **Status: complete (2026-11-17).** The app as it stands is the finished result of this initiative. Everything that was not finished when it was closed was **removed from scope**, not deferred: the Polish, Quality & Release epic (PD-701 – PD-706, including onboarding, PWA, the real Settings screen, cross-device QA, performance pass and help content), level unlocking (PD-405), and the one unmet check on PD-315 (a try-out on a real piano). Further work is tracked in [initiative-2-tickets.md](initiative-2-tickets.md).
+
+This file tracked the MVP (no GitHub Issues, Jira, etc.). It was built from the "Implementation Tickets" section of [design.MD](design.MD). It is a living document: tickets, wording, and dependencies may evolve as the design does, so edit freely, and keep this file in sync with the code.
 
 ## How to use
 
@@ -16,46 +18,39 @@ This file is the **only** task tracker for the project (no GitHub Issues, Jira, 
 
 Cross out a row (`~~text~~` in each cell) when its ticket is Done. Rows that are not crossed out are still open; add `(in progress)`, `(blocked)` or `(deferred)` to the description while a ticket is in one of those states.
 
-| Epic                            | Ticket     | Short description                                                   |
-| ------------------------------- | ---------- | ------------------------------------------------------------------- |
-| ~~0 Project Foundations~~       | ~~PD-001~~ | ~~Project scaffolding~~                                             |
-| ~~0 Project Foundations~~       | ~~PD-002~~ | ~~App shell & routing~~                                             |
-| ~~0 Project Foundations~~       | ~~PD-003~~ | ~~Local storage layer~~                                             |
-| ~~0 Project Foundations~~       | ~~PD-004~~ | ~~GitHub Pages deploy & routing~~                                   |
-| ~~1 Music Theory Engine~~       | ~~PD-101~~ | ~~Core pitch & spelling primitives~~                                |
-| ~~1 Music Theory Engine~~       | ~~PD-102~~ | ~~Keys & key signatures~~                                           |
-| ~~1 Music Theory Engine~~       | ~~PD-103~~ | ~~Diatonic chord & interval library~~                               |
-| ~~1 Music Theory Engine~~       | ~~PD-104~~ | ~~Register, playability & readability constraints~~                 |
-| ~~1 Music Theory Engine~~       | ~~PD-105~~ | ~~Target generator — single-hand content~~                          |
-| ~~1 Music Theory Engine~~       | ~~PD-106~~ | ~~Two-hand voicing templates & generator~~                          |
-| ~~1 Music Theory Engine~~       | ~~PD-107~~ | ~~Ledger-line register (notes above and below the staves)~~         |
-| ~~1 Music Theory Engine~~       | ~~PD-108~~ | ~~Level & preset schema~~                                           |
-| ~~2 Notation Rendering~~        | ~~PD-201~~ | ~~Single staff renderer (treble/bass) with key signature~~          |
-| ~~2 Notation Rendering~~        | ~~PD-202~~ | ~~Chords, intervals & accidentals~~                                 |
-| ~~2 Notation Rendering~~        | ~~PD-203~~ | ~~Grand staff renderer~~                                            |
-| ~~2 Notation Rendering~~        | ~~PD-204~~ | ~~Flash performance & timing hook~~                                 |
-| ~~2 Notation Rendering~~        | ~~PD-205~~ | ~~Overlays — note names & keyboard diagram~~                        |
-| ~~3 Input & Verification~~      | ~~PD-301~~ | ~~`NoteInput` interface & `ScriptedInput`~~                         |
-| ~~3 Input & Verification~~      | ~~PD-302~~ | ~~On-screen keyboard input~~                                        |
-| ~~3 Input & Verification~~      | ~~PD-313~~ | ~~MIDI keyboard input (`MidiInput`) & test screen~~                 |
-| ~~3 Input & Verification~~      | ~~PD-314~~ | ~~MIDI-driven Play and Key Signatures~~                             |
-| 3 Input & Verification          | PD-315     | Key Signatures MIDI view: a checklist on a MIDI piano (in progress) |
-| ~~4 Drill Session (Play Mode)~~ | ~~PD-401~~ | ~~Session state machine & timing core~~                             |
-| ~~4 Drill Session (Play Mode)~~ | ~~PD-402~~ | ~~Drill screen UI~~                                                 |
-| ~~4 Drill Session (Play Mode)~~ | ~~PD-403~~ | ~~Session results & high scores~~                                   |
-| ~~4 Drill Session (Play Mode)~~ | ~~PD-404~~ | ~~Level select & custom settings UI~~                               |
-| ~~5 Key Identification Mode~~   | ~~PD-501~~ | ~~Key-signature question generator~~                                |
-| ~~5 Key Identification Mode~~   | ~~PD-502~~ | ~~Answer UI (circle-of-fifths wheel / typing)~~                     |
-| ~~5 Key Identification Mode~~   | ~~PD-503~~ | ~~Key-signature session screen & scoring~~                          |
-| ~~5 Key Identification Mode~~   | ~~PD-504~~ | ~~Play-the-tonic answer option~~                                    |
-| ~~5 Key Identification Mode~~   | ~~PD-505~~ | ~~Key-signature settings & levels~~                                 |
-| 7 Polish, Quality & Release     | PD-701     | Onboarding & first-run flow                                         |
-| 7 Polish, Quality & Release     | PD-702     | PWA setup (offline, installable)                                    |
-| 7 Polish, Quality & Release     | PD-703     | Settings screen                                                     |
-| 7 Polish, Quality & Release     | PD-704     | Cross-device/browser QA & fixes                                     |
-| 7 Polish, Quality & Release     | PD-705     | Performance & battery pass                                          |
-| 7 Polish, Quality & Release     | PD-706     | Documentation & help content                                        |
-| 8 Post-MVP                      | PD-405     | Level progression & unlocking                                       |
+| Epic                            | Ticket     | Short description                                           |
+| ------------------------------- | ---------- | ----------------------------------------------------------- |
+| ~~0 Project Foundations~~       | ~~PD-001~~ | ~~Project scaffolding~~                                     |
+| ~~0 Project Foundations~~       | ~~PD-002~~ | ~~App shell & routing~~                                     |
+| ~~0 Project Foundations~~       | ~~PD-003~~ | ~~Local storage layer~~                                     |
+| ~~0 Project Foundations~~       | ~~PD-004~~ | ~~GitHub Pages deploy & routing~~                           |
+| ~~1 Music Theory Engine~~       | ~~PD-101~~ | ~~Core pitch & spelling primitives~~                        |
+| ~~1 Music Theory Engine~~       | ~~PD-102~~ | ~~Keys & key signatures~~                                   |
+| ~~1 Music Theory Engine~~       | ~~PD-103~~ | ~~Diatonic chord & interval library~~                       |
+| ~~1 Music Theory Engine~~       | ~~PD-104~~ | ~~Register, playability & readability constraints~~         |
+| ~~1 Music Theory Engine~~       | ~~PD-105~~ | ~~Target generator — single-hand content~~                  |
+| ~~1 Music Theory Engine~~       | ~~PD-106~~ | ~~Two-hand voicing templates & generator~~                  |
+| ~~1 Music Theory Engine~~       | ~~PD-107~~ | ~~Ledger-line register (notes above and below the staves)~~ |
+| ~~1 Music Theory Engine~~       | ~~PD-108~~ | ~~Level & preset schema~~                                   |
+| ~~2 Notation Rendering~~        | ~~PD-201~~ | ~~Single staff renderer (treble/bass) with key signature~~  |
+| ~~2 Notation Rendering~~        | ~~PD-202~~ | ~~Chords, intervals & accidentals~~                         |
+| ~~2 Notation Rendering~~        | ~~PD-203~~ | ~~Grand staff renderer~~                                    |
+| ~~2 Notation Rendering~~        | ~~PD-204~~ | ~~Flash performance & timing hook~~                         |
+| ~~2 Notation Rendering~~        | ~~PD-205~~ | ~~Overlays — note names & keyboard diagram~~                |
+| ~~3 Input & Verification~~      | ~~PD-301~~ | ~~`NoteInput` interface & `ScriptedInput`~~                 |
+| ~~3 Input & Verification~~      | ~~PD-302~~ | ~~On-screen keyboard input~~                                |
+| ~~3 Input & Verification~~      | ~~PD-313~~ | ~~MIDI keyboard input (`MidiInput`) & test screen~~         |
+| ~~3 Input & Verification~~      | ~~PD-314~~ | ~~MIDI-driven Play and Key Signatures~~                     |
+| ~~3 Input & Verification~~      | ~~PD-315~~ | ~~Key Signatures MIDI view: a checklist on a MIDI piano~~   |
+| ~~4 Drill Session (Play Mode)~~ | ~~PD-401~~ | ~~Session state machine & timing core~~                     |
+| ~~4 Drill Session (Play Mode)~~ | ~~PD-402~~ | ~~Drill screen UI~~                                         |
+| ~~4 Drill Session (Play Mode)~~ | ~~PD-403~~ | ~~Session results & high scores~~                           |
+| ~~4 Drill Session (Play Mode)~~ | ~~PD-404~~ | ~~Level select & custom settings UI~~                       |
+| ~~5 Key Identification Mode~~   | ~~PD-501~~ | ~~Key-signature question generator~~                        |
+| ~~5 Key Identification Mode~~   | ~~PD-502~~ | ~~Answer UI (circle-of-fifths wheel / typing)~~             |
+| ~~5 Key Identification Mode~~   | ~~PD-503~~ | ~~Key-signature session screen & scoring~~                  |
+| ~~5 Key Identification Mode~~   | ~~PD-504~~ | ~~Play-the-tonic answer option~~                            |
+| ~~5 Key Identification Mode~~   | ~~PD-505~~ | ~~Key-signature settings & levels~~                         |
 
 ## Suggested Build Order
 
@@ -63,8 +58,6 @@ Cross out a row (`~~text~~` in each cell) when its ticket is Done. Rows that are
 2. **Theory and notation:** PD-101 → PD-108, PD-201 → PD-205
 3. **Input:** PD-301, PD-302 (on-screen piano), then **PD-313 → PD-315 (MIDI, the MVP's input)**
 4. **Play and Key Signatures screens:** PD-401 → PD-404, Epic 5
-5. **Polish:** Epic 7
-6. **After the MVP:** Epic 8 (level unlocking)
 
 ## Ticket Index
 
@@ -76,8 +69,6 @@ Cross out a row (`~~text~~` in each cell) when its ticket is Done. Rows that are
 | 3 Input & Verification | PD-301, PD-302, PD-313 – PD-315 (PD-303 cut) |
 | 4 Drill Session        | PD-401 – PD-404                              |
 | 5 Key Signatures Mode  | PD-501 – PD-505                              |
-| 7 Polish & Release     | PD-701 – PD-706                              |
-| 8 Post-MVP             | PD-405                                       |
 
 ---
 
@@ -121,7 +112,7 @@ IndexedDB wrapper (Dexie or similar) with repositories for settings, custom pres
 
 - [x] CRUD tests pass; export → wipe → import restores data.
 
-**Notes:** `src/storage/`: `PianoDrillDB` (Dexie, schema version 1; later changes go in as a new `version(n)` with an upgrade step), a `Storage` object with sessions (saved together with their reps), custom presets and remembered settings, and `exportBackup` / `parseBackup` / `importBackup` (replace or merge; a checked, versioned JSON file). `getStorage()` gives the app's shared instance. The tests use `fake-indexeddb` (a dev dependency). High scores are saved through it (PD-403; the session and rep tables exist but nothing writes to them for now); the Play and Key Signatures settings still live in localStorage until PD-404/703 move them over. Schema version 2 added the high-score `scores` table.
+**Notes:** `src/storage/`: `PianoDrillDB` (Dexie, schema version 1; later changes go in as a new `version(n)` with an upgrade step), a `Storage` object with sessions (saved together with their reps), custom presets and remembered settings, and `exportBackup` / `parseBackup` / `importBackup` (replace or merge; a checked, versioned JSON file). `getStorage()` gives the app's shared instance. The tests use `fake-indexeddb` (a dev dependency). High scores are saved through it (PD-403; the session and rep tables exist but nothing writes to them for now); the Play and Key Signatures settings still live in localStorage. Schema version 2 added the high-score `scores` table.
 
 ### PD-004: GitHub Pages deploy & routing
 
@@ -265,7 +256,7 @@ VexFlow (or chosen lib) wrapper rendering a staff with clef, key signature, and 
 
 - [x] Renders all 30 key signatures in both clefs correctly (visual snapshot tests).
 
-**Notes:** verified by eye in the Notation gallery (Settings > Notation gallery) and by tests that compare VexFlow's accidental placement with our own table for all 30 keys on both clefs. Uses VexFlow's Bravura-only entry; the main bundle is ~1.0 MB (see PD-705).
+**Notes:** verified by eye in the Notation gallery (Settings > Notation gallery) and by tests that compare VexFlow's accidental placement with our own table for all 30 keys on both clefs. Uses VexFlow's Bravura-only entry; the main bundle is ~1.0 MB .
 
 ### PD-202: Chords, intervals & accidentals
 
@@ -305,7 +296,7 @@ Pre-render next target off-screen; atomic swap; expose a `onPainted(timestamp)` 
 
 **Acceptance:**
 
-- [x] Swap completes within a single frame on desktop (phone check moved to PD-704); the t₀ callback fires once per flash.
+- [x] Swap completes within a single frame on desktop (phone check dropped from scope); the t₀ callback fires once per flash.
 
 **Notes:** `FlashController` in `src/notation/flash.ts` (prepare off-screen, one DOM swap, `onPainted` once per flash with `paintedAt` as t0). Desktop (MacBook, Chrome): swap median 0.10 ms, worst 0.30 ms, 0 of 50 over a 60 Hz frame; prerender median 1.5 ms; swap to painted median 3.5 ms; human reaction test 168 to 196 ms, so t0 is not early. Try it at Settings > Flash test.
 
@@ -325,7 +316,7 @@ Optional note-name labels on notes; piano keyboard component highlighting target
 
 ## Epic 3 — Input & Verification
 
-Progress: 4/5 tickets done
+Progress: 5/5 tickets done
 
 > **Direction change (2026-11-12, finished 2026-11-17).** Microphone input did not reach the bar for the MVP, so the MVP takes its notes from **a digital piano over MIDI** (PD-313, PD-314), on desktop Chromium. On 2026-11-17 the microphone was **cut from the project completely**: all mic tickets (PD-304–PD-312, PD-406) were removed from this file, and nothing mic-related is planned.
 
@@ -394,7 +385,7 @@ Use `MidiInput` in the drill loop. An input chooser on the Sight-Read screen (on
 
 **Size:** M  
 **Deps:** PD-314  
-**Status:** In progress (built and tested with a fake piano; awaiting a check with a real one)
+**Status:** Done (closed with the initiative on 2026-11-17; the try-out on a real piano was removed from scope)
 
 Replaces PD-314's "play the scale" with a checklist, played on a MIDI piano with the hand that reads the clef shown (treble: right hand, at or above middle C; bass: left hand, below it). The rows can be done in any order and tick off as they are met: **scale up** (8 notes, from the tonic in any octave on the clef's side), **scale down** (8 notes, its own octave), and **the tonic chord** with its **first and second inversions** (exactly the three notes held together, the lowest note says which). (Playing the signature's sharps or flats in order was tried and dropped on 2026-11-16.) Minor keys are natural minor with a minor tonic chord. The labels never say which key. The MIDI view works **only with a MIDI piano chosen under Input and on a desktop screen** (wider than 640 px); otherwise the tab is greyed out with a hint. The on-screen piano in the MIDI view only mirrors the keys held (green; red if out of key), it cannot be clicked, and what it lit does not stay lit. The tab is named **MIDI**. Notes may overlap (the next key down before the last is up) without breaking a scale. Chords count when the root-position chord they come from starts on the clef's side, so in the bass a rising root position and inversions still count when the inversions climb above middle C.
 
@@ -402,7 +393,6 @@ Replaces PD-314's "play the scale" with a checklist, played on a MIDI piano with
 
 **Acceptance:**
 
-- [ ] Key Signatures's MIDI view works with a real piano over MIDI: every row can be ticked, in any order, and the on-screen piano follows the keys held.
 - [x] The rows, the hand/register rule, wrong-note and slip handling, the +25 s limit and the flat 250 score are covered by tests (with a fake piano).
 - [x] With the on-screen piano chosen, or on a phone-width screen, the MIDI tab is greyed out with a hint, and there is no Input setting on a phone.
 - [x] Ties on a high-score board go to the faster session.
@@ -469,7 +459,7 @@ Scope cut down on 2026-11-12 to keep settings simple: no level locks, no saved c
 - [x] A valid custom configuration can be created and launched, and is remembered.
 - [x] Key-signature levels are selectable too (moved from PD-505).
 
-**Notes:** the Play settings are a centred modal (`src/ui/PlayScreen.tsx`, shared `DifficultyFields`); Key Signatures's are the same modal, narrower. Cut from the original ticket: the full level list with targets and locks (see PD-405, deferred), save/load/delete of presets (the storage for it exists but is unused), live preview of sample targets, the "free play" toggle, and the remaining dimensions of design §3 (clef, content type, inversions, chromatic notes, ledger lines, octave strictness).
+**Notes:** the Play settings are a centred modal (`src/ui/PlayScreen.tsx`, shared `DifficultyFields`); Key Signatures's are the same modal, narrower. Cut from the original ticket: the full level list with targets and locks (level locks were dropped from scope), save/load/delete of presets (the storage for it exists but is unused), live preview of sample targets, the "free play" toggle, and the remaining dimensions of design §3 (clef, content type, inversions, chromatic notes, ledger lines, octave strictness).
 
 ## Epic 5 — Key Identification Mode
 
@@ -499,7 +489,7 @@ Touch-friendly answer input with proper enharmonic labelling; major/minor toggle
 
 **Acceptance:**
 
-- [x] All 30 keys can be selected correctly on desktop, by wheel and typing (phone check moved to PD-704).
+- [x] All 30 keys can be selected correctly on desktop, by wheel and typing (phone check dropped from scope).
 
 **Notes:** circle-of-fifths wheel (majors outside, relative minors inside, the three enharmonic positions split; kept compact), Type (no visual cue; works with a phone keyboard), and Play. All centred under the staff. Marks right and wrong by shape and color. The input marks right/wrong only; the screen around it says what the answer was. Verified on desktop in Settings > Key Signatures preview.
 
@@ -542,99 +532,3 @@ Presets (≤2 accidentals → all major keys → major and minor → all 30 keys
 - [x] Presets selectable, and options editable, in the Key Signatures screen's settings drawer (level, sharps/flats, keys, time limit).
 
 **Notes:** selecting key-ID levels from the global level screen moved to PD-404's acceptance.
-
-## Epic 7 — Polish, Quality & Release
-
-Progress: 0/6 tickets done
-
-### PD-701: Onboarding & first-run flow
-
-**Size:** M  
-**Deps:** PD-313, PD-404  
-**Status:** Todo
-
-Intro, how to connect the digital piano (and which browsers work), choice of input method, first level suggestion.
-
-**Acceptance:**
-
-- [ ] New user can reach their first rep in < 3 minutes.
-
-### PD-702: PWA setup (offline, installable)
-
-**Size:** S  
-**Deps:** PD-002  
-**Status:** Todo
-
-Service worker, manifest, icons, offline operation for everything except nothing-requires-network features.
-
-**Acceptance:**
-
-- [ ] Installs on iOS/Android/desktop; fully functional offline.
-
-### PD-703: Settings screen
-
-**Size:** S  
-**Deps:** PD-003  
-**Status:** Todo
-
-Input device, timeout default, notation size, sound effects, data export/import/reset.
-
-**Acceptance:**
-
-- [ ] Settings persist and take effect without reload.
-
-### PD-704: Cross-device/browser QA & fixes
-
-**Size:** L  
-**Deps:** PD-503  
-**Status:** Todo
-
-Test matrix per §11; fix iOS Safari audio, permission, throttling, and layout bugs; document known limitations.
-
-**Acceptance:**
-
-- [ ] Checklist passes on the device matrix; issues triaged.
-- [ ] Flash test screen on a mid-range phone: swap within one frame, t0 callback once per flash (moved from PD-204); record the numbers.
-- [ ] Key-signature answer wheel and Type mode work on a phone: every key tappable, soft keyboard works in Type mode (moved from PD-502).
-
-### PD-705: Performance & battery pass
-
-**Size:** M  
-**Deps:** PD-503  
-**Status:** Todo
-
-Profile rendering and input handling on low-end devices, reduce CPU, verify memory stability over a 30-minute session.
-
-**Acceptance:**
-
-- [ ] Meets §9.4 budget on the lowest-spec target device.
-
-### PD-706: Documentation & help content
-
-**Size:** S  
-**Deps:** PD-701  
-**Status:** Todo
-
-In-app help (pedal advice, troubleshooting) and developer README (architecture, running benchmarks, adding levels/voicings).
-
-**Acceptance:**
-
-- [ ] Docs reviewed; troubleshooting covers each calibration failure mode.
-
-## Epic 8 — Post-MVP
-
-Progress: 0/1 tickets done (deferred until after the MVP)
-
-Everything here is **deferred, not cut**: it moved out of the MVP on 2026-11-12 so the remaining epics show only what the MVP needs. PD-405 (level unlocking) comes back when the app has more levels worth gating.
-
-### PD-405: Level progression & unlocking
-
-**Size:** S  
-**Deps:** PD-403, PD-404  
-**Status:** Deferred (2026-11-12: post-MVP. Every level is open from the start. The idea: when a session meets a level's goal in its data (accuracy and median time), unlock the next level, with a "free play" switch to open everything.)
-
-Evaluate level targets from §3.2 after each session; unlock next level; surface progress.
-
-**Acceptance:**
-
-- [ ] Seeded session data unlocks as expected; free-play bypass works.

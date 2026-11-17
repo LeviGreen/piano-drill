@@ -40,14 +40,6 @@ describe('routing', () => {
     expect(screen.getByRole('heading', { level: 1, name: heading })).toBeTruthy()
   })
 
-  it('the Settings screen chooses the input, remembered for the drills', async () => {
-    renderAt('/settings')
-    const choice = screen.getByLabelText('Input') as HTMLSelectElement
-    expect(choice.value).toBe('screen')
-    await userEvent.selectOptions(choice, 'midi')
-    expect(localStorage.getItem('piano-drill.input')).toBe('midi')
-  })
-
   it('navigates via the main nav', async () => {
     renderAt('/')
     await userEvent.click(

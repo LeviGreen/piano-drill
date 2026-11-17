@@ -3,7 +3,7 @@
 **Status:** Draft v1
 **Name:** Piano Drill
 
-> **Input (decided 2026-11-12, final 2026-11-17):** the app reads notes from **a digital piano over MIDI** on desktop Chromium, or from an on-screen piano. Microphone input was tried, did not reach the bar, and was cut from the project completely on 2026-11-17. See docs/tickets.md (PD-313, PD-314) and docs/midi.md.
+> **Input (decided 2026-11-12, final 2026-11-17):** the app reads notes from **a digital piano over MIDI** on desktop Chromium, or from an on-screen piano. Microphone input was tried, did not reach the bar, and was cut from the project completely on 2026-11-17. See docs/initiative-1-tickets.md (PD-313, PD-314) and docs/midi.md.
 
 ---
 

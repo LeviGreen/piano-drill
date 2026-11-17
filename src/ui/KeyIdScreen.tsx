@@ -100,7 +100,7 @@ export function KeyIdScreen({
     return () => session.current?.end()
   }, [])
 
-  // Playing the key needs a MIDI piano (chosen in Settings) and a desktop screen.
+  // Playing the key needs a MIDI piano (chosen in the Sight-Read settings) and a desktop screen.
   const playable = piano.choice === 'midi' && !phone
   const state = snap?.state ?? 'IDLE'
   const running = state !== 'IDLE' && state !== 'ENDED'
@@ -310,7 +310,7 @@ export function KeyIdScreen({
             ? undefined
             : phone
               ? 'The MIDI view is for desktop screens, with a MIDI piano.'
-              : 'The MIDI view needs a MIDI piano: choose it under Input in Settings.'
+              : 'The MIDI view needs a MIDI piano: choose it under Input in the Sight-Read settings.'
         }
         onViewChange={onViewChange}
       />

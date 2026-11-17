@@ -1,7 +1,6 @@
-import { useState, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { Link } from 'react-router'
-import { loadInputChoice, saveInputChoice } from '../audio/inputs/drillInput'
-import { InputChoiceField } from './InputChoiceField'
+import { PianoIcon } from './icons'
 import { NAV_ITEMS } from './nav'
 
 const DESCRIPTIONS: Record<string, string> = {
@@ -28,36 +27,6 @@ export function HomeScreen() {
   )
 }
 
-function Placeholder({ title, ticket }: { title: string; ticket: string }) {
-  return (
-    <>
-      <h1>{title}</h1>
-      <p className="placeholder">Coming soon (see {ticket} in docs/tickets.md).</p>
-    </>
-  )
-}
-
-const iconProps = {
-  width: 28,
-  height: 28,
-  viewBox: '0 0 24 24',
-  fill: 'none',
-  stroke: 'currentColor',
-  strokeWidth: 1.8,
-  strokeLinecap: 'round' as const,
-  strokeLinejoin: 'round' as const,
-  'aria-hidden': true,
-}
-
-/** A piano keyboard. */
-const PianoIcon = () => (
-  <svg {...iconProps}>
-    <rect x="3" y="5" width="18" height="14" rx="2" />
-    <path d="M9 5v14M15 5v14" />
-    <path d="M7 5v7M13 5v7M19 5v7" strokeWidth="3" />
-  </svg>
-)
-
 const TOOLS: { label: string; to: string; icon: ReactNode; enabled: boolean; note: string }[] = [
   {
     label: 'MIDI Test',
@@ -69,20 +38,9 @@ const TOOLS: { label: string; to: string; icon: ReactNode; enabled: boolean; not
 ]
 
 export function SettingsScreen() {
-  // The same remembered choice that Sight-Read uses; Key Signatures' MIDI view needs the MIDI piano chosen here.
-  const [choice, setChoice] = useState(loadInputChoice)
   return (
     <>
-      <Placeholder title="Settings" ticket="PD-703" />
-      <div className="settings-fields">
-        <InputChoiceField
-          value={choice}
-          onChange={(c) => {
-            setChoice(c)
-            saveInputChoice(c)
-          }}
-        />
-      </div>
+      <h1>Settings</h1>
       <div className="card-grid">
         {TOOLS.map((tool) => {
           const body = (
