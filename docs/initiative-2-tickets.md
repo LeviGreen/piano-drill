@@ -15,22 +15,22 @@ This file tracks the refactoring work that follows the MVP ([initiative-1-ticket
 
 ## Status at a glance
 
-| Epic                     | Ticket     | Short description                                     |
-| ------------------------ | ---------- | ----------------------------------------------------- |
-| ~~1 Mic leftovers~~      | ~~RF-101~~ | ~~Simplify `NoteInput` (drop `confidence`)~~          |
-| ~~1 Mic leftovers~~      | ~~RF-102~~ | ~~Remove silence gating from `RepSession`~~           |
-| ~~1 Mic leftovers~~      | ~~RF-103~~ | ~~Retire `startedWithoutSilence`~~                    |
-| ~~1 Mic leftovers~~      | ~~RF-104~~ | ~~Fix stale docs and comments~~                       |
-| 2 Shared infrastructure  | RF-201     | One preferences-storage helper                        |
-| 2 Shared infrastructure  | RF-202     | Shared settings module                                |
-| 2 Shared infrastructure  | RF-203     | Shared level/preset loading                           |
-| 3 Drill screens          | RF-301     | `useRepSession` hook                                  |
-| 3 Drill screens          | RF-302     | Shared drill screen frame                             |
-| 3 Drill screens          | RF-303     | Move Play and Key Signatures onto the shared pieces   |
-| 4 Structure & polish     | RF-401     | Split `index.css`                                     |
-| ~~4 Structure & polish~~ | ~~RF-402~~ | ~~Small tidy-ups (empty folders, lint suppressions)~~ |
-| 4 Structure & polish     | RF-403     | Lazy-load the notation code                           |
-| 4 Structure & polish     | RF-404     | `KeyIdSession` answer-method strategy (deferred)      |
+| Epic                        | Ticket     | Short description                                     |
+| --------------------------- | ---------- | ----------------------------------------------------- |
+| ~~1 Mic leftovers~~         | ~~RF-101~~ | ~~Simplify `NoteInput` (drop `confidence`)~~          |
+| ~~1 Mic leftovers~~         | ~~RF-102~~ | ~~Remove silence gating from `RepSession`~~           |
+| ~~1 Mic leftovers~~         | ~~RF-103~~ | ~~Retire `startedWithoutSilence`~~                    |
+| ~~1 Mic leftovers~~         | ~~RF-104~~ | ~~Fix stale docs and comments~~                       |
+| 2 Shared infrastructure     | RF-201     | One preferences-storage helper                        |
+| ~~2 Shared infrastructure~~ | ~~RF-202~~ | ~~Shared settings module~~                            |
+| ~~2 Shared infrastructure~~ | ~~RF-203~~ | ~~Shared level/preset loading~~                       |
+| 3 Drill screens             | RF-301     | `useRepSession` hook                                  |
+| 3 Drill screens             | RF-302     | Shared drill screen frame                             |
+| 3 Drill screens             | RF-303     | Move Play and Key Signatures onto the shared pieces   |
+| 4 Structure & polish        | RF-401     | Split `index.css`                                     |
+| ~~4 Structure & polish~~    | ~~RF-402~~ | ~~Small tidy-ups (empty folders, lint suppressions)~~ |
+| 4 Structure & polish        | RF-403     | Lazy-load the notation code (in progress)             |
+| 4 Structure & polish        | RF-404     | `KeyIdSession` answer-method strategy (deferred)      |
 
 ## Suggested Build Order
 
@@ -121,7 +121,7 @@ Also removed the mic-era "almost" note state (the dashed ring on the staff and k
 
 ## Epic 2 — Shared infrastructure
 
-Progress: 0/3 tickets done
+Progress: 2/3 tickets done
 
 ### RF-201: One preferences-storage helper
 
@@ -141,27 +141,31 @@ Progress: 0/3 tickets done
 
 **Size:** M  
 **Deps:** None  
-**Status:** Todo
+**Status:** Done
 
 `src/levels/settings.ts` and `src/keyid/settings.ts` both validate, fill defaults, merge and version their settings, and `keyid` imports `deepMerge`, `isInt` and `show` from `levels`. Move those helpers to `src/settings/`, then define a small `SettingsSchema<T>` (known keys, per-field validators, defaults, version) that both modes use, so a new mode does not copy the validation loop. Keep the JSON shapes and the error messages as they are.
 
 **Acceptance:**
 
-- [ ] Both modes use the shared schema; the helper functions live in one place.
-- [ ] The tests for both settings files pass without changing their expectations.
+- [x] Both modes use the shared schema; the helper functions live in one place.
+- [x] The tests for both settings files pass without changing their expectations.
+
+**Notes:** `src/settings/`: `json.ts` (`isObject`, `isInt`, `show`, `deepMerge`), `schema.ts` (`createSettings`: migrate, fill defaults, validate, drop unknown keys with a warning, merge; plus the checks every mode shares: name, timeout, goal, version-only). Sight-Read (`levels/settings.ts`, with its own legacy migrations) and Key Signatures (`keyid/settings.ts`) now only describe themselves; their exports and every error message are unchanged. `src/settings/schema.test.ts` builds a made-up mode to show a new mode needs only a schema.
 
 ### RF-203: Shared level/preset loading
 
 **Size:** S  
 **Deps:** RF-202  
-**Status:** Todo
+**Status:** Done
 
 `src/levels/presets.ts` and `src/keyid/presets.ts` (and their two `levels.json` files) have the same shape: load, validate, number, look up by id or name. Share the loader so a new mode only supplies its JSON and its schema.
 
 **Acceptance:**
 
-- [ ] One generic preset loader; both modes use it.
-- [ ] The tests, lint and build pass.
+- [x] One generic preset loader; both modes use it.
+- [x] The tests, lint and build pass.
+
+**Notes:** `src/settings/presets.ts` (`loadPresets`, `presetById`, `Preset<S>`). `Level` and `KeyIdLevel` are now aliases of `Preset`; `PRESET_LEVELS`, `KEY_ID_LEVELS`, `levelById` and `keyIdLevelById` keep their names and behaviour.
 
 ---
 
@@ -250,14 +254,16 @@ Progress: 1/4 tickets done
 
 **Size:** S  
 **Deps:** None  
-**Status:** Todo
+**Status:** In progress (the code is done and tested; waiting to confirm on the live site after the next deploy)
 
 The build is one 1.18 MB chunk (vite warns above 500 kB), mostly VexFlow. Load the notation code per route with `React.lazy`, so Home and Settings do not download it. Check that the GitHub Pages base path (`base: './'`) still works with the extra chunks.
 
 **Acceptance:**
 
-- [ ] No chunk warning, or a clearly smaller main chunk (numbers recorded here).
-- [ ] The deployed site works from the repo subpath.
+- [x] A clearly smaller main chunk (numbers recorded in the notes; the one remaining warning is for the VexFlow chunk).
+- [ ] The deployed site works from the repo subpath (imports are relative; confirm after the next deploy).
+
+**Notes:** the drill screens load on demand (`React.lazy` in `src/App.tsx`, with a "Loading…" fallback), and VexFlow is its own `vexflow` chunk (`manualChunks` in `vite.config.ts`). Numbers: the main file went from **1,178 kB to 397 kB** (gzip 535 kB to 127 kB); Home, Scores, Settings and MIDI Test no longer download the 719 kB VexFlow file (387 kB gzip). Vite's 500 kB warning still shows, for that one VexFlow chunk (it holds the music font); the main chunk is under the limit. Chunk imports are relative (`./PlayScreen-….js`), so the repo-subpath deploy works; the live site should be opened once after the next deploy to confirm. `App.test.tsx` waits for the lazy screens.
 
 ### RF-404: `KeyIdSession` answer-method strategy
 

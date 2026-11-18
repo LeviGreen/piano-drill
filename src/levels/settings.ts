@@ -1,6 +1,14 @@
 import { DEFAULT_CONSTRAINTS } from '../theory/constraints'
 import { findKey, type KeySignature, type Mode } from '../theory/keys'
 import { parsePitch } from '../theory/pitch'
+import { isInt, isObject, show, type Json } from '../settings/json'
+import {
+  createSettings,
+  checkGoal,
+  checkName,
+  checkTimeout,
+  type ParseResult as GenericParseResult,
+} from '../settings/schema'
 
 /**
  * Difficulty settings for a level (design §3) as plain, JSON-serialisable data. Levels are data, not code,
@@ -56,29 +64,7 @@ export const DEFAULT_SETTINGS: DifficultySettings = {
   octaveStrictness: 'exact',
 }
 
-export type ParseResult =
-  { ok: true; settings: DifficultySettings; warnings: string[] } | { ok: false; errors: string[] }
-
-// ---------- helpers ----------
-
-export type Json = Record<string, unknown>
-export const isObject = (v: unknown): v is Json =>
-  typeof v === 'object' && v !== null && !Array.isArray(v)
-export const show = (v: unknown): string =>
-  typeof v === 'string' ? `"${v}"` : (JSON.stringify(v) ?? String(v))
-export const isInt = (v: unknown, lo: number, hi: number): v is number =>
-  Number.isInteger(v) && (v as number) >= lo && (v as number) <= hi
-
-/** Merge `over` onto `base`: objects merge key by key, arrays and values replace. */
-export function deepMerge(base: unknown, over: unknown): unknown {
-  if (over === undefined) return base
-  if (isObject(base) && isObject(over)) {
-    const out: Json = { ...base }
-    for (const k of Object.keys(over)) out[k] = deepMerge(base[k], over[k])
-    return out
-  }
-  return over
-}
+export type ParseResult = GenericParseResult<DifficultySettings>
 
 // ---------- migration ----------
 
@@ -222,15 +208,9 @@ export function parseKeyName(name: string): KeySignature | null {
   return findKey(m[1] as never, acc, m[3] as Mode)
 }
 
-function validate(s: Json): { errors: string[]; warnings: string[] } {
+function validate(s: Json): string[] {
   const errors: string[] = []
-  const warnings: string[] = []
-  for (const k of Object.keys(s))
-    if (!TOP_LEVEL_KEYS.has(k)) warnings.push(`${k}: unknown setting, ignored`)
-
-  if (typeof s.name !== 'string' || s.name.trim() === '' || s.name.length > 60) {
-    errors.push(`name: must be 1 to 60 characters (got ${show(s.name)})`)
-  }
+  checkName(s, errors)
   const hands = oneOfList(s.hands, 'hands', ['LH', 'RH', 'both'] as const, errors)
   if (new Set(hands).size !== hands.length)
     errors.push('hands: must not list the same option twice')
@@ -288,53 +268,29 @@ function validate(s: Json): { errors: string[]; warnings: string[] } {
       errors.push(`range: low (${range.low}) must be below high (${range.high})`)
   }
 
-  const t = s.timeoutSeconds
-  if (t !== null && !(typeof t === 'number' && t >= 1 && t <= 120))
-    errors.push(
-      `timeoutSeconds: must be null (no timeout) or a number from 1 to 120 (got ${show(t)})`,
-    )
+  checkTimeout(s, errors)
   if (!['exact', 'any'].includes(s.octaveStrictness as string))
     errors.push(`octaveStrictness: must be "exact" or "any" (got ${show(s.octaveStrictness)})`)
 
-  if (s.goal !== undefined) {
-    const g = s.goal
-    if (!isObject(g))
-      errors.push(
-        'goal: must be an object like { "medianSeconds": 2, "accuracy": 0.9, "reps": 20 }',
-      )
-    else {
-      if (!(typeof g.medianSeconds === 'number' && g.medianSeconds > 0))
-        errors.push(`goal.medianSeconds: must be a number above 0 (got ${show(g.medianSeconds)})`)
-      if (!(typeof g.accuracy === 'number' && g.accuracy >= 0 && g.accuracy <= 1))
-        errors.push(`goal.accuracy: must be between 0 and 1 (got ${show(g.accuracy)})`)
-      if (!isInt(g.reps, 1, 1000))
-        errors.push(`goal.reps: must be a whole number from 1 to 1000 (got ${show(g.reps)})`)
-    }
-  }
-  return { errors, warnings }
+  checkGoal(s, '{ "medianSeconds": 2, "accuracy": 0.9, "reps": 20 }', errors)
+  return errors
 }
+
+const settings = createSettings<DifficultySettings>({
+  knownKeys: TOP_LEVEL_KEYS,
+  defaults: DEFAULT_SETTINGS,
+  migrate: migrateSettings,
+  validate,
+})
 
 /**
  * Turn any JSON into valid settings: upgrade old versions, fill missing fields from the defaults, then check
  * every field. Problems come back as readable messages naming the field.
  */
-export function parseSettings(input: unknown): ParseResult {
-  if (!isObject(input)) return { ok: false, errors: ['settings: must be a JSON object'] }
-  const migrated = migrateSettings(input)
-  if ('error' in migrated) return { ok: false, errors: [migrated.error] }
-  const merged = deepMerge(DEFAULT_SETTINGS, migrated.settings) as Json
-  const { errors, warnings } = validate(merged)
-  if (errors.length > 0) return { ok: false, errors }
-  const known: Json = {}
-  for (const k of Object.keys(merged)) if (TOP_LEVEL_KEYS.has(k)) known[k] = merged[k]
-  return { ok: true, settings: known as unknown as DifficultySettings, warnings }
-}
+export const parseSettings = settings.parse
 
 /** A custom preset: a base level with some fields overridden (objects merge, lists and values replace). */
-export function mergeSettings(base: DifficultySettings, overrides: unknown): ParseResult {
-  if (!isObject(overrides)) return { ok: false, errors: ['overrides: must be a JSON object'] }
-  return parseSettings(deepMerge(base, overrides))
-}
+export const mergeSettings = settings.merge
 
 export function constraintsFor(s: DifficultySettings) {
   return {

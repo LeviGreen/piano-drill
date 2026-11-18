@@ -1,18 +1,35 @@
+import { lazy, Suspense } from 'react'
 import { Route, Routes } from 'react-router'
 import { AppShell } from './ui/AppShell'
 import { MidiTestScreen } from './ui/MidiTestScreen'
-import { KeyIdScreen } from './ui/KeyIdScreen'
-import { PlayScreen } from './ui/PlayScreen'
 import { ScoresScreen } from './ui/ScoresScreen'
 import { HomeScreen, NotFoundScreen, SettingsScreen } from './ui/screens'
+
+// The two drill screens draw with VexFlow, the biggest part of the app, so they load only when visited.
+const PlayScreen = lazy(() => import('./ui/PlayScreen').then((m) => ({ default: m.PlayScreen })))
+const KeyIdScreen = lazy(() => import('./ui/KeyIdScreen').then((m) => ({ default: m.KeyIdScreen })))
 
 export default function App() {
   return (
     <Routes>
       <Route element={<AppShell />}>
         <Route index element={<HomeScreen />} />
-        <Route path="sight-read" element={<PlayScreen />} />
-        <Route path="key-signatures" element={<KeyIdScreen />} />
+        <Route
+          path="sight-read"
+          element={
+            <Suspense fallback={<p className="placeholder">Loading…</p>}>
+              <PlayScreen />
+            </Suspense>
+          }
+        />
+        <Route
+          path="key-signatures"
+          element={
+            <Suspense fallback={<p className="placeholder">Loading…</p>}>
+              <KeyIdScreen />
+            </Suspense>
+          }
+        />
         <Route path="scores" element={<ScoresScreen />} />
         <Route path="settings" element={<SettingsScreen />} />
         <Route path="settings/midi-test" element={<MidiTestScreen />} />

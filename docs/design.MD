@@ -298,6 +298,7 @@ Local only for v1: IndexedDB (via Dexie or similar). Export/import JSON for back
 /src
   /theory        // pitch, intervals, scales, keys, chords, voicing templates, generator
   /levels        // level/preset definitions (JSON) + validation
+  /settings      // shared settings schema, JSON helpers and preset loader (used by every mode)
   /notation      // staff rendering (VexFlow wrapper), layout, overlays
   /audio
     /inputs      // NoteInput implementations: Midi, OnScreen, Scripted, Merged

@@ -1,4 +1,4 @@
-import { isObject } from '../levels/settings'
+import { isObject } from '../settings/json'
 import type { Storage } from './repositories'
 import type { PresetRecord, ScoreRecord, SessionRecord, SettingRecord, StoredRep } from './types'
 

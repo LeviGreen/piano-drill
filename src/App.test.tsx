@@ -35,9 +35,10 @@ describe('routing', () => {
     ['/sight-read', 'Sight-Read'],
     ['/key-signatures', 'Key Signatures'],
     ['/settings', 'Settings'],
-  ])('renders %s', (path, heading) => {
+  ])('renders %s', async (path, heading) => {
     renderAt(path)
-    expect(screen.getByRole('heading', { level: 1, name: heading })).toBeTruthy()
+    // The drill screens load on demand, so wait for them.
+    expect(await screen.findByRole('heading', { level: 1, name: heading })).toBeTruthy()
   })
 
   it('navigates via the main nav', async () => {
