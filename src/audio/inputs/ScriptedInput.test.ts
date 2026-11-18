@@ -14,14 +14,11 @@ describe('ScriptedInput', () => {
   it('emits onsets with the supplied timestamps and tracks active notes', async () => {
     const { input, states } = await started()
     input.noteOn(60, 100)
-    input.noteOn(64, 120, 0.8)
+    input.noteOn(64, 120)
     expect(states).toHaveLength(2)
-    expect(states[0].onsets).toEqual([{ midi: 60, t: 100, confidence: 1 }])
+    expect(states[0].onsets).toEqual([{ midi: 60, t: 100 }])
     expect(states[1].t).toBe(120)
-    expect([...states[1].activeNotes]).toEqual([
-      [60, 1],
-      [64, 0.8],
-    ])
+    expect([...states[1].activeNotes]).toEqual([60, 64])
   })
 
   it('removes notes on noteOff and ignores unknown noteOff', async () => {

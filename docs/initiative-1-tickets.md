@@ -312,7 +312,7 @@ Optional note-name labels on notes; piano keyboard component highlighting target
 
 - [x] Reveal view shows correct names/highlights for any target.
 
-**Notes:** note names, three per-note states (heard = halo + check, almost = dashed ring, missing = none), a piano keyboard (now C2-C6) (marks by shape and color, names below the keys), click-to-cycle in the Generator preview. Names carry `stroke: none` because VexFlow's SVG root has a black stroke.
+**Notes:** note names, per-note states (heard = halo + check, missing = none; an "almost" state from the mic era was removed in RF-104), a piano keyboard (now C2-C6) (marks by shape and color, names below the keys), click-to-cycle in the Generator preview. Names carry `stroke: none` because VexFlow's SVG root has a black stroke.
 
 ## Epic 3 — Input & Verification
 

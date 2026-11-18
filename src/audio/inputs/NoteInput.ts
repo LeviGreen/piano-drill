@@ -1,19 +1,19 @@
-/** A detected note-on. `t` is in milliseconds on the same clock as the drill timer. */
-export type Onset = { midi: number; t: number; confidence: number }
+/** A note-on. `t` is in milliseconds on the same clock as the drill timer. */
+export type Onset = { midi: number; t: number }
 
-/** Snapshot emitted whenever the set of sounding notes changes or an onset is detected. */
+/** Snapshot emitted whenever the set of sounding notes changes or a note is struck. */
 export type NoteInputState = {
   t: number
-  /** Currently sounding notes: MIDI number -> confidence (0..1). */
-  activeNotes: Map<number, number>
-  /** Onsets detected since the previous update. */
+  /** The MIDI numbers of the notes held down right now. */
+  activeNotes: Set<number>
+  /** Notes struck since the previous update. */
   onsets: Onset[]
 }
 
 export type NoteInputListener = (state: NoteInputState) => void
 
 /**
- * Every input method (mic, MIDI, on-screen keyboard, scripted test input) implements this,
+ * Every input method (MIDI, on-screen keyboard, scripted test input) implements this,
  * so the drill loop and tests share one path.
  */
 export interface NoteInput {

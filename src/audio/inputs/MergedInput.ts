@@ -6,17 +6,17 @@ import type { NoteInput, NoteInputListener, NoteInputState } from './NoteInput'
  */
 export class MergedInput implements NoteInput {
   private readonly inputs: NoteInput[]
-  private readonly latest: Map<number, number>[]
+  private readonly latest: Set<number>[]
   private readonly listeners = new Set<NoteInputListener>()
   private readonly offs: (() => void)[] = []
 
   constructor(inputs: NoteInput[]) {
     this.inputs = inputs
-    this.latest = inputs.map(() => new Map())
+    this.latest = inputs.map(() => new Set<number>())
     inputs.forEach((input, i) => {
       this.offs.push(
         input.onUpdate((s) => {
-          this.latest[i] = new Map(s.activeNotes)
+          this.latest[i] = new Set(s.activeNotes)
           this.emit(s)
         }),
       )
@@ -44,14 +44,12 @@ export class MergedInput implements NoteInput {
 
   stop(): void {
     for (const input of this.inputs) input.stop()
-    this.latest.forEach((_, i) => (this.latest[i] = new Map()))
+    this.latest.forEach((_, i) => (this.latest[i] = new Set()))
   }
 
   private emit(from: NoteInputState): void {
-    const activeNotes = new Map<number, number>()
-    for (const held of this.latest)
-      for (const [midi, confidence] of held)
-        activeNotes.set(midi, Math.max(confidence, activeNotes.get(midi) ?? 0))
+    const activeNotes = new Set<number>()
+    for (const held of this.latest) for (const midi of held) activeNotes.add(midi)
     const state: NoteInputState = { t: from.t, activeNotes, onsets: from.onsets }
     for (const cb of [...this.listeners]) cb(state)
   }

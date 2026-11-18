@@ -53,16 +53,9 @@ describe('playing notes', () => {
     const { states, last } = await rig(piano)
     piano.noteOn(60, 1234.5, 127)
     expect(states).toHaveLength(1)
-    expect(last().onsets).toEqual([{ midi: 60, t: 1234.5, confidence: 1 }])
+    expect(last().onsets).toEqual([{ midi: 60, t: 1234.5 }])
     expect(last().t).toBe(1234.5)
     expect(held(last())).toEqual([60])
-  })
-
-  it('velocity becomes the confidence, between 0 and 1', async () => {
-    const piano = new FakePort('p')
-    const { last } = await rig(piano)
-    piano.noteOn(60, 1, 64)
-    expect(last().onsets[0].confidence).toBeCloseTo(64 / 127)
   })
 
   it('a chord holds all its notes, and each note-off releases only its own', async () => {

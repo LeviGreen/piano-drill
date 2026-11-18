@@ -19,7 +19,7 @@ import type { Target } from '../theory/target'
 import { KeyIdScreen } from './KeyIdScreen'
 import { PlayScreen } from './PlayScreen'
 
-const FAST = { getReadyMs: { first: 0, between: 0 }, feedbackMs: 30, revealMs: 30, silenceMs: 0 }
+const FAST = { getReadyMs: { first: 0, between: 0 }, feedbackMs: 30, revealMs: 30 }
 const SEED = Math.floor(0.123 * 1e6)
 
 beforeAll(() => {

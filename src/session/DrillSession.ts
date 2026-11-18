@@ -31,7 +31,7 @@ function matchExpected(
 }
 
 /**
- * Play mode (design §9.3): wait for quiet, flash a target, listen, and finish the rep. The rep cycle itself (timing,
+ * Play mode (design §9.3): flash a target, read the notes played, and finish the rep. The rep cycle itself (timing,
  * states, pause, results) is in RepSession; this adds listening to notes.
  *
  * Verification is per note and cumulative (design §6.2): each expected note counts once when heard after the target was
@@ -45,8 +45,6 @@ export class DrillSession extends RepSession<Target, SessionSnapshot> {
   private expected: number[] = []
   private heard = new Map<number, number>() // expected midi -> onset time
   private errors: { t: number; notes: number[] }[] = []
-  private silentSince: number | null = null
-  private active = false // are notes currently sounding on the input?
 
   constructor(opts: SessionOptions) {
     super({ ...opts, timeoutSeconds: opts.settings.timeoutSeconds })
@@ -66,7 +64,6 @@ export class DrillSession extends RepSession<Target, SessionSnapshot> {
 
   protected async onStart(): Promise<void> {
     this.unsubscribeInput = this.input.onUpdate((s) => this.onInput(s))
-    this.silentSince = this.clock.now() // assume the room is quiet until the input says otherwise
     await this.input.start()
   }
 
@@ -74,10 +71,6 @@ export class DrillSession extends RepSession<Target, SessionSnapshot> {
     this.unsubscribeInput?.()
     this.unsubscribeInput = null
     this.input.stop()
-  }
-
-  protected quietState() {
-    return { active: this.active, silentSince: this.silentSince }
   }
 
   protected beginRep(target: Target): void {
@@ -89,15 +82,6 @@ export class DrillSession extends RepSession<Target, SessionSnapshot> {
   // ---------- listening ----------
 
   private onInput(update: NoteInputState): void {
-    const wasActive = this.active
-    this.active = update.activeNotes.size > 0
-    if (this.active) this.silentSince = null
-    else if (wasActive || this.silentSince === null) this.silentSince = this.clock.now()
-
-    if (this.state === 'READY') {
-      this.recheckReady()
-      return
-    }
     if (this.state !== 'FLASHED' || this.t0 === null) return
 
     let changed = false
@@ -122,12 +106,7 @@ export class DrillSession extends RepSession<Target, SessionSnapshot> {
 
   // ---------- the result ----------
 
-  protected buildResult(
-    target: Target,
-    outcome: RepOutcome,
-    t0: number,
-    startedWithoutSilence: boolean,
-  ): RepResult {
+  protected buildResult(target: Target, outcome: RepOutcome, t0: number): RepResult {
     const times = [...this.heard.values()]
     const complete = outcome === 'correct' || outcome === 'correct_with_errors'
     return {
@@ -140,7 +119,6 @@ export class DrillSession extends RepSession<Target, SessionSnapshot> {
       errors: this.errors.map((e) => ({ ...e, notes: [...e.notes] })),
       heard: [...this.heard.entries()].map(([midi, t]) => ({ midi, t: t - t0 })),
       outcome,
-      startedWithoutSilence,
       timestamp: new Date().toISOString(),
     }
   }

@@ -63,9 +63,9 @@ describe('label legibility', () => {
 })
 
 describe('per-note feedback states', () => {
-  it('draws nothing for missing notes, a solid halo and check for heard, a dashed ring for almost', () => {
-    const div = staff(['C4', 'E4', 'G4'], { states: ['heard', 'almost', 'missing'] })
-    expect(halos(div)).toEqual(['heard', 'almost'])
+  it('draws nothing for missing notes, a solid halo and check for heard', () => {
+    const div = staff(['C4', 'E4', 'G4'], { states: ['heard', 'missing'] })
+    expect(halos(div)).toEqual(['heard'])
     expect(div.querySelectorAll('.note-check')).toHaveLength(1) // only the heard note gets the check mark
   })
 
@@ -109,10 +109,10 @@ describe('on the grand staff', () => {
       rh: ['E4', 'G4', 'C5'].map(parsePitch),
       lh: ['C3', 'G3'].map(parsePitch),
       showNames: true,
-      rhStates: ['heard', 'heard', 'almost'],
+      rhStates: ['heard', 'heard', 'missing'],
       lhStates: ['missing', 'heard'],
     })
     expect(names(div).sort()).toEqual(['C3', 'C5', 'E4', 'G3', 'G4'])
-    expect(halos(div).sort()).toEqual(['almost', 'heard', 'heard', 'heard'])
+    expect(halos(div).sort()).toEqual(['heard', 'heard', 'heard'])
   })
 })

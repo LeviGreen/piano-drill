@@ -18,9 +18,9 @@ describe('two inputs heard as one', () => {
   it('a note played on either is an onset, and the notes held on both add up', async () => {
     const { a, b, last, states } = await rig()
     a.noteOn(60, 1)
-    expect(last().onsets).toEqual([{ midi: 60, t: 1, confidence: 1 }])
+    expect(last().onsets).toEqual([{ midi: 60, t: 1 }])
     b.noteOn(64, 2)
-    expect(last().onsets).toEqual([{ midi: 64, t: 2, confidence: 1 }])
+    expect(last().onsets).toEqual([{ midi: 64, t: 2 }])
     expect(held(last())).toEqual([60, 64])
     expect(states).toHaveLength(2)
   })

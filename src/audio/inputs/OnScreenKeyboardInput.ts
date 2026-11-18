@@ -3,7 +3,7 @@ import { ScriptedInput } from './ScriptedInput'
 /**
  * The on-screen piano as a NoteInput (PD-302). Pressing a key is a note-on and letting go is a note-off, stamped with
  * the drill's clock, so any number of fingers at once give the combined set of sounding notes (a chord).
- * It stands in for a piano until the microphone can listen, and doubles as a demo mode.
+ * It stands in for a piano when none is connected, and doubles as a demo mode.
  */
 export class OnScreenKeyboardInput extends ScriptedInput {
   /** Fingers (or clicks) currently holding each key, so a key stays down until the last one lets go. */

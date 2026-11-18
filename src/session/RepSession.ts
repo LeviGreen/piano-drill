@@ -25,10 +25,6 @@ export type RepSessionOptions<Item> = {
    * targets. Fixed in the product; tests set it shorter.
    */
   getReadyMs?: { first: number; between: number }
-  /** How long a silent input must stay silent before a flash (only for sessions that listen to an input). */
-  silenceMs?: number
-  /** Flash anyway after waiting this long for silence (a noisy room), and mark the rep. */
-  maxWaitMs?: number
   /** How long feedback stays after a correct rep, and how long the answer is revealed after a miss. */
   feedbackMs?: number
   revealMs?: number
@@ -39,8 +35,6 @@ export type RepSessionOptions<Item> = {
 const DEFAULTS = {
   totalReps: 20,
   getReadyMs: GET_READY_MS,
-  silenceMs: 300,
-  maxWaitMs: 8000,
   feedbackMs: 700,
   revealMs: 2500,
 }
@@ -81,7 +75,6 @@ export abstract class RepSession<Item, Snapshot extends BaseSnapshot<Item> = Bas
   private readonly opts: RepSessionOptions<Item>
   private upcoming: Item | null = null
   private flashing = false
-  private startedWithoutSilence = false
   /** The next get-ready is the first of a run (session start or a resume), so it is the longer one. */
   private firstOfRun = true
   private readyIsFirst = false
@@ -102,8 +95,6 @@ export abstract class RepSession<Item, Snapshot extends BaseSnapshot<Item> = Bas
     this.cfg = {
       totalReps: opts.totalReps === undefined ? DEFAULTS.totalReps : (opts.totalReps as number),
       getReadyMs: opts.getReadyMs ?? DEFAULTS.getReadyMs,
-      silenceMs: opts.silenceMs ?? DEFAULTS.silenceMs,
-      maxWaitMs: opts.maxWaitMs ?? DEFAULTS.maxWaitMs,
       feedbackMs: opts.feedbackMs ?? DEFAULTS.feedbackMs,
       revealMs: opts.revealMs ?? DEFAULTS.revealMs,
       timeoutSeconds: opts.timeoutSeconds,
@@ -116,12 +107,7 @@ export abstract class RepSession<Item, Snapshot extends BaseSnapshot<Item> = Bas
   /** A new item has been chosen; reset whatever is tracked per rep. */
   protected abstract beginRep(item: Item): void
   /** Build the record of a finished rep. */
-  protected abstract buildResult(
-    item: Item,
-    outcome: RepOutcome,
-    t0: number,
-    startedWithoutSilence: boolean,
-  ): RepResult
+  protected abstract buildResult(item: Item, outcome: RepOutcome, t0: number): RepResult
   /** The time limit for an item about to be flashed. Sessions can lengthen it for harder ways of answering. */
   protected limitSecondsFor(_item: Item): number | null {
     return this.cfg.timeoutSeconds
@@ -132,13 +118,6 @@ export abstract class RepSession<Item, Snapshot extends BaseSnapshot<Item> = Bas
   protected async onStart(): Promise<void> {}
   /** Stop listening when the session ends. */
   protected onStop(): void {}
-  /**
-   * Is the input quiet? Sessions that listen to a live input return its state so a flash waits for silence; sessions
-   * that answer by tapping return null and flash as soon as the get-ready time is up.
-   */
-  protected quietState(): { active: boolean; silentSince: number | null } | null {
-    return null
-  }
 
   // ---------- public API ----------
 
@@ -229,7 +208,6 @@ export abstract class RepSession<Item, Snapshot extends BaseSnapshot<Item> = Bas
     this.upcoming = null
     this.t0 = null
     this.limitSeconds = null
-    this.startedWithoutSilence = false
     this.beginRep(this.item)
     this.opts.presenter.clear() // back to the empty staff while the player settles
     this.readyEnteredAt = this.clock.now()
@@ -241,38 +219,21 @@ export abstract class RepSession<Item, Snapshot extends BaseSnapshot<Item> = Bas
     this.checkReady()
   }
 
-  /** Subclasses call this when the input changes while getting ready. */
-  protected recheckReady(): void {
-    if (this.state === 'READY') this.checkReady()
-  }
-
   private checkReady(): void {
     if (this.state !== 'READY' || this.flashing) return
     this.clearTimer('ready')
-    const now = this.clock.now()
-    const q = this.quietState()
-    const quiet =
-      q === null ||
-      (!q.active && q.silentSince !== null && now - q.silentSince >= this.cfg.silenceMs)
-    const waitedTooLong = now - this.readyEnteredAt >= this.cfg.maxWaitMs
-    if ((now >= this.readyAt && quiet) || waitedTooLong) {
-      this.flashNow(!quiet)
+    const wait = this.readyAt - this.clock.now()
+    if (wait <= 0) {
+      this.flashNow()
       return
     }
-    // Come back when something could change: the delay ends, the quiet period completes, or we give up.
-    const waits = [this.readyEnteredAt + this.cfg.maxWaitMs - now]
-    if (this.readyAt > now) waits.push(this.readyAt - now)
-    if (q && !q.active && q.silentSince !== null)
-      waits.push(q.silentSince + this.cfg.silenceMs - now)
-    const wait = Math.max(1, Math.min(...waits.filter((w) => w > 0)))
     this.timers.ready = this.clock.setTimeout(() => this.checkReady(), wait)
   }
 
-  private flashNow(forced: boolean): void {
+  private flashNow(): void {
     const item = this.item!
     const generation = this.generation
     this.flashing = true
-    this.startedWithoutSilence = forced
     this.opts.presenter
       .flash(item)
       .then((t0) => {
@@ -306,7 +267,7 @@ export abstract class RepSession<Item, Snapshot extends BaseSnapshot<Item> = Bas
     if (this.state !== 'FLASHED' || this.t0 === null || this.item === null) return
     const item = this.item
     this.clearTimer('timeout')
-    this.results.push(this.buildResult(item, outcome, this.t0, this.startedWithoutSilence))
+    this.results.push(this.buildResult(item, outcome, this.t0))
     this.lastOutcome = outcome
     const success = SUCCESS.includes(outcome)
     this.setState(

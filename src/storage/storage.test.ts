@@ -28,7 +28,6 @@ const rep = (id: string, over: Partial<RepResult> = {}): RepResult => ({
   errors: [],
   heard: [{ midi: 60, t: 600 }],
   outcome: 'correct',
-  startedWithoutSilence: false,
   timestamp: '2026-01-01T10:00:00.000Z',
   ...over,
 })
@@ -225,6 +224,18 @@ describe('export and import', () => {
     const b = await exportBackup(s)
     return { ...b, exportedAt: '' }
   }
+
+  it('a backup from before RF-103, whose reps still carry startedWithoutSilence, imports fine', async () => {
+    await fill(storage)
+    const old = JSON.parse(JSON.stringify(await exportBackup(storage)))
+    for (const r of old.reps) r.startedWithoutSilence = false // the retired field
+    await storage.wipe()
+    const parsed = parseBackup(old)
+    if (!parsed.ok) throw new Error(parsed.errors.join(', '))
+    const counts = await importBackup(storage, parsed.backup)
+    expect(counts.reps).toBe(3)
+    expect((await storage.getReps('s1')).map((r) => r.targetId)).toEqual(['a', 'b'])
+  })
 
   it('export, wipe, import restores everything (acceptance)', async () => {
     await fill(storage)

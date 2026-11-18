@@ -17,10 +17,10 @@ This file tracks the refactoring work that follows the MVP ([initiative-1-ticket
 
 | Epic                     | Ticket     | Short description                                     |
 | ------------------------ | ---------- | ----------------------------------------------------- |
-| 1 Mic leftovers          | RF-101     | Simplify `NoteInput` (drop `confidence`)              |
-| 1 Mic leftovers          | RF-102     | Remove silence gating from `RepSession`               |
-| 1 Mic leftovers          | RF-103     | Retire `startedWithoutSilence` (needs a decision)     |
-| 1 Mic leftovers          | RF-104     | Fix stale docs and comments                           |
+| ~~1 Mic leftovers~~      | ~~RF-101~~ | ~~Simplify `NoteInput` (drop `confidence`)~~          |
+| ~~1 Mic leftovers~~      | ~~RF-102~~ | ~~Remove silence gating from `RepSession`~~           |
+| ~~1 Mic leftovers~~      | ~~RF-103~~ | ~~Retire `startedWithoutSilence`~~                    |
+| ~~1 Mic leftovers~~      | ~~RF-104~~ | ~~Fix stale docs and comments~~                       |
 | 2 Shared infrastructure  | RF-201     | One preferences-storage helper                        |
 | 2 Shared infrastructure  | RF-202     | Shared settings module                                |
 | 2 Shared infrastructure  | RF-203     | Shared level/preset loading                           |
@@ -54,7 +54,7 @@ This file tracks the refactoring work that follows the MVP ([initiative-1-ticket
 
 ## Epic 1 — Mic leftovers
 
-Progress: 0/4 tickets done
+Progress: 4/4 tickets done
 
 Concepts that only made sense for a microphone and now do nothing with MIDI or the on-screen piano.
 
@@ -62,54 +62,60 @@ Concepts that only made sense for a microphone and now do nothing with MIDI or t
 
 **Size:** M  
 **Deps:** None  
-**Status:** Todo
+**Status:** Done
 
 `src/audio/inputs/NoteInput.ts` still has a `confidence` on every `Onset`, and `activeNotes` is a `Map<midi, confidence>`. MIDI and the on-screen piano can only report 1. Make `activeNotes` a `Set<number>` and drop `confidence` from `Onset`. Update `MidiInput`, `OnScreenKeyboardInput`, `ScriptedInput`, `MergedInput`, the fake MIDI test helper, every consumer and every test that builds a state. Fix the doc comment that lists "mic" as an input.
 
 **Acceptance:**
 
-- [ ] No `confidence` anywhere in `src/`.
-- [ ] `activeNotes` is a `Set<number>`.
-- [ ] The tests, lint and build pass.
+- [x] No `confidence` anywhere in `src/`.
+- [x] `activeNotes` is a `Set<number>`.
+- [x] The tests, lint and build pass.
+
+**Notes:** `NoteInputState.activeNotes` is a `Set<number>` and `Onset` is `{ midi, t }`. MIDI velocity is no longer read (nothing used it).
 
 ### RF-102: Remove silence gating from `RepSession`
 
 **Size:** S  
 **Deps:** None  
-**Status:** Todo
+**Status:** Done
 
 `RepSession` waits for the input to be quiet before a flash (`silenceMs`, `maxWaitMs`, "READY waits for quiet"). MIDI has no ring-out, so this does nothing. Remove the options, the waiting logic and the matching `Input` hooks, and keep the fixed get-ready wait (4 s, then 1 s). Update the session tests that cover it.
 
 **Acceptance:**
 
-- [ ] `silenceMs` and `maxWaitMs` no longer exist; READY is only the get-ready countdown.
-- [ ] The tests, lint and build pass.
+- [x] `silenceMs` and `maxWaitMs` no longer exist; READY is only the get-ready countdown.
+- [x] The tests, lint and build pass.
+
+**Notes:** also removed `quietState`, `recheckReady`, the `silenceMs` test option, and the tests that waited for quiet; READY is now just the get-ready timer.
 
 ### RF-103: Retire `startedWithoutSilence`
 
 **Size:** S  
 **Deps:** RF-102  
-**Status:** Blocked (decision needed)
+**Status:** Done
 
-`startedWithoutSilence` is set on every `RepResult` and saved. It is always false now. **Decision needed:** (a) drop it from new results and ignore it when reading old ones, or (b) keep the field but stop setting it. Before choosing, check what old saved sessions, scores and backups (`src/storage/backup.ts`) contain, so import and export keep working.
+`startedWithoutSilence` is set on every `RepResult` and saved. It is always false now. **Decision (2026-11-18): option (a)**: the field is dropped from new results and ignored when reading old ones. Checked: backups do not validate it (`src/storage/backup.ts` only checks the session id, mode, timestamp and outcome of a rep), so old backups and saved reps that still carry it import and read fine; a test covers an old-style backup.
 
 **Acceptance:**
 
-- [ ] The decision is written in this ticket.
-- [ ] Old saved data and old backups still load.
-- [ ] The tests, lint and build pass.
+- [x] The decision is written in this ticket (option a).
+- [x] Old saved data and old backups still load.
+- [x] The tests, lint and build pass.
 
 ### RF-104: Fix stale docs and comments
 
 **Size:** S  
 **Deps:** RF-101, RF-102  
-**Status:** Todo
+**Status:** Done
 
 Update `docs/design.MD` §9.3 (state machine: silence), the `SessionState` comments in `src/session/types.ts` ("listening", "waiting for quiet") and any remaining comment that talks about listening, noise or ring-out.
 
+Also removed the mic-era "almost" note state (the dashed ring on the staff and keyboard, its CSS and tests), which nothing set any more.
+
 **Acceptance:**
 
-- [ ] A search for "listen", "silence", "quiet" and "ring-out" in `src/` and `docs/` finds no stale meaning.
+- [x] A search for "listen", "silence", "quiet" and "ring-out" in `src/` and `docs/` finds no stale meaning.
 
 ---
 

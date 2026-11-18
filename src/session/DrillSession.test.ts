@@ -63,7 +63,6 @@ function rig(over: Partial<SessionOptions> = {}, targets?: Target[]): Rig {
     presenter,
     clock,
     getReadyMs: { first: 0, between: 0 },
-    silenceMs: 0,
     feedbackMs: 100,
     revealMs: 200,
     totalReps: 3,
@@ -269,21 +268,7 @@ describe('timeout and skip', () => {
   })
 })
 
-describe('waiting for quiet before a flash (READY)', () => {
-  it('holds the flash while notes are still sounding, then waits the silence period', async () => {
-    const r = rig({ silenceMs: 300 })
-    await r.session.start()
-    r.input.noteOn(parsePitch('C4').midi, 0) // a note still ringing at the start
-    await r.clock.advance(2000)
-    expect(r.session.snapshot.state).toBe('READY') // not flashed while it rings
-    r.input.noteOff(parsePitch('C4').midi, r.clock.now())
-    await r.clock.advance(299)
-    expect(r.session.snapshot.state).toBe('READY') // quiet, but not for long enough
-    await r.clock.advance(10)
-    expect(r.session.snapshot.state).toBe('FLASHED')
-    expect(r.session.results).toHaveLength(0)
-  })
-
+describe('getting ready (READY)', () => {
   it('waits 4 seconds before the first target by default: not before, and the flash comes right at 4 s', async () => {
     const r = rig({ getReadyMs: undefined }) // the product default
     await r.session.start()
@@ -346,27 +331,6 @@ describe('waiting for quiet before a flash (READY)', () => {
     await r.clock.advance(5)
     expect(r.session.snapshot.state).toBe('FLASHED')
   })
-
-  it('flashes anyway after maxWaitMs in a noisy room, and marks the rep', async () => {
-    const r = rig({ maxWaitMs: 1000, getReadyMs: { first: 500, between: 500 } }) // READY for 500 ms, so a note can start ringing first
-    await r.session.start()
-    r.input.noteOn(parsePitch('C4').midi, 0) // never released: the room is never quiet
-    await r.clock.advance(1100)
-    expect(r.session.snapshot.state).toBe('FLASHED') // flashed anyway after 1000 ms
-    r.input.noteOn(parsePitch('E4').midi, r.clock.now())
-    r.input.noteOn(parsePitch('G4').midi, r.clock.now())
-    r.input.noteOn(parsePitch('C4').midi, r.clock.now()) // struck again after the flash
-    expect(r.session.results[0].outcome).toBe('correct')
-    expect(r.session.results[0].startedWithoutSilence).toBe(true)
-  })
-
-  it('a normal start is not marked noisy', async () => {
-    const r = rig()
-    await r.session.start()
-    await r.untilFlashed()
-    r.play('C4', 'E4', 'G4')
-    expect(r.session.results[0].startedWithoutSilence).toBe(false)
-  })
 })
 
 describe('pause, resume and end', () => {
@@ -400,7 +364,7 @@ describe('pause, resume and end', () => {
     expect(r.session.snapshot.state).toBe('FLASHED')
   })
 
-  it('pausing while waiting for quiet just stops the wait', async () => {
+  it('pausing while getting ready just stops the wait', async () => {
     const r = rig({ getReadyMs: { first: 1000, between: 1000 } })
     await r.session.start()
     r.session.pause()

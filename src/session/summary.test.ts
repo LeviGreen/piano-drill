@@ -11,7 +11,6 @@ const rep = (over: Partial<RepResult> & { outcome: RepOutcome }): RepResult => (
   completionMs: over.outcome === 'correct' || over.outcome === 'correct_with_errors' ? 1000 : null,
   errors: [],
   heard: [],
-  startedWithoutSilence: false,
   timestamp: '',
   ...over,
 })

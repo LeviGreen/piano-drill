@@ -3,14 +3,13 @@ import { RANGE_HIGH_MIDI, RANGE_LOW_MIDI } from '../theory/constraints'
 import { formatPitch, pitchFromMidi } from '../theory/pitch'
 import { keyboardLayout, WHITE_H } from './keyboardLayout'
 
-/** How a key is marked: part of the target (to play), heard, only weakly heard, or heard but wrong. */
-export type KeyMark = 'target' | 'heard' | 'almost' | 'wrong'
+/** How a key is marked: part of the target (to play), heard, or heard but wrong. */
+export type KeyMark = 'target' | 'heard' | 'wrong'
 
-const SYMBOL: Record<KeyMark, string> = { target: '●', heard: '✓', almost: '~', wrong: '✕' }
+const SYMBOL: Record<KeyMark, string> = { target: '●', heard: '✓', wrong: '✕' }
 const WORD: Record<KeyMark, string> = {
   target: 'to play',
   heard: 'heard',
-  almost: 'almost heard',
   wrong: 'wrong note heard',
 }
 
@@ -35,7 +34,7 @@ export type PianoKeyboardProps = {
 
 /**
  * A piano keyboard diagram. Marked keys show their state by shape as well as color: a dot for a target key,
- * a check mark for heard, a dashed outline for almost, a cross for a wrong note.
+ * a check mark for heard, a cross for a wrong note.
  */
 export function PianoKeyboard({
   low = RANGE_LOW_MIDI,

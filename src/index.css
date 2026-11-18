@@ -318,12 +318,6 @@ select {
   stroke: var(--ok);
 }
 
-.note-halo.almost {
-  fill: none;
-  stroke: var(--ok);
-  stroke-dasharray: 3 2;
-}
-
 .note-check {
   stroke: none;
   fill: var(--ok);
@@ -365,12 +359,12 @@ select {
   stroke: #9b9aa8;
 }
 
-:root[data-theme='high-contrast'] .kb-key.white:not(.target, .heard, .almost, .wrong) rect {
+:root[data-theme='high-contrast'] .kb-key.white:not(.target, .heard, .wrong) rect {
   fill: #ffffff;
   stroke: #000000;
 }
 
-:root[data-theme='high-contrast'] .kb-key.black:not(.target, .heard, .almost, .wrong) rect {
+:root[data-theme='high-contrast'] .kb-key.black:not(.target, .heard, .wrong) rect {
   fill: #000000;
   stroke: #ffffff;
 }
@@ -387,12 +381,6 @@ select {
   fill: var(--ok);
 }
 
-.kb-key.almost rect {
-  stroke: var(--ok);
-  stroke-width: 2;
-  stroke-dasharray: 3 2;
-}
-
 .kb-key.wrong rect {
   fill: var(--bad);
 }
@@ -404,11 +392,6 @@ select {
   stroke: #111;
   stroke-width: 0.6;
   paint-order: stroke;
-}
-
-.kb-key.almost .kb-mark {
-  fill: #111;
-  stroke: #fff;
 }
 
 .kb-name {

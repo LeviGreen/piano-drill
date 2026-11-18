@@ -1,13 +1,13 @@
 import type { StaveNote } from 'vexflow/bravura'
 import { formatPitch, type Pitch } from '../theory/pitch'
 
-/** How far a note has got in the drill: heard by the mic, only weakly heard, or not heard yet. */
-export type NoteState = 'heard' | 'almost' | 'missing'
+/** How far a note has got in the drill: heard, nearly heard, or not heard yet. */
+export type NoteState = 'heard' | 'missing'
 
 export type OverlayOptions = {
   /** Write each note's name beside it. */
   names?: boolean
-  /** One entry per note, lowest pitch first. Heard gets a solid halo and a check mark, almost a dashed ring. */
+  /** One entry per note, lowest pitch first. Heard gets a solid halo and a check mark. */
   states?: (NoteState | undefined)[]
 }
 

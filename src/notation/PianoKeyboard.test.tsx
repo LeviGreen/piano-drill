@@ -41,14 +41,13 @@ describe('PianoKeyboard', () => {
   const marks = new Map<number, KeyMark>([
     [60, 'target'],
     [64, 'heard'],
-    [67, 'almost'],
     [61, 'wrong'],
   ])
 
   it('shows every mark by shape as well as color', () => {
     const { container } = render(<PianoKeyboard marks={marks} />)
     const symbols = [...container.querySelectorAll('.kb-mark')].map((e) => e.textContent).sort()
-    expect(symbols).toEqual(['~', '●', '✓', '✕'])
+    expect(symbols).toEqual(['●', '✓', '✕'])
     expect(container.querySelectorAll('.kb-key.target')).toHaveLength(1)
     expect(container.querySelectorAll('.kb-key.heard')).toHaveLength(1)
   })
@@ -57,7 +56,6 @@ describe('PianoKeyboard', () => {
     const labels = new Map([
       [60, 'C4'],
       [64, 'E4'],
-      [67, 'G4'],
       [61, 'D♭4'],
     ])
     const off = render(<PianoKeyboard marks={marks} labels={labels} />)
@@ -65,7 +63,7 @@ describe('PianoKeyboard', () => {
     cleanup()
     const on = render(<PianoKeyboard marks={marks} labels={labels} showNames />)
     expect([...on.container.querySelectorAll('.kb-name')].map((e) => e.textContent).sort()).toEqual(
-      ['C4', 'D♭4', 'E4', 'G4'],
+      ['C4', 'D♭4', 'E4'],
     )
   })
 

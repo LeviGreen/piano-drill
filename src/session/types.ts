@@ -4,8 +4,8 @@ import type { Hand, Target } from '../theory/target'
 /** The drill's states (design §9.3). A wrong note is an event recorded in `errors`, not a separate state. */
 export type SessionState =
   | 'IDLE'
-  | 'READY' // waiting for quiet, then flashing the next target
-  | 'FLASHED' // target on screen, listening
+  | 'READY' // getting ready, then flashing the next target
+  | 'FLASHED' // target on screen, waiting for the player
   | 'SUCCESS' // every expected note heard (shown briefly before INTERSTITIAL)
   | 'TIMEOUT'
   | 'SKIPPED'
@@ -72,8 +72,6 @@ export type RepResult = {
   /** Expected notes heard, with their onset times (ms after painted). */
   heard: { midi: number; t: number }[]
   outcome: RepOutcome
-  /** True if the rep began without the input having been quiet (noisy room, held pedal). */
-  startedWithoutSilence: boolean
   /** Key-signature reps only. */
   keyId?: KeyIdDetail
   timestamp: string

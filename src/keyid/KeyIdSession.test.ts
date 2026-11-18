@@ -245,13 +245,6 @@ describe('the shared rep cycle', () => {
     expect(r.session.snapshot.ready?.first).toBe(false)
   })
 
-  it('does not wait for any input to go quiet when answers are tapped', async () => {
-    const r = rig({ getReadyMs: undefined }, [question('a')])
-    await r.session.start()
-    await r.clock.advance(4003)
-    expect(r.session.snapshot.state).toBe('FLASHED') // no input, no gate
-  })
-
   it('empties the staff while getting ready, hides it on pause, and a paused rep is not recorded', async () => {
     const r = rig({}, [question('a')])
     await r.session.start()
@@ -340,7 +333,6 @@ describe('answering by playing the checklist', () => {
       input,
       clock,
       getReadyMs: { first: 0, between: 0 },
-      silenceMs: 0,
       totalReps: 2,
     })
     return { clock, input, presenter, session }
@@ -568,23 +560,6 @@ describe('answering by playing the checklist', () => {
     r.input.noteOn(UP[0], -100) // ignored while stopped; the session has not started
     await begin(r)
     expect(rows(r).up.progress).toBe(0)
-  })
-
-  it('waits for the room to go quiet before flashing (the input is a live one)', async () => {
-    const r = playRig()
-    await begin(r)
-    await run(r, [...UP, ...DOWN.slice(1)])
-    await chord(r, ROOT)
-    await chord(r, FIRST)
-    r.input.noteOn(SECOND[0], r.clock.now()) // the last row's notes: held down...
-    r.input.noteOn(SECOND[1], r.clock.now())
-    r.input.noteOn(SECOND[2], r.clock.now())
-    expect(r.session.results[0].outcome).toBe('correct')
-    await r.clock.advance(3000) // feedback is over, but the keys are still held
-    expect(r.session.snapshot.state).toBe('READY') // not flashed while notes sound
-    for (const m of SECOND) r.input.noteOff(m, r.clock.now())
-    await r.clock.advance(20)
-    expect(r.session.snapshot.state).toBe('FLASHED')
   })
 
   it('tapped answers are ignored in play mode', async () => {

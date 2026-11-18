@@ -276,7 +276,7 @@ export class MidiInput implements NoteInput {
     this.held.set(portId, notes)
     if (msg.type === 'on') {
       notes.add(msg.midi)
-      this.emit([{ midi: msg.midi, t, confidence: msg.velocity / 127 }], t)
+      this.emit([{ midi: msg.midi, t }], t)
     } else if (msg.type === 'off') {
       if (notes.delete(msg.midi)) this.emit([], t)
     } else {
@@ -304,8 +304,8 @@ export class MidiInput implements NoteInput {
   }
 
   private emit(onsets: Onset[], t = this.now()): void {
-    const active = new Map<number, number>()
-    for (const notes of this.held.values()) for (const m of notes) active.set(m, 1)
+    const active = new Set<number>()
+    for (const notes of this.held.values()) for (const m of notes) active.add(m)
     const state: NoteInputState = { t, activeNotes: active, onsets }
     for (const cb of [...this.listeners]) cb(state)
   }

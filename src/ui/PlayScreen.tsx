@@ -92,14 +92,13 @@ export type PlayScreenProps = {
     getReadyMs?: { first: number; between: number }
     feedbackMs?: number
     revealMs?: number
-    silenceMs?: number
   }
 }
 
 /**
  * Play mode (design §2, §9.3): a grand staff flashes a note, interval or chord; you play it. Every note you get
  * turns green on the staff and the keyboard, in any order, and the rep ends when all of them have been heard. The
- * on-screen piano stands in for a real piano until the microphone can listen.
+ * on-screen piano stands in when no MIDI piano is connected.
  */
 export function PlayScreen({ reps = DEFAULT_REPS, timing, storage, midiAccess }: PlayScreenProps) {
   const [initial] = useState(loadSettings)

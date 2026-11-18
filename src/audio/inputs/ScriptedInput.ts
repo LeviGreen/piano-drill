@@ -1,8 +1,7 @@
 import type { NoteInput, NoteInputListener, Onset } from './NoteInput'
 
 export type ScriptEvent =
-  | { type: 'on'; midi: number; t: number; confidence?: number }
-  | { type: 'off'; midi: number; t: number }
+  { type: 'on'; midi: number; t: number } | { type: 'off'; midi: number; t: number }
 
 /**
  * Test/fake NoteInput with caller-controlled timestamps. Events are ignored while stopped,
@@ -10,7 +9,7 @@ export type ScriptEvent =
  */
 export class ScriptedInput implements NoteInput {
   private listeners = new Set<NoteInputListener>()
-  private active = new Map<number, number>()
+  private active = new Set<number>()
   private running = false
 
   onUpdate(cb: NoteInputListener): () => void {
@@ -27,10 +26,10 @@ export class ScriptedInput implements NoteInput {
     this.active.clear()
   }
 
-  noteOn(midi: number, t: number, confidence = 1): void {
+  noteOn(midi: number, t: number): void {
     if (!this.running) return
-    this.active.set(midi, confidence)
-    this.emit(t, [{ midi, t, confidence }])
+    this.active.add(midi)
+    this.emit(t, [{ midi, t }])
   }
 
   noteOff(midi: number, t: number): void {
@@ -44,13 +43,13 @@ export class ScriptedInput implements NoteInput {
       .map((e, i) => [e, i] as const)
       .sort(([a, i], [b, j]) => a.t - b.t || i - j)
     for (const [e] of ordered) {
-      if (e.type === 'on') this.noteOn(e.midi, e.t, e.confidence)
+      if (e.type === 'on') this.noteOn(e.midi, e.t)
       else this.noteOff(e.midi, e.t)
     }
   }
 
   private emit(t: number, onsets: Onset[]): void {
-    const state = { t, activeNotes: new Map(this.active), onsets }
+    const state = { t, activeNotes: new Set(this.active), onsets }
     for (const cb of [...this.listeners]) cb(state)
   }
 }

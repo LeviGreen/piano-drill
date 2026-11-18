@@ -315,7 +315,7 @@ IDLE → READY → FLASHED → (WRONG_NOTE → FLASHED)* → SUCCESS | TIMEOUT |
                     ↘ (PAUSE / END_SESSION)
 ```
 
-`READY` waits for an optional delay before flashing.
+`READY` is the fixed get-ready wait (4 seconds at the start and after a resume, 1 second between targets), then the target flashes.
 
 ### 9.4 Performance budget
 
@@ -328,7 +328,7 @@ IDLE → READY → FLASHED → (WRONG_NOTE → FLASHED)* → SUCCESS | TIMEOUT |
 
 - Primary screen is nearly just a **big staff**, a timer (optionally hidden to avoid anxiety; show result after), and minimal chrome.
 - Keyboard/touch shortcuts: Space = skip/next, Esc = end session; big touch targets for mid-session controls.
-- A fixed **"Get ready"**: 4 seconds at the start of a session (and after a resume), then 1 second between targets, with the room quiet each time. Not a setting.
+- A fixed **"Get ready"**: 4 seconds at the start of a session (and after a resume), then 1 second between targets. Not a setting.
 - **Per-note feedback** (the point is to tell the user *which* note to fix, and how):
   - Each expected note is **heard** (solid green halo plus a check mark) or **missing** (no marking). Never color alone.
   - Wrong notes are marked ✕.

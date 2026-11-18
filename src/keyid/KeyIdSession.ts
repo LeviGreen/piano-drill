@@ -59,8 +59,6 @@ export class KeyIdSession extends RepSession<KeyIdQuestion, KeyIdSnapshot> {
   private firstGuessAt: number | null = null
   private solvedAt: number | null = null
   private solvedBy: KeyIdAnswerMethod | null = null
-  private silentSince: number | null = null
-  private active = false
 
   constructor(opts: KeyIdSessionOptions) {
     super({ ...opts, timeoutSeconds: opts.settings.timeoutSeconds })
@@ -94,7 +92,6 @@ export class KeyIdSession extends RepSession<KeyIdQuestion, KeyIdSnapshot> {
   protected async onStart(): Promise<void> {
     if (!this.input) return
     this.unsubscribeInput = this.input.onUpdate((s) => this.onInput(s))
-    this.silentSince = this.clock.now()
     await this.input.start()
   }
 
@@ -102,11 +99,6 @@ export class KeyIdSession extends RepSession<KeyIdQuestion, KeyIdSnapshot> {
     this.unsubscribeInput?.()
     this.unsubscribeInput = null
     this.input?.stop()
-  }
-
-  /** Waiting for quiet only matters when notes are the answer. */
-  protected quietState() {
-    return this.method === 'play' ? { active: this.active, silentSince: this.silentSince } : null
   }
 
   /** The limit is set when the question appears, by the way it is being answered then. */
@@ -152,17 +144,8 @@ export class KeyIdSession extends RepSession<KeyIdQuestion, KeyIdSnapshot> {
   }
 
   private onInput(update: NoteInputState): void {
-    const wasActive = this.active
-    this.active = update.activeNotes.size > 0
-    if (this.active) this.silentSince = null
-    else if (wasActive || this.silentSince === null) this.silentSince = this.clock.now()
-
     if (this.method !== 'play') return
     this.held = [...update.activeNotes.keys()]
-    if (this.state === 'READY') {
-      this.recheckReady()
-      return
-    }
     if (this.state !== 'FLASHED' || this.t0 === null || !this.item) return
     // Every note struck after the question appeared goes to the checklist, in order. A wrong note (on the clef's side of
     // middle C but not in the key) costs points; any other slip only resets the row it was in, and notes on the other
@@ -189,12 +172,7 @@ export class KeyIdSession extends RepSession<KeyIdQuestion, KeyIdSnapshot> {
     this.emit()
   }
 
-  protected buildResult(
-    q: KeyIdQuestion,
-    outcome: RepOutcome,
-    t0: number,
-    startedWithoutSilence: boolean,
-  ): RepResult {
+  protected buildResult(q: KeyIdQuestion, outcome: RepOutcome, t0: number): RepResult {
     const solved = this.solvedAt !== null ? this.solvedAt - t0 : null
     return {
       sessionId: this.sessionId,
@@ -206,7 +184,6 @@ export class KeyIdSession extends RepSession<KeyIdQuestion, KeyIdSnapshot> {
       errors: this.errors.map((e) => ({ ...e, notes: [...e.notes] })),
       heard: [],
       outcome,
-      startedWithoutSilence,
       keyId: {
         format: q.format,
         correct: q.answer,
