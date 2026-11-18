@@ -1,4 +1,6 @@
-# Piano Drill — Initiative 2: Refactoring
+# Piano Drill — Initiative 2: Refactoring (Complete)
+
+> **Status: complete (2026-11-18).** Every ticket in scope is done. RF-404 (a strategy object for each Key Signatures answer method) was **removed from scope**, not deferred: the current code handles the three answer methods well enough, and it can be revisited only if a fourth method appears. How to build a new drill mode on the shared pieces is in [adding-a-drill-mode.md](adding-a-drill-mode.md).
 
 This file tracks the refactoring work that follows the MVP ([initiative-1-tickets.md](initiative-1-tickets.md)). The goal: **clean code that is flexible for future development**, such as new drill modes and new input types, without changing what the app does. It comes from a code review on 2026-11-17, after the microphone was cut from the project. Like the first initiative's file, it is a living document: edit tickets as the code changes.
 
@@ -30,7 +32,6 @@ This file tracks the refactoring work that follows the MVP ([initiative-1-ticket
 | ~~4 Structure & polish~~    | ~~RF-401~~ | ~~Split `index.css`~~                                   |
 | ~~4 Structure & polish~~    | ~~RF-402~~ | ~~Small tidy-ups (empty folders, lint suppressions)~~   |
 | ~~4 Structure & polish~~    | ~~RF-403~~ | ~~Lazy-load the notation code~~                         |
-| 4 Structure & polish        | RF-404     | `KeyIdSession` answer-method strategy (deferred)        |
 
 ## Suggested Build Order
 
@@ -39,7 +40,6 @@ This file tracks the refactoring work that follows the MVP ([initiative-1-ticket
 3. **RF-301 → RF-303** (the shared screen pieces: the change that most helps a future third mode).
 4. **RF-202, RF-203** (when the next mode, or a settings change, needs them).
 5. **RF-401 → RF-403** (anytime; RF-401 is best done before a larger UI change).
-6. **RF-404** only if the MIDI answer method keeps growing.
 
 ## Ticket Index
 
@@ -48,7 +48,7 @@ This file tracks the refactoring work that follows the MVP ([initiative-1-ticket
 | 1 Mic leftovers         | RF-101 – RF-104 |
 | 2 Shared infrastructure | RF-201 – RF-203 |
 | 3 Drill screens         | RF-301 – RF-303 |
-| 4 Structure & polish    | RF-401 – RF-404 |
+| 4 Structure & polish    | RF-401 – RF-403 |
 
 ---
 
@@ -229,7 +229,7 @@ Rebuild `PlayScreen` and `KeyIdScreen` with `useRepSession`, `DrillScreenFrame` 
 
 ## Epic 4 — Structure & polish
 
-Progress: 3/4 tickets done
+Progress: 3/3 tickets done
 
 ### RF-401: Split `index.css`
 
@@ -276,16 +276,3 @@ The build is one 1.18 MB chunk (vite warns above 500 kB), mostly VexFlow. Load t
 - [x] The deployed site works from the repo subpath (checked on the live site on 2026-11-18: both drill screens load).
 
 **Notes:** the drill screens load on demand (`React.lazy` in `src/App.tsx`, with a "Loading…" fallback), and VexFlow is its own `vexflow` chunk (`manualChunks` in `vite.config.ts`). Numbers: the main file went from **1,178 kB to 397 kB** (gzip 535 kB to 127 kB); Home, Scores, Settings and MIDI Test no longer download the 719 kB VexFlow file (387 kB gzip). Vite's 500 kB warning still shows, for that one VexFlow chunk (it holds the music font); the main chunk is under the limit. Chunk imports are relative (`./PlayScreen-….js`), so the repo-subpath deploy works; confirmed on the live site. `App.test.tsx` waits for the lazy screens.
-
-### RF-404: `KeyIdSession` answer-method strategy
-
-**Size:** M  
-**Deps:** RF-303  
-**Status:** Deferred (only worth doing if the MIDI answer method keeps growing)
-
-`KeyIdSession.answer()` and `setMethod()` carry the logic for three answer methods (wheel, type, play) on top of the shared base. If a fourth appears, or the scale-playing view gets more rules, move each method into its own strategy object with one interface.
-
-**Acceptance:**
-
-- [ ] Each answer method is its own small class or object with its own tests.
-- [ ] `KeyIdSession` only delegates.

@@ -2,7 +2,7 @@
 
 ## Ticket tracking
 
-The ticket files in `docs/` are the only task trackers (no GitHub Issues/Jira): [docs/initiative-1-tickets.md](docs/initiative-1-tickets.md) (the MVP, PD-xxx) and [docs/initiative-2-tickets.md](docs/initiative-2-tickets.md) (refactoring for cleanliness and flexibility, RF-xxx). They are maintained by both the user and Claude, and tickets may evolve along with the design ([docs/design.MD](docs/design.MD)).
+The ticket files in `docs/` are the only task trackers (no GitHub Issues/Jira): [docs/initiative-1-tickets.md](docs/initiative-1-tickets.md) (the MVP, PD-xxx; complete) and [docs/initiative-2-tickets.md](docs/initiative-2-tickets.md) (refactoring for cleanliness and flexibility, RF-xxx; complete) and [docs/initiative-3-tickets.md](docs/initiative-3-tickets.md) (small improvements and bug fixes, IM-xxx; open: add new tickets there). They are maintained by both the user and Claude, and tickets may evolve along with the design ([docs/design.MD](docs/design.MD)).
 
 When work on a ticket is finished, in the same change as the code:
 - Set its **Status** line (Todo / In progress / Blocked / Deferred / Done).
