@@ -1,0 +1,120 @@
+/* The drill screens' common parts: the staff stage and its countdown, the settings drawer, and the screen's centred column. */
+
+/* The countdown number sits over the empty staff, so nothing on the page moves when it appears. */
+.stage {
+  position: relative;
+}
+
+.countdown {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 4rem;
+  font-weight: 800;
+  color: var(--accent);
+  pointer-events: none;
+}
+
+/* Settings drawer */
+.drawer-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+}
+
+.drawer-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgb(0 0 0 / 0.45);
+}
+
+.drawer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(24rem, 100%);
+  overflow-y: auto;
+  background: var(--bg);
+  color: var(--text);
+  border-left: 1px solid var(--border);
+  box-shadow: -8px 0 24px rgb(0 0 0 / 0.25);
+  padding: var(--space);
+}
+
+.drawer:focus {
+  outline: none;
+}
+
+.drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space);
+}
+
+.drawer-head h2 {
+  margin: 0;
+}
+
+.drawer-body {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.drawer-body label {
+  display: grid;
+  gap: 0.25rem;
+}
+
+/* Key Signatures screen: one centred column, so the staff and the answer input line up */
+.keyid-screen {
+  max-width: 34rem;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.keyid-screen .result-slot {
+  justify-content: center;
+}
+
+.keyid-bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.keyid-status {
+  min-height: 1.5rem; /* reserved: the status never changes the height of the page */
+  margin: 0.25rem 0 0;
+}
+
+/* Its own line, with digits of equal width, so counting down moves nothing. */
+.keyid-clock {
+  height: 2.5rem; /* fixed, with or without a number, so nothing moves */
+  margin: 0 0 0.25rem;
+  font-size: 1.5rem;
+  line-height: 2.5rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+
+/* Session demo results */
+.results {
+  border-collapse: collapse;
+  width: 100%;
+  max-width: 40rem;
+}
+
+.results th,
+.results td {
+  text-align: left;
+  padding: 0.35rem 0.6rem;
+  border-bottom: 1px solid var(--border);
+}

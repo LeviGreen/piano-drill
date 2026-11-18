@@ -1,53 +1,22 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import type { RequestMidiAccess } from '../audio/inputs/MidiInput'
 import { KeyIdSession, type KeyIdAnswerMethod, type KeyIdSnapshot } from '../keyid/KeyIdSession'
 import { answerLabel } from '../keyid/labels'
 import { KEY_ID_LEVELS } from '../keyid/presets'
 import { formatFor, KeyIdGenerator, type KeyIdQuestion } from '../keyid/questions'
 import { handFor, scaleToShow } from '../keyid/checklist'
-import {
-  mergeKeyIdSettings,
-  parseKeyIdSettings,
-  toQuestionConfig,
-  toSessionSettings,
-  type KeyIdSettings,
-} from '../keyid/settings'
-import { FlashController } from '../notation/flash'
+import { toQuestionConfig, toSessionSettings } from '../keyid/settings'
 import { renderStaff } from '../notation/renderStaff'
-import { summarize } from '../session/summary'
-import type { Presenter, RepResult } from '../session/types'
 import type { Storage } from '../storage'
 import { keySignature } from '../theory/keys'
+import { DrillScreenFrame } from './DrillScreenFrame'
 import { KeyAnswerInput, type AnswerFeedback, type AnswerView } from './KeyAnswerInput'
-import { SettingsDrawer } from './SettingsDrawer'
-import { levelLabel } from './levelLabel'
-import { ScoreSummary } from './ScoreSummary'
-import { useCountdown } from './useCountdown'
 import { PHONE_QUERY, useMediaQuery } from './useMediaQuery'
-import { usePianoInput } from './usePianoInput'
-import { useRemainingSeconds } from './useRemainingSeconds'
+import { useKeyIdSettings } from './useKeyIdSettings'
+import { flashPresenter, useRepSession } from './useRepSession'
 
 /** A session is always this many questions. */
 const DEFAULT_QUESTIONS = 20
-
-const STORAGE_KEY = 'piano-drill.keyid-settings'
-
-function loadSettings(): { settings: KeyIdSettings; levelId: number | 'custom' } {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) {
-      const parsed = parseKeyIdSettings(JSON.parse(raw))
-      if (parsed.ok) {
-        // Changing any option renames the settings "Custom", so a preset's own name means it is still that level.
-        const preset = KEY_ID_LEVELS.find((l) => l.settings.name === parsed.settings.name)
-        return { settings: parsed.settings, levelId: preset?.id ?? 'custom' }
-      }
-    }
-  } catch {
-    // Storage unavailable or corrupt: fall back to the first level.
-  }
-  return { settings: KEY_ID_LEVELS[0].settings, levelId: KEY_ID_LEVELS[0].id }
-}
 
 const drawEmptyStaff = (el: HTMLElement | null) => {
   if (el) renderStaff(el, { clef: 'treble', key: keySignature(0, 'major') })
@@ -78,103 +47,40 @@ export function KeyIdScreen({
   midiAccess,
   questions: QUESTIONS = DEFAULT_QUESTIONS,
 }: KeyIdScreenProps) {
-  const [initial] = useState(loadSettings)
-  const [settings, setSettings] = useState<KeyIdSettings>(initial.settings)
-  const [levelId, setLevelId] = useState<number | 'custom'>(initial.levelId)
-  const [drawerOpen, setDrawerOpen] = useState(false)
-  const [dismissed, setDismissed] = useState(false)
+  const { settings, levelId, edit, pickLevel } = useKeyIdSettings()
   const [method, setMethod] = useState<KeyIdAnswerMethod>('wheel')
-  const stage = useRef<HTMLDivElement>(null)
-  const session = useRef<KeyIdSession | null>(null)
-  const [snap, setSnap] = useState<KeyIdSnapshot | null>(null)
-  const [results, setResults] = useState<RepResult[]>([])
-  const count = useCountdown(snap?.ready ?? null)
   const phone = useMediaQuery(PHONE_QUERY)
-  const piano = usePianoInput({
-    requestAccess: midiAccess,
-    onLost: () => session.current?.pause(), // the piano went away: stop, and say so
+
+  const run = useRepSession<KeyIdQuestion, KeyIdSnapshot, KeyIdSession>({
+    midiAccess,
+    drawEmpty: drawEmptyStaff,
+    create: ({ drill, stage }) =>
+      new KeyIdSession({
+        settings: toSessionSettings(settings),
+        generator: new KeyIdGenerator(toQuestionConfig(settings), Math.floor(Math.random() * 1e6)),
+        presenter: flashPresenter<KeyIdQuestion>({
+          container: stage,
+          render: (into, q) =>
+            renderStaff(into, { clef: q.clef, key: q.key, notes: q.hint ? [q.hint] : undefined }),
+          reveal: () => {}, // the answer input marks the right answer and the message says what it was
+          clear: () => drawEmptyStaff(stage),
+        }),
+        input: drill.midi ?? undefined, // the on-screen piano only mirrors the keys; it is not an input here
+        // Playing needs a MIDI piano (`drill.midi` is there only when it is chosen) and a desktop screen.
+        method: method === 'play' && !(drill.midi && !phone) ? 'wheel' : method,
+        totalReps: QUESTIONS,
+        ...timing,
+      }),
   })
+  const { snap, state, results, piano } = run
 
-  useEffect(() => {
-    drawEmptyStaff(stage.current)
-    return () => session.current?.end()
-  }, [])
-
-  // Playing the key needs a MIDI piano (chosen in the Sight-Read settings) and a desktop screen.
+  // The play view is offered only with a MIDI piano (chosen in the Sight-Read settings) and a desktop screen.
   const playable = piano.choice === 'midi' && !phone
-  const state = snap?.state ?? 'IDLE'
-  const running = state !== 'IDLE' && state !== 'ENDED'
-  useEffect(() => {
-    if (state === 'ENDED') piano.release()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state])
-
-  const remaining = useRemainingSeconds(
-    state === 'FLASHED',
-    snap?.t0 ?? null,
-    snap?.limitSeconds ?? null, // longer when the question is answered by playing
-  )
-
-  const start = async () => {
-    session.current?.end()
-    drawEmptyStaff(stage.current)
-    setResults([])
-    setSnap(null)
-    setDismissed(false)
-    const drill = await piano.open() // a missing MIDI piano is reported here, before anything starts
-    if (!drill) return
-    const flash = new FlashController<KeyIdQuestion>({
-      container: stage.current!,
-      render: (into, q) =>
-        renderStaff(into, { clef: q.clef, key: q.key, notes: q.hint ? [q.hint] : undefined }),
-    })
-    const presenter: Presenter<KeyIdQuestion> = {
-      prepare: (q) => flash.prepare(q),
-      flash: async (q) => (await flash.flash(q)).paintedAt,
-      reveal: () => {}, // the answer input marks the right answer and the message says what it was
-      clear: () => drawEmptyStaff(stage.current),
-    }
-    const s = new KeyIdSession({
-      settings: toSessionSettings(settings),
-      generator: new KeyIdGenerator(toQuestionConfig(settings), Math.floor(Math.random() * 1e6)),
-      presenter,
-      input: drill.midi ?? undefined, // the on-screen piano only mirrors the keys; it is not an input here
-      method: method === 'play' && !playable ? 'wheel' : method,
-      totalReps: QUESTIONS,
-      ...timing,
-    })
-    session.current = s
-    s.subscribe((snapshot) => {
-      setSnap(snapshot)
-      setResults([...s.results])
-    })
-    await s.start()
-  }
 
   /** The view being answered in is how the question is answered, and so how it is scored. */
   const onViewChange = (view: AnswerView) => {
     setMethod(view)
-    session.current?.setMethod(view)
-  }
-
-  // ----- settings -----
-  const changeSettings = (next: KeyIdSettings, level: number | 'custom') => {
-    setSettings(next)
-    setLevelId(level)
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
-    } catch {
-      // Not saved; the settings still apply for this visit.
-    }
-  }
-  const edit = (patch: Record<string, unknown>) => {
-    const r = mergeKeyIdSettings(settings, patch)
-    if (r.ok) changeSettings({ ...r.settings, name: 'Custom' }, 'custom')
-  }
-  const pickLevel = (value: string) => {
-    if (value === 'custom') return setLevelId('custom')
-    const picked = KEY_ID_LEVELS.find((l) => l.id === Number(value))
-    if (picked) changeSettings(picked.settings, picked.id)
+    run.session.current?.setMethod(view)
   }
 
   // ----- what the screen says -----
@@ -194,18 +100,6 @@ export function KeyIdScreen({
           ok: snap.lastOutcome === 'correct' || snap.lastOutcome === 'correct_with_errors',
         }
       : null
-  const status =
-    state === 'IDLE'
-      ? 'Press Start.'
-      : state === 'READY'
-        ? 'Get ready…'
-        : state === 'PAUSED'
-          ? 'Paused. The question on screen was discarded.'
-          : state === 'ENDED'
-            ? snap?.completedReps === QUESTIONS
-              ? 'Session complete.'
-              : 'Session ended.'
-            : (question?.prompt ?? '')
   const message =
     finished && last && question
       ? last.outcome === 'timeout' || last.outcome === 'skipped'
@@ -228,71 +122,93 @@ export function KeyIdScreen({
           : []),
       ]
     : []
-  const summary = state === 'ENDED' && results.length > 0 ? summarize(results) : null
-  const format = formatFor(settings.modes)
 
   return (
-    <div className="keyid-screen">
-      <h1>Key Signatures</h1>
-      <div className="keyid-bar">
-        <button type="button" onClick={() => void start()} disabled={running || piano.starting}>
-          Start
-        </button>
-        {state === 'PAUSED' ? (
-          <button
-            type="button"
-            disabled={piano.lost}
-            onClick={() => {
-              piano.acknowledge()
-              session.current?.resume()
-            }}
-          >
-            Resume
-          </button>
-        ) : (
-          <button type="button" onClick={() => session.current?.pause()} disabled={!running}>
-            Pause
-          </button>
-        )}
-        <button
-          type="button"
-          onClick={() => session.current?.skip()}
-          disabled={state !== 'FLASHED'}
-        >
-          Skip
-        </button>
-        <button type="button" onClick={() => session.current?.end()} disabled={!running}>
-          End
-        </button>
-        <button type="button" className="seg" onClick={() => setDrawerOpen(true)}>
-          Settings
-        </button>
-      </div>
-
-      <p className="keyid-status" role="status">
-        <strong>{status}</strong>
-        {running && snap && state !== 'PAUSED' && (
-          <>
-            {' '}
-            Question {Math.min(snap.repNumber, QUESTIONS)} of {QUESTIONS}
-          </>
-        )}
-      </p>
-
-      <p className="keyid-clock">{remaining ?? ''}</p>
-
-      <div className="stage">
-        <div ref={stage} className="staff" />
-        {count !== null && (
-          <div className="countdown" role="timer" aria-label="Seconds until the first question">
-            {count > 0 ? count : '…'}
-          </div>
-        )}
-      </div>
-
+    <DrillScreenFrame
+      title="Key Signatures"
+      run={run}
+      itemWord="question"
+      total={QUESTIONS}
+      playingText={question?.prompt ?? ''}
+      message={message}
+      score={{
+        mode: 'keyid',
+        levelId,
+        goalSeconds: settings.goal?.medianSeconds,
+        timeoutSeconds: settings.timeoutSeconds,
+        storage,
+      }}
+      settingsTitle="Key Signatures settings"
+      settingsNarrow
+      settings={
+        <>
+          <label>
+            Level
+            <select
+              value={levelId}
+              onChange={(e) => pickLevel(e.target.value)}
+              disabled={run.running}
+            >
+              <option value="custom">Custom</option>
+              {KEY_ID_LEVELS.map((l) => (
+                <option key={l.id} value={l.id}>
+                  {l.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          {typeof levelId === 'number' && (
+            <small className="placeholder">
+              {KEY_ID_LEVELS.find((l) => l.id === levelId)?.description}
+            </small>
+          )}
+          <label>
+            Up to this many sharps or flats
+            <select
+              value={settings.maxAccidentals}
+              onChange={(e) => edit({ maxAccidentals: Number(e.target.value) })}
+              disabled={run.running}
+            >
+              {[0, 1, 2, 3, 4, 5, 6, 7].map((n) => (
+                <option key={n}>{n}</option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Keys
+            <select
+              value={settings.modes}
+              onChange={(e) => edit({ modes: e.target.value })}
+              disabled={run.running}
+            >
+              <option value="major">Major only</option>
+              <option value="minor">Minor only</option>
+              <option value="both">Major and minor</option>
+            </select>
+          </label>
+          <label>
+            Time limit per question
+            <select
+              value={settings.timeoutSeconds ?? 'none'}
+              onChange={(e) =>
+                edit({ timeoutSeconds: e.target.value === 'none' ? null : Number(e.target.value) })
+              }
+              disabled={run.running}
+            >
+              <option value="none">No limit</option>
+              {[5, 10, 20].map((n) => (
+                <option key={n} value={n}>
+                  {n} seconds
+                </option>
+              ))}
+            </select>
+          </label>
+        </>
+      }
+    >
       <KeyAnswerInput
-        format={format}
-        onAnswer={(a) => session.current?.answer(a)}
+        format={formatFor(settings.modes)}
+        onAnswer={(a) => run.session.current?.answer(a)}
         disabled={state !== 'FLASHED'}
         feedback={feedback}
         wrong={marking ? (snap?.wrong ?? []) : []}
@@ -314,92 +230,6 @@ export function KeyIdScreen({
         }
         onViewChange={onViewChange}
       />
-
-      <div className={`result-slot${piano.notice ? ' midi-problem' : ''}`} role="status">
-        {piano.notice ?? message}
-      </div>
-
-      {summary && !dismissed && (
-        <ScoreSummary
-          mode="keyid"
-          levelId={levelId}
-          levelName={levelLabel(levelId)}
-          goalSeconds={settings.goal?.medianSeconds}
-          timeoutSeconds={settings.timeoutSeconds}
-          plannedReps={QUESTIONS}
-          results={results}
-          storage={storage}
-          onClose={() => setDismissed(true)}
-          onAgain={() => void start()}
-        ></ScoreSummary>
-      )}
-
-      <SettingsDrawer
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        title="Key Signatures settings"
-        centered
-        narrow
-      >
-        <label>
-          Level
-          <select value={levelId} onChange={(e) => pickLevel(e.target.value)} disabled={running}>
-            <option value="custom">Custom</option>
-            {KEY_ID_LEVELS.map((l) => (
-              <option key={l.id} value={l.id}>
-                {l.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        {typeof levelId === 'number' && (
-          <small className="placeholder">
-            {KEY_ID_LEVELS.find((l) => l.id === levelId)?.description}
-          </small>
-        )}
-        <label>
-          Up to this many sharps or flats
-          <select
-            value={settings.maxAccidentals}
-            onChange={(e) => edit({ maxAccidentals: Number(e.target.value) })}
-            disabled={running}
-          >
-            {[0, 1, 2, 3, 4, 5, 6, 7].map((n) => (
-              <option key={n}>{n}</option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Keys
-          <select
-            value={settings.modes}
-            onChange={(e) => edit({ modes: e.target.value })}
-            disabled={running}
-          >
-            <option value="major">Major only</option>
-            <option value="minor">Minor only</option>
-            <option value="both">Major and minor</option>
-          </select>
-        </label>
-        <label>
-          Time limit per question
-          <select
-            value={settings.timeoutSeconds ?? 'none'}
-            onChange={(e) =>
-              edit({ timeoutSeconds: e.target.value === 'none' ? null : Number(e.target.value) })
-            }
-            disabled={running}
-          >
-            <option value="none">No limit</option>
-            {[5, 10, 20].map((n) => (
-              <option key={n} value={n}>
-                {n} seconds
-              </option>
-            ))}
-          </select>
-        </label>
-        {running && <small className="placeholder">Settings are locked during a session.</small>}
-      </SettingsDrawer>
-    </div>
+    </DrillScreenFrame>
   )
 }

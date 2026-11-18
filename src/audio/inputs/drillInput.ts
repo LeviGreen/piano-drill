@@ -1,3 +1,4 @@
+import { loadPref, PREF_KEYS, savePref } from '../../storage/prefs'
 import { MergedInput } from './MergedInput'
 import { MidiInput, MidiUnavailableError, type RequestMidiAccess } from './MidiInput'
 import type { NoteInput } from './NoteInput'
@@ -6,9 +7,6 @@ import { OnScreenKeyboardInput } from './OnScreenKeyboardInput'
 /** Where a drill gets its notes: the on-screen piano, or a MIDI piano (the on-screen one still works too). */
 export type InputChoice = 'screen' | 'midi'
 
-const CHOICE_KEY = 'piano-drill.input'
-const DEVICE_KEY = 'piano-drill.midi-device'
-
 export const NO_PIANO_MESSAGE =
   'No MIDI piano was found. Plug in and switch on your piano, or choose the on-screen piano in Settings.'
 export const PIANO_LOST_MESSAGE = 'Your piano was disconnected. Plug it back in, then press Resume.'
@@ -16,28 +14,21 @@ export const PIANO_BACK_MESSAGE = 'Your piano is back. Press Resume.'
 
 /** The remembered choice, shared by the Sight-Read and Key Signatures screens. The on-screen piano until you choose otherwise. */
 export function loadInputChoice(): InputChoice {
-  try {
-    return localStorage.getItem(CHOICE_KEY) === 'midi' ? 'midi' : 'screen'
-  } catch {
-    return 'screen'
-  }
+  return loadPref(PREF_KEYS.inputChoice) === 'midi' ? 'midi' : 'screen'
 }
 
 export function saveInputChoice(choice: InputChoice): void {
-  try {
-    localStorage.setItem(CHOICE_KEY, choice)
-  } catch {
-    // Not remembered; the choice still applies for this visit.
-  }
+  savePref(PREF_KEYS.inputChoice, choice)
 }
 
 /** The piano chosen on the MIDI test screen, if any. */
 export function loadMidiDevice(): string | null {
-  try {
-    return localStorage.getItem(DEVICE_KEY)
-  } catch {
-    return null
-  }
+  return loadPref(PREF_KEYS.midiDevice)
+}
+
+/** Remember the piano chosen on the MIDI test screen; null goes back to listening to all of them. */
+export function saveMidiDevice(id: string | null): void {
+  savePref(PREF_KEYS.midiDevice, id)
 }
 
 export type DrillInput = {

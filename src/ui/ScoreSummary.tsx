@@ -9,17 +9,10 @@ import {
 } from '../scoring/score'
 import type { RepResult } from '../session/types'
 import { getStorage, type Storage, type StoredMode } from '../storage'
+import { loadPref, PREF_KEYS, savePref } from '../storage/prefs'
 import { ResultsModal } from './ResultsModal'
 
-const INITIALS_KEY = 'piano-drill.initials'
-
-const lastInitials = (): string => {
-  try {
-    return localStorage.getItem(INITIALS_KEY) ?? ''
-  } catch {
-    return ''
-  }
-}
+const lastInitials = (): string => loadPref(PREF_KEYS.initials) ?? ''
 
 export type ScoreSummaryProps = {
   mode: StoredMode
@@ -93,11 +86,7 @@ export function ScoreSummary({
   const save = async () => {
     const name = initials.replace(/[^A-Z]/g, '')
     if (!name || placed !== undefined) return
-    try {
-      localStorage.setItem(INITIALS_KEY, name)
-    } catch {
-      // Not remembered; fine.
-    }
+    savePref(PREF_KEYS.initials, name)
     try {
       setPlaced(
         await db.addScore({

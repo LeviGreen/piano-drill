@@ -1,0 +1,141 @@
+/* Base: theme tokens, page defaults and the plain element styles (links, headings, form controls) that every screen builds on. */
+
+/* Theme tokens. Default follows the OS (light/dark); data-theme on <html> overrides. */
+:root {
+  --bg: #ffffff;
+  --surface: #f4f3ee;
+  --text: #1c1b22;
+  --text-muted: #5b5766;
+  --border: #d9d7de;
+  --accent: #5b3fd1;
+  --accent-text: #ffffff;
+  --focus: #5b3fd1;
+  --ok: #1a7f37; /* heard notes */
+  --bad: #cf222e; /* wrong notes */
+
+  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --space: 1rem;
+  --radius: 10px;
+  --nav-height: 3.5rem;
+
+  color-scheme: light;
+  font: 16px/1.5 var(--sans);
+  color: var(--text);
+  background: var(--bg);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --bg: #15161c;
+    --surface: #1f2029;
+    --text: #eceaf2;
+    --text-muted: #a3a0b0;
+    --border: #34353f;
+    --accent: #a98bff;
+    --accent-text: #15161c;
+    --focus: #a98bff;
+    --ok: #3fb950;
+    --bad: #ff7b72;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  --bg: #15161c;
+  --surface: #1f2029;
+  --text: #eceaf2;
+  --text-muted: #a3a0b0;
+  --border: #34353f;
+  --accent: #a98bff;
+  --accent-text: #15161c;
+  --focus: #a98bff;
+  --ok: #3fb950;
+  --bad: #ff7b72;
+  color-scheme: dark;
+}
+
+:root[data-theme='high-contrast'] {
+  --bg: #000000;
+  --surface: #000000;
+  --text: #ffffff;
+  --text-muted: #ffffff;
+  --border: #ffffff;
+  --accent: #ffff00;
+  --accent-text: #000000;
+  --focus: #ffff00;
+  --ok: #00ff88;
+  --bad: #ff6666;
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--text);
+}
+
+a {
+  color: var(--accent);
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+h1,
+h2 {
+  line-height: 1.2;
+  margin: 0 0 0.5rem;
+}
+
+select {
+  font: inherit;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.35rem 0.5rem;
+}
+
+fieldset {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  display: grid;
+  gap: 0.25rem;
+}
+
+input {
+  font: inherit;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.4rem 0.6rem;
+}
+
+button {
+  font: inherit;
+  color: var(--accent-text);
+  background: var(--accent);
+  border: 0;
+  border-radius: var(--radius);
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}

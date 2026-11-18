@@ -1,28 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
+import { loadMidiDevice, saveMidiDevice } from '../audio/inputs/drillInput'
 import { MidiInput, type RequestMidiAccess } from '../audio/inputs/MidiInput'
 import { PianoKeyboard, type KeyMark } from '../notation/PianoKeyboard'
 import { formatPitch, pitchFromMidi } from '../theory/pitch'
 
-const DEVICE_KEY = 'piano-drill.midi-device'
-
 const noteName = (midi: number) => formatPitch(pitchFromMidi(midi))
-
-function savedDevice(): string | null {
-  try {
-    return localStorage.getItem(DEVICE_KEY)
-  } catch {
-    return null
-  }
-}
-function saveDevice(id: string | null): void {
-  try {
-    if (id === null) localStorage.removeItem(DEVICE_KEY)
-    else localStorage.setItem(DEVICE_KEY, id)
-  } catch {
-    // Not remembered; the choice still applies for this visit.
-  }
-}
 
 /** What the browser can see of each piano: tells a missing piano from a broken screen. */
 function Devices({ input }: { input: MidiInput }) {
@@ -59,7 +42,7 @@ export function MidiTestScreen({ requestAccess }: { requestAccess?: RequestMidiA
   )
   const [, bump] = useState(0)
   const [held, setHeld] = useState<number[]>([])
-  const [chosen, setChosen] = useState<string | null>(savedDevice)
+  const [chosen, setChosen] = useState<string | null>(loadMidiDevice)
 
   useEffect(() => {
     const offChange = input.onChange(() => bump((x) => x + 1))
@@ -88,7 +71,7 @@ export function MidiTestScreen({ requestAccess }: { requestAccess?: RequestMidiA
   const pick = (value: string) => {
     const id = value === '' ? null : value
     setChosen(id)
-    saveDevice(id)
+    saveMidiDevice(id)
     input.select(id)
   }
 

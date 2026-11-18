@@ -1,0 +1,97 @@
+/* Notation: note halos and names on the staff, and the on-screen piano keyboard. */
+
+/* Notation */
+.note-halo {
+  stroke-width: 2;
+}
+
+.note-halo.heard {
+  fill: var(--ok);
+  fill-opacity: 0.25;
+  stroke: var(--ok);
+}
+
+.note-check {
+  stroke: none;
+  fill: var(--ok);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.note-name {
+  stroke: none;
+  fill: currentColor;
+  font-size: 10px;
+  font-family: var(--sans);
+}
+
+.keyboard {
+  touch-action: none; /* fingers play keys; they do not scroll or zoom the page */
+  user-select: none;
+  -webkit-user-select: none;
+  display: block;
+  width: 100%;
+  max-width: 44rem;
+  height: auto;
+  margin: 0.5rem auto;
+  color: var(--text);
+}
+
+.kb-key rect {
+  stroke-width: 0.75;
+}
+
+/* Keys look like keys on any theme: light white keys, dark black keys, each with an outline that shows on the page. */
+.kb-key.white rect {
+  fill: #f4f3f8;
+  stroke: #4a4955;
+}
+
+.kb-key.black rect {
+  fill: #1b1b22;
+  stroke: #9b9aa8;
+}
+
+:root[data-theme='high-contrast'] .kb-key.white:not(.target, .heard, .wrong) rect {
+  fill: #ffffff;
+  stroke: #000000;
+}
+
+:root[data-theme='high-contrast'] .kb-key.black:not(.target, .heard, .wrong) rect {
+  fill: #000000;
+  stroke: #ffffff;
+}
+
+.kb-key[role='button'] {
+  cursor: pointer;
+}
+
+.kb-key.target rect {
+  fill: var(--accent);
+}
+
+.kb-key.heard rect {
+  fill: var(--ok);
+}
+
+.kb-key.wrong rect {
+  fill: var(--bad);
+}
+
+.kb-mark {
+  font-size: 9px;
+  font-weight: 700;
+  fill: #ffffff;
+  stroke: #111;
+  stroke-width: 0.6;
+  paint-order: stroke;
+}
+
+.kb-name {
+  font-size: 5px;
+  fill: currentColor;
+}
+
+.staff {
+  color: var(--text);
+}

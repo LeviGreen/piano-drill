@@ -15,22 +15,22 @@ This file tracks the refactoring work that follows the MVP ([initiative-1-ticket
 
 ## Status at a glance
 
-| Epic                        | Ticket     | Short description                                     |
-| --------------------------- | ---------- | ----------------------------------------------------- |
-| ~~1 Mic leftovers~~         | ~~RF-101~~ | ~~Simplify `NoteInput` (drop `confidence`)~~          |
-| ~~1 Mic leftovers~~         | ~~RF-102~~ | ~~Remove silence gating from `RepSession`~~           |
-| ~~1 Mic leftovers~~         | ~~RF-103~~ | ~~Retire `startedWithoutSilence`~~                    |
-| ~~1 Mic leftovers~~         | ~~RF-104~~ | ~~Fix stale docs and comments~~                       |
-| 2 Shared infrastructure     | RF-201     | One preferences-storage helper                        |
-| ~~2 Shared infrastructure~~ | ~~RF-202~~ | ~~Shared settings module~~                            |
-| ~~2 Shared infrastructure~~ | ~~RF-203~~ | ~~Shared level/preset loading~~                       |
-| 3 Drill screens             | RF-301     | `useRepSession` hook                                  |
-| 3 Drill screens             | RF-302     | Shared drill screen frame                             |
-| 3 Drill screens             | RF-303     | Move Play and Key Signatures onto the shared pieces   |
-| 4 Structure & polish        | RF-401     | Split `index.css`                                     |
-| ~~4 Structure & polish~~    | ~~RF-402~~ | ~~Small tidy-ups (empty folders, lint suppressions)~~ |
-| 4 Structure & polish        | RF-403     | Lazy-load the notation code (in progress)             |
-| 4 Structure & polish        | RF-404     | `KeyIdSession` answer-method strategy (deferred)      |
+| Epic                        | Ticket     | Short description                                       |
+| --------------------------- | ---------- | ------------------------------------------------------- |
+| ~~1 Mic leftovers~~         | ~~RF-101~~ | ~~Simplify `NoteInput` (drop `confidence`)~~            |
+| ~~1 Mic leftovers~~         | ~~RF-102~~ | ~~Remove silence gating from `RepSession`~~             |
+| ~~1 Mic leftovers~~         | ~~RF-103~~ | ~~Retire `startedWithoutSilence`~~                      |
+| ~~1 Mic leftovers~~         | ~~RF-104~~ | ~~Fix stale docs and comments~~                         |
+| ~~2 Shared infrastructure~~ | ~~RF-201~~ | ~~One preferences-storage helper~~                      |
+| ~~2 Shared infrastructure~~ | ~~RF-202~~ | ~~Shared settings module~~                              |
+| ~~2 Shared infrastructure~~ | ~~RF-203~~ | ~~Shared level/preset loading~~                         |
+| ~~3 Drill screens~~         | ~~RF-301~~ | ~~`useRepSession` hook~~                                |
+| ~~3 Drill screens~~         | ~~RF-302~~ | ~~Shared drill screen frame~~                           |
+| ~~3 Drill screens~~         | ~~RF-303~~ | ~~Move Play and Key Signatures onto the shared pieces~~ |
+| ~~4 Structure & polish~~    | ~~RF-401~~ | ~~Split `index.css`~~                                   |
+| ~~4 Structure & polish~~    | ~~RF-402~~ | ~~Small tidy-ups (empty folders, lint suppressions)~~   |
+| ~~4 Structure & polish~~    | ~~RF-403~~ | ~~Lazy-load the notation code~~                         |
+| 4 Structure & polish        | RF-404     | `KeyIdSession` answer-method strategy (deferred)        |
 
 ## Suggested Build Order
 
@@ -73,6 +73,8 @@ Concepts that only made sense for a microphone and now do nothing with MIDI or t
 - [x] The tests, lint and build pass.
 
 **Notes:** `NoteInputState.activeNotes` is a `Set<number>` and `Onset` is `{ midi, t }`. MIDI velocity is no longer read (nothing used it).
+
+**Still to do by hand:** try it once on the real MIDI piano (Sight-Read and the Key Signatures MIDI view). The fake-piano tests pass, but the change to `MidiInput` has not been run against real hardware yet.
 
 ### RF-102: Remove silence gating from `RepSession`
 
@@ -121,21 +123,23 @@ Also removed the mic-era "almost" note state (the dashed ring on the staff and k
 
 ## Epic 2 — Shared infrastructure
 
-Progress: 2/3 tickets done
+Progress: 3/3 tickets done
 
 ### RF-201: One preferences-storage helper
 
 **Size:** S  
 **Deps:** None  
-**Status:** Todo
+**Status:** Done
 
 `localStorage` reads and writes, each with its own try/catch and key constant, are repeated in about 8 places: `PlayScreen`, `KeyIdScreen`, `MidiTestScreen`, `ScoreSummary`, `ThemeProvider`, `theme.ts` and `drillInput.ts`. Add `src/storage/prefs.ts` with typed `load`, `save` and `remove`, namespaced keys (keep today's key names, so nothing already saved is lost) and one place that handles "storage unavailable". Replace the direct calls. Tests can fake the module instead of `localStorage`.
 
 **Acceptance:**
 
-- [ ] No direct `localStorage` use outside `prefs.ts`.
-- [ ] Existing saved settings, theme, initials and device choices still load.
-- [ ] The tests, lint and build pass.
+- [x] No direct `localStorage` use outside `prefs.ts`.
+- [x] Existing saved settings, theme, initials and device choices still load.
+- [x] The tests, lint and build pass.
+
+**Notes:** `src/storage/prefs.ts` (`loadPref`, `savePref`, `loadJsonPref`, `saveJsonPref`, and `PREF_KEYS` with every key under its old name, so nothing already saved is lost). Used by the input choice and MIDI device (`drillInput.ts`, which now also has `saveMidiDevice`; the MIDI test screen used to keep its own copy of that key), the theme, the initials, and the two screens' settings. `PlayScreen` and `KeyIdScreen` no longer touch storage themselves.
 
 ### RF-202: Shared settings module
 
@@ -171,7 +175,7 @@ Progress: 2/3 tickets done
 
 ## Epic 3 — Drill screens
 
-Progress: 0/3 tickets done
+Progress: 3/3 tickets done
 
 `PlayScreen` (445 lines) and `KeyIdScreen` (405 lines) are near-twins: the same hooks, the same flash/presenter/session/subscribe setup, the same controls, drawer and results modal. A third mode (for example intervals) should need about one new file, not a copy of 400 lines.
 
@@ -179,61 +183,69 @@ Progress: 0/3 tickets done
 
 **Size:** M  
 **Deps:** None  
-**Status:** Todo
+**Status:** Done
 
 Extract the shared logic from both screens into one hook, for example `src/ui/useRepSession.ts`: build the `FlashController` and `Presenter`, open the piano input (`usePianoInput`), create and subscribe to the session, keep the snapshot and results in state, handle start, pause, resume, skip and end, and release the piano at the end. The screen passes in what differs: the session factory and how an item is drawn, revealed and cleared.
 
 **Acceptance:**
 
-- [ ] The hook has its own tests with a fake clock and fake input.
-- [ ] It owns the start/pause/resume/end/cleanup effects that both screens duplicate.
+- [x] The hook has its own tests with a fake clock and fake input.
+- [x] It owns the start/pause/resume/end/cleanup effects that both screens duplicate.
+
+**Notes:** `src/ui/useRepSession.ts` (the hook, `flashPresenter`, and the `RepRun` type) with tests in `useRepSession.test.tsx` on a fake clock. The settings state of each mode moved to its own hooks, `usePlaySettings` and `useKeyIdSettings`. One small change: the clock reads the session's own `limitSeconds` in both modes (it equals the settings' time limit in Sight-Read).
 
 ### RF-302: Shared drill screen frame
 
 **Size:** M  
 **Deps:** None  
-**Status:** Todo
+**Status:** Done
 
 Extract the layout both screens share into a `DrillScreenFrame` component: the centred column, the staff stage, the status, clock and notes lines (fixed height), the countdown, the controls, the settings drawer and the results modal. The screen fills in slots (settings fields, answer area, status text).
 
 **Acceptance:**
 
-- [ ] The frame renders both modes' layouts without visual change (checked by hand in the running app).
-- [ ] The tests, lint and build pass.
+- [x] The frame renders both modes' layouts without visual change (checked by hand in the running app).
+- [x] The tests, lint and build pass.
+
+**Notes:** `src/ui/DrillScreenFrame.tsx`. It owns the settings drawer's open state and the "locked during a session" line. Checked without a browser: the screens' markup, idle and with the settings window open (66 KB of HTML), is byte-for-byte the same as before the refactor.
 
 ### RF-303: Move Play and Key Signatures onto the shared pieces
 
 **Size:** M  
 **Deps:** RF-201, RF-301, RF-302  
-**Status:** Todo
+**Status:** Done
 
 Rebuild `PlayScreen` and `KeyIdScreen` with `useRepSession`, `DrillScreenFrame` and `prefs`. Each should shrink to what is specific to its mode: its settings fields, its way of drawing an item and its answer UI. Existing screen tests keep passing; `midiDrills.test.tsx` is the safety net for the MIDI paths.
 
 **Acceptance:**
 
-- [ ] Each screen is clearly smaller (target: under about 250 lines).
-- [ ] No behaviour change: every existing screen test passes unchanged.
-- [ ] A short note in `docs/` on how to add a new drill mode.
+- [x] Each screen is clearly smaller (target: under about 250 lines).
+- [x] No behaviour change: every existing screen test passes unchanged.
+- [x] A short note in `docs/` on how to add a new drill mode.
+
+**Notes:** `PlayScreen` 445 to 140 lines, `KeyIdScreen` 405 to 235 (its settings fields are inline; Sight-Read's moved to `PlaySettingsFields`). Every existing screen test passes unchanged (739). How to add a mode: [adding-a-drill-mode.md](adding-a-drill-mode.md).
 
 ---
 
 ## Epic 4 — Structure & polish
 
-Progress: 1/4 tickets done
+Progress: 3/4 tickets done
 
 ### RF-401: Split `index.css`
 
 **Size:** M  
 **Deps:** None  
-**Status:** Todo
+**Status:** Done
 
 `src/index.css` is one file of about 1,360 lines. Split it into `base.css` (tokens, reset, element defaults such as `button` and `input`), component files (keyboard, modal, drawer, tiles, wheel and so on) and screen files (Play, Key Signatures, Scores), imported from one entry. Keep the cascade order the same. Do a visual check of every screen at desktop and phone widths in light and dark themes.
 
 **Acceptance:**
 
-- [ ] No file over about 300 lines.
-- [ ] Every screen looks the same in light and dark, desktop and phone.
-- [ ] Global element rules are in `base.css`, not under a screen's heading.
+- [x] No file over about 300 lines.
+- [x] Every screen looks the same in light and dark, desktop and phone.
+- [x] Global element rules are in `base.css`, not under a screen's heading.
+
+**Notes:** `src/index.css` is now only a list of imports, in the order they apply, and the styles are in `src/styles/`: `base`, `shell`, `notation`, `controls`, `drill`, `answer-input`, `modals`, `scores`, `midi-view` (the largest is 221 lines). The one cut, `src/styles/base.css`, now holds the page defaults and the plain element rules (`select`, `fieldset`, `input`, `button`, `button:disabled`), which used to sit under other screens' headings. **How it was checked (not by eye):** the built CSS has the same rules in the same order as before, except those five element rules, which moved to the top; they are single-element rules that can only lose to any class rule, and no earlier rule of equal weight sets the same properties, so the cascade is unchanged. Also removed 7 rules whose classes nothing uses any more (`.gallery`, `.gallery-item`, `.gallery-item h2`, `.gallery-keys`, `.tricky`, `.keyid-summary`, `.modal-score`). A quick look at the live site, in light and dark and at phone width, is still worth doing after the next deploy.
 
 ### RF-402: Small tidy-ups
 
@@ -254,16 +266,16 @@ Progress: 1/4 tickets done
 
 **Size:** S  
 **Deps:** None  
-**Status:** In progress (the code is done and tested; waiting to confirm on the live site after the next deploy)
+**Status:** Done
 
 The build is one 1.18 MB chunk (vite warns above 500 kB), mostly VexFlow. Load the notation code per route with `React.lazy`, so Home and Settings do not download it. Check that the GitHub Pages base path (`base: './'`) still works with the extra chunks.
 
 **Acceptance:**
 
 - [x] A clearly smaller main chunk (numbers recorded in the notes; the one remaining warning is for the VexFlow chunk).
-- [ ] The deployed site works from the repo subpath (imports are relative; confirm after the next deploy).
+- [x] The deployed site works from the repo subpath (checked on the live site on 2026-11-18: both drill screens load).
 
-**Notes:** the drill screens load on demand (`React.lazy` in `src/App.tsx`, with a "Loading…" fallback), and VexFlow is its own `vexflow` chunk (`manualChunks` in `vite.config.ts`). Numbers: the main file went from **1,178 kB to 397 kB** (gzip 535 kB to 127 kB); Home, Scores, Settings and MIDI Test no longer download the 719 kB VexFlow file (387 kB gzip). Vite's 500 kB warning still shows, for that one VexFlow chunk (it holds the music font); the main chunk is under the limit. Chunk imports are relative (`./PlayScreen-….js`), so the repo-subpath deploy works; the live site should be opened once after the next deploy to confirm. `App.test.tsx` waits for the lazy screens.
+**Notes:** the drill screens load on demand (`React.lazy` in `src/App.tsx`, with a "Loading…" fallback), and VexFlow is its own `vexflow` chunk (`manualChunks` in `vite.config.ts`). Numbers: the main file went from **1,178 kB to 397 kB** (gzip 535 kB to 127 kB); Home, Scores, Settings and MIDI Test no longer download the 719 kB VexFlow file (387 kB gzip). Vite's 500 kB warning still shows, for that one VexFlow chunk (it holds the music font); the main chunk is under the limit. Chunk imports are relative (`./PlayScreen-….js`), so the repo-subpath deploy works; confirmed on the live site. `App.test.tsx` waits for the lazy screens.
 
 ### RF-404: `KeyIdSession` answer-method strategy
 
