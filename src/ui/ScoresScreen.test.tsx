@@ -18,9 +18,9 @@ afterEach(async () => {
   await PianoDrillDB.delete(db.name)
 })
 
-const show = () =>
+const show = (url = '/') =>
   render(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={[url]}>
       <ScoresScreen storage={storage} />
     </MemoryRouter>,
   )
@@ -179,5 +179,21 @@ describe('on a phone', () => {
     await screen.findByText('TOP')
     expect(screen.queryByRole('button', { name: /show details/ })).toBeNull()
     expect(document.querySelectorAll('.board th')).toHaveLength(7)
+  })
+
+  it('opens on the mode and level in the link, and falls back quietly on a bad one', async () => {
+    show('/scores?mode=keyid&level=3')
+    expect(
+      screen.getByRole('button', { name: 'Key Signatures' }).getAttribute('aria-pressed'),
+    ).toBe('true')
+    expect((screen.getByLabelText('Level') as HTMLSelectElement).value).toBe('3')
+    await screen.findAllByRole('row')
+    cleanup()
+    show('/scores?mode=bogus&level=99')
+    expect(screen.getByRole('button', { name: 'Sight-Read' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    )
+    expect((screen.getByLabelText('Level') as HTMLSelectElement).value).toBe('1')
+    await screen.findAllByRole('row')
   })
 })

@@ -15,15 +15,15 @@ This file tracks small improvements and bug fixes found while using the app, aft
 
 ## Status at a glance
 
-| Epic                       | Ticket | Short description                                            |
-| -------------------------- | ------ | ------------------------------------------------------------ |
-| 1 Navigation & scores      | IM-101 | Phone: make every button a tab (blocked: needs a screenshot) |
-| 1 Navigation & scores      | IM-102 | High-scores link opens the mode and level just played        |
-| 2 Key Signatures           | IM-201 | Scale up/down: the turning notes need not be struck twice    |
-| 3 Settings                 | IM-301 | Settings windows get Save and Close                          |
-| 4 MIDI on the mode screens | IM-401 | Reusable MIDI connection components                          |
-| 4 MIDI on the mode screens | IM-402 | A compact piano connection strip on each mode screen         |
-| 4 MIDI on the mode screens | IM-403 | The on-screen piano always responds                          |
+| Epic                       | Ticket     | Short description                                         |
+| -------------------------- | ---------- | --------------------------------------------------------- |
+| ~~1 Navigation & scores~~  | ~~IM-101~~ | ~~Phone: make every tab the same size~~                   |
+| ~~1 Navigation & scores~~  | ~~IM-102~~ | ~~High-scores link opens the mode and level just played~~ |
+| 2 Key Signatures           | IM-201     | Scale up/down: the turning notes need not be struck twice |
+| 3 Settings                 | IM-301     | Settings windows get Save and Close                       |
+| 4 MIDI on the mode screens | IM-401     | Reusable MIDI connection components                       |
+| 4 MIDI on the mode screens | IM-402     | A compact piano connection strip on each mode screen      |
+| 4 MIDI on the mode screens | IM-403     | The on-screen piano always responds                       |
 
 ## Suggested Build Order
 
@@ -45,28 +45,26 @@ This file tracks small improvements and bug fixes found while using the app, aft
 
 ## Epic 1 — Navigation & scores
 
-Progress: 0/2 tickets done
+Progress: 2/2 tickets done
 
-### IM-101: Phone: make every button a tab
+### IM-101: Phone: make every tab the same size
 
 **Size:** S  
 **Deps:** None  
-**Status:** Blocked (needs a screenshot to be sure which buttons are meant)
+**Status:** Done
 
-On a phone, the Key Signatures button looks and works like a tab, while other buttons are regular buttons. Make them all tabs, so the buttons look and behave the same way.
-
-**To pin down before starting:** it is not clear from the code which buttons are meant. The phone's bottom bar (Sight-Read, Key Signatures, Scores, Settings) is already one set of tabs. The tab-like buttons are the `.seg` ones: Settings in each mode's button bar, and the Wheel / Type / MIDI view switch on Key Signatures. Start, Pause, Skip and End are the regular buttons. A screenshot of the phone screen, with the buttons in question pointed out, will settle it.
+The screenshots show the phone's bottom bar: Key Signatures wraps to two lines, so its tab came out taller than the other three. Every tab now fills the bar's height and shares its width equally, with the label centred, so they all look the same.
 
 **Acceptance:**
 
-- [ ] On a phone, the buttons that should match do look and behave the same (hover, pressed, disabled and focus too).
-- [ ] The result is checked in the light, dark and high-contrast themes.
+- [x] On a phone, the four tabs are the same size, whether the label takes one line or two.
+- [ ] The result is checked in the light, dark and high-contrast themes (to be checked on a phone).
 
 ### IM-102: High-scores link opens the mode and level just played
 
 **Size:** S  
 **Deps:** None  
-**Status:** Todo
+**Status:** Done
 
 **The bug:** the "High scores" link in the results window always opens the Scores screen on Sight-Read, Level 1, whatever you just played. It should open on the mode and level of the session you just finished.
 
@@ -76,9 +74,9 @@ On a phone, the Key Signatures button looks and works like a tab, while other bu
 
 **Acceptance:**
 
-- [ ] After a Sight-Read session, the link opens Sight-Read on the level just played; after a Key Signatures session, Key Signatures on its level.
-- [ ] A link with an unknown or missing mode or level falls back to the default board without an error.
-- [ ] Changing the mode or level on the Scores screen still works, and a test covers the link.
+- [x] After a Sight-Read session, the link opens Sight-Read on the level just played; after a Key Signatures session, Key Signatures on its level.
+- [x] A link with an unknown or missing mode or level falls back to the default board without an error.
+- [x] Changing the mode or level on the Scores screen still works, and a test covers the link.
 
 ---
 

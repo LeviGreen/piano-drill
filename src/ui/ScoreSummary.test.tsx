@@ -193,6 +193,13 @@ describe('the high-score board', () => {
   it('has one link to the high scores', () => {
     show()
     expect(screen.getAllByRole('link')).toHaveLength(1)
+    expect(screen.getByRole('link', { name: /High scores/ }).getAttribute('href')).toBe(
+      '/scores?mode=play&level=3',
+    )
+  })
+
+  it('a custom setup links to the plain scores screen', () => {
+    show({ levelId: 'custom', levelName: 'Custom' })
     expect(screen.getByRole('link', { name: /High scores/ }).getAttribute('href')).toBe('/scores')
   })
 })

@@ -160,7 +160,9 @@ export function ScoreSummary({
         {failed && <small>Could not save to this browser's storage.</small>}
       </div>
       <p>
-        <Link to="/scores">High scores</Link>
+        <Link to={typeof levelId === 'number' ? `/scores?mode=${mode}&level=${level}` : '/scores'}>
+          High scores
+        </Link>
       </p>
     </ResultsModal>
   )

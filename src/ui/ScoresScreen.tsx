@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
+import { useSearchParams } from 'react-router'
 import { KEY_ID_LEVELS } from '../keyid/presets'
 import { PRESET_LEVELS } from '../levels/presets'
 import { getStorage, type ScoreRecord, type Storage, type StoredMode } from '../storage'
@@ -165,8 +166,14 @@ function Board({
 export function ScoresScreen({ storage }: { storage?: Storage }) {
   const db = storage ?? getStorage()
   const compact = useMediaQuery(PHONE_QUERY)
-  const [mode, setMode] = useState<StoredMode>('play')
-  const [levelId, setLevelId] = useState(1)
+  // A link from the results window names the mode and level just played (?mode=keyid&level=3).
+  const [params] = useSearchParams()
+  const linked = MODES.find((m) => m.value === params.get('mode'))?.value ?? 'play'
+  const [mode, setMode] = useState<StoredMode>(linked)
+  const [levelId, setLevelId] = useState(() => {
+    const n = Number(params.get('level'))
+    return levelsFor(linked).some((l) => l.id === n) ? n : 1
+  })
   const levels = levelsFor(mode)
 
   return (
