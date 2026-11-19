@@ -26,7 +26,7 @@ export function PlaySettingsFields({
   piano: RepRun['piano']
   running: boolean
 }) {
-  const { settings, levelId, level, signature, lastSignature } = s
+  const { settings, levelId, level, signature, lastSignature } = s.draft
   return (
     <>
       <fieldset disabled={running}>
@@ -91,7 +91,11 @@ export function PlaySettingsFields({
           </label>
         </div>
       </div>
-      <InputChoiceField value={piano.choice} onChange={piano.setChoice} disabled={running} />
+      <InputChoiceField
+        value={piano.draftChoice}
+        onChange={piano.setDraftChoice}
+        disabled={running}
+      />
       <DifficultyFields
         settings={settings as DifficultySettings}
         onEdit={s.edit}

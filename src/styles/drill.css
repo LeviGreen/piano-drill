@@ -55,6 +55,11 @@
   margin-bottom: var(--space);
 }
 
+.drawer-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
 .drawer-head h2 {
   margin: 0;
 }

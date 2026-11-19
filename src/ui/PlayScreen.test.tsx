@@ -81,10 +81,39 @@ describe('before starting', () => {
     const dialog = screen.getByRole('dialog', { name: 'Sight-Read settings' })
     expect((within(dialog).getByLabelText('Level') as HTMLSelectElement).value).toBe('1')
     await userEvent.selectOptions(within(dialog).getByLabelText('Level'), '4')
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Save' }))
     cleanup()
     show()
     await userEvent.click(button('Settings'))
     expect((screen.getByLabelText('Level') as HTMLSelectElement).value).toBe('4')
+  })
+
+  it('Save keeps the changes and closes; Close, a click outside and Escape throw them away', async () => {
+    show()
+    const dialogNow = () => screen.getByRole('dialog', { name: 'Sight-Read settings' })
+    const level = () => (within(dialogNow()).getByLabelText('Level') as HTMLSelectElement).value
+    const pick = async (v: string) => {
+      await userEvent.click(button('Settings'))
+      await userEvent.selectOptions(within(dialogNow()).getByLabelText('Level'), v)
+    }
+    await pick('4')
+    await userEvent.click(within(dialogNow()).getByRole('button', { name: 'Close' }))
+    await userEvent.click(button('Settings'))
+    expect(level()).toBe('1') // Close: back to what it was
+    await userEvent.selectOptions(within(dialogNow()).getByLabelText('Level'), '4')
+    await userEvent.keyboard('{Escape}')
+    await userEvent.click(button('Settings'))
+    expect(level()).toBe('1') // Escape
+    await userEvent.selectOptions(within(dialogNow()).getByLabelText('Level'), '4')
+    await userEvent.click(document.querySelector('.drawer-backdrop')!)
+    await userEvent.click(button('Settings'))
+    expect(level()).toBe('1') // a click outside
+    await userEvent.selectOptions(within(dialogNow()).getByLabelText('Level'), '4')
+    await userEvent.click(within(dialogNow()).getByRole('button', { name: 'Save' }))
+    expect(screen.queryByRole('dialog')).toBeNull() // Save closes the window
+    await userEvent.click(button('Settings'))
+    expect(level()).toBe('4')
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).levelId).toBe(4)
   })
 
   it('the settings have the level, hands, notes per hand, sharps/flats and a time limit, but not the keys', async () => {
@@ -120,6 +149,7 @@ describe('before starting', () => {
     expect(within(dialog).getByLabelText('Key signature').closest('.unused')).toBeNull()
     expect(within(dialog).getByLabelText('Time limit per target')).toBeTruthy()
     await userEvent.selectOptions(within(dialog).getByLabelText('Key signature'), '-3')
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Save' }))
     expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!)).toMatchObject({
       levelId: 'custom',
       settings: { keys: { explicit: ['E♭ major', 'C minor'] } },
@@ -135,9 +165,12 @@ describe('before starting', () => {
     await userEvent.click(within(dialog).getByRole('radio', { name: 'Several keys' }))
     expect(within(dialog).getByLabelText('Level')).toBeTruthy()
     expect(within(dialog).getByLabelText(/Up to this many sharps/)).toBeTruthy()
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Save' }))
     expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).settings.keys.explicit).toBeUndefined()
-    await userEvent.click(within(dialog).getByRole('radio', { name: 'One key signature' }))
-    expect((within(dialog).getByLabelText('Key signature') as HTMLSelectElement).value).toBe('2')
+    await userEvent.click(button('Settings'))
+    const reopened = screen.getByRole('dialog')
+    await userEvent.click(within(reopened).getByRole('radio', { name: 'One key signature' }))
+    expect((within(reopened).getByLabelText('Key signature') as HTMLSelectElement).value).toBe('2')
   })
 
   it('picking a level fills the options in; changing one makes it Custom and keeps it next time', async () => {
@@ -162,6 +195,7 @@ describe('before starting', () => {
     ).toBe('false')
     await userEvent.selectOptions(within(dialog).getByLabelText(/Up to this many sharps/), '5')
     await userEvent.selectOptions(within(dialog).getByLabelText('Time limit per target'), '20')
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Save' }))
     expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!)).toMatchObject({
       levelId: 'custom',
       settings: {
@@ -188,7 +222,7 @@ describe('before starting', () => {
       within(screen.getByRole('dialog')).getByLabelText('Time limit per target'),
       'none',
     )
-    await userEvent.keyboard('{Escape}')
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Save' }))
     await userEvent.click(button('Start'))
     await waitForTarget()
     expect(document.querySelector('.keyid-clock')!.textContent).toBe('')
@@ -213,7 +247,7 @@ describe('before starting', () => {
     const dialog = screen.getByRole('dialog')
     await userEvent.click(within(dialog).getByRole('button', { name: /Left hand only/ }))
     await userEvent.click(within(dialog).getByRole('button', { name: /Right hand only/ }))
-    await userEvent.keyboard('{Escape}')
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Save' }))
     await userEvent.click(button('Start'))
     await waitForTarget()
     expect(document.querySelectorAll('.staff .vf-notehead').length).toBeGreaterThan(0)
@@ -412,7 +446,7 @@ describe('scores', () => {
     await userEvent.click(
       within(screen.getByRole('dialog')).getByRole('button', { name: /Left hand only/ }),
     )
-    await userEvent.keyboard('{Escape}')
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Save' }))
     await userEvent.click(button('Start'))
     await waitForTarget()
     await userEvent.click(button('Skip'))

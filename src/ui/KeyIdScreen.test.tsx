@@ -272,11 +272,48 @@ describe('the settings drawer', () => {
     expect((within(dialog).getByLabelText('Keys') as HTMLSelectElement).value).toBe('both')
     await userEvent.selectOptions(within(dialog).getByLabelText(/Up to this many/), '6')
     expect((within(dialog).getByLabelText('Level') as HTMLSelectElement).value).toBe('custom')
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Save' }))
     expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!)).toMatchObject({
       modes: 'both',
       maxAccidentals: 6,
       name: 'Custom',
     })
+  })
+
+  it('Save keeps the changes and closes; Close, a click outside and Escape throw them away', async () => {
+    store({})
+    show()
+    const dialogNow = () => screen.getByRole('dialog', { name: 'Key Signatures settings' })
+    const sharps = () =>
+      (within(dialogNow()).getByLabelText(/Up to this many/) as HTMLSelectElement).value
+    const change = async () => {
+      await userEvent.click(button('Settings'))
+      await userEvent.selectOptions(within(dialogNow()).getByLabelText(/Up to this many/), '6')
+    }
+    await userEvent.click(button('Settings'))
+    const before = sharps()
+    await userEvent.keyboard('{Escape}')
+    await change()
+    await userEvent.click(within(dialogNow()).getByRole('button', { name: 'Close' }))
+    await userEvent.click(button('Settings'))
+    expect(sharps()).toBe(before) // Close
+    await userEvent.keyboard('{Escape}')
+    await change()
+    await userEvent.keyboard('{Escape}')
+    await userEvent.click(button('Settings'))
+    expect(sharps()).toBe(before) // Escape
+    await userEvent.keyboard('{Escape}')
+    await change()
+    await userEvent.click(document.querySelector('.drawer-backdrop')!)
+    await userEvent.click(button('Settings'))
+    expect(sharps()).toBe(before) // a click outside
+    await userEvent.keyboard('{Escape}')
+    await change()
+    await userEvent.click(within(dialogNow()).getByRole('button', { name: 'Save' }))
+    expect(screen.queryByRole('dialog')).toBeNull() // Save closes the window
+    await userEvent.click(button('Settings'))
+    expect(sharps()).toBe('6')
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).maxAccidentals).toBe(6)
   })
 
   it('has only the simple options: level, sharps and flats, keys, time limit', async () => {

@@ -121,6 +121,14 @@ export function PlayScreen({ reps = DEFAULT_REPS, timing, storage, midiAccess }:
         storage,
       }}
       settingsTitle="Sight-Read settings"
+      onSaveSettings={() => {
+        s.save()
+        run.piano.saveChoice()
+      }}
+      onDiscardSettings={() => {
+        s.discard()
+        run.piano.discardChoice()
+      }}
       settings={<PlaySettingsFields s={s} piano={run.piano} running={run.running} />}
     >
       <p className="play-notes">

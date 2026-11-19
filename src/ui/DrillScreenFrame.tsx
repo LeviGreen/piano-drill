@@ -34,6 +34,8 @@ export function DrillScreenFrame({
   settingsTitle,
   settingsNarrow,
   settings,
+  onSaveSettings,
+  onDiscardSettings,
   children,
 }: {
   title: string
@@ -53,6 +55,10 @@ export function DrillScreenFrame({
   settingsNarrow?: boolean
   /** The settings fields, shown in the drawer (locked while a session runs). */
   settings: ReactNode
+  /** Save pressed: keep the draft the fields have been editing. */
+  onSaveSettings: () => void
+  /** The window closed without Save (Close, outside click, Escape): drop the draft. */
+  onDiscardSettings: () => void
   /** What sits between the staff and the message line. */
   children: ReactNode
 }) {
@@ -147,7 +153,15 @@ export function DrillScreenFrame({
 
       <SettingsDrawer
         open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
+        onClose={() => {
+          setDrawerOpen(false)
+          onDiscardSettings()
+        }}
+        onSave={() => {
+          onSaveSettings()
+          setDrawerOpen(false)
+        }}
+        saveDisabled={running}
         title={settingsTitle}
         centered
         narrow={settingsNarrow}

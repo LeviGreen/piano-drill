@@ -15,15 +15,15 @@ This file tracks small improvements and bug fixes found while using the app, aft
 
 ## Status at a glance
 
-| Epic                       | Ticket     | Short description                                         |
-| -------------------------- | ---------- | --------------------------------------------------------- |
-| ~~1 Navigation & scores~~  | ~~IM-101~~ | ~~Phone: make every tab the same size~~                   |
-| ~~1 Navigation & scores~~  | ~~IM-102~~ | ~~High-scores link opens the mode and level just played~~ |
-| 2 Key Signatures           | IM-201     | Scale up/down: the turning notes need not be struck twice |
-| 3 Settings                 | IM-301     | Settings windows get Save and Close                       |
-| 4 MIDI on the mode screens | IM-401     | Reusable MIDI connection components                       |
-| 4 MIDI on the mode screens | IM-402     | A compact piano connection strip on each mode screen      |
-| 4 MIDI on the mode screens | IM-403     | The on-screen piano always responds                       |
+| Epic                       | Ticket     | Short description                                             |
+| -------------------------- | ---------- | ------------------------------------------------------------- |
+| ~~1 Navigation & scores~~  | ~~IM-101~~ | ~~Phone: make every tab the same size~~                       |
+| ~~1 Navigation & scores~~  | ~~IM-102~~ | ~~High-scores link opens the mode and level just played~~     |
+| ~~2 Key Signatures~~       | ~~IM-201~~ | ~~Scale up/down: the turning notes need not be struck twice~~ |
+| ~~3 Settings~~             | ~~IM-301~~ | ~~Settings windows get Save and Close~~                       |
+| 4 MIDI on the mode screens | IM-401     | Reusable MIDI connection components                           |
+| 4 MIDI on the mode screens | IM-402     | A compact piano connection strip on each mode screen          |
+| 4 MIDI on the mode screens | IM-403     | The on-screen piano always responds                           |
 
 ## Suggested Build Order
 
@@ -82,13 +82,13 @@ The screenshots show the phone's bottom bar: Key Signatures wraps to two lines, 
 
 ## Epic 2 — Key Signatures
 
-Progress: 0/1 tickets done
+Progress: 1/1 tickets done
 
 ### IM-201: Scale up/down: the turning notes need not be struck twice
 
 **Size:** M  
 **Deps:** None  
-**Status:** Todo
+**Status:** Done
 
 In the MIDI view's checklist, "Scale up" ends on the top note (the octave) and "Scale down" starts on that same note, so today the top note has to be struck twice when playing up and straight back down. The same goes for the bottom note (the tonic) where the two scales meet. Make both ways work: playing the turning note **once** counts for both rows, and playing it **twice** (as today) is also fine. That way it feels natural whichever way the player thinks of it.
 
@@ -100,21 +100,21 @@ In the MIDI view's checklist, "Scale up" ends on the top note (the octave) and "
 
 **Acceptance:**
 
-- [ ] Up then down with the top note struck once ticks both rows; struck twice also ticks both rows.
-- [ ] Down then up with the bottom note struck once, or twice, ticks both rows.
-- [ ] A wrong note still resets only the row in progress, and the existing checklist tests pass, with new tests for the one-strike and two-strike cases in both directions, in treble and bass and in major and minor.
+- [x] Up then down with the top note struck once ticks both rows; struck twice also ticks both rows.
+- [x] Down then up with the bottom note struck once, or twice, ticks both rows.
+- [x] A wrong note still resets only the row in progress, and the existing checklist tests pass, with new tests for the one-strike and two-strike cases in both directions, in treble and bass and in major and minor.
 
 ---
 
 ## Epic 3 — Settings
 
-Progress: 0/1 tickets done
+Progress: 1/1 tickets done
 
 ### IM-301: Settings windows get Save and Close
 
 **Size:** M  
 **Deps:** None  
-**Status:** Todo
+**Status:** Done
 
 Today the Sight-Read and Key Signatures settings windows apply every change at once and have a single Close button. Give both a **Save** button and a **Close** button:
 
@@ -126,15 +126,15 @@ The windows work on a draft copy of the settings while they are open, and the sc
 **Details to settle while working:**
 
 - Settings stay locked during a session, so Save and the fields are disabled then, as the fields are today.
-- Whether Save closes the window (my suggestion: yes) and whether Save is disabled while nothing has changed.
+- Decided: Save closes the window, and the Save button is always enabled (not only after a change).
 - The Input choice (on-screen or MIDI piano) is a setting too, so it follows the same rule.
 
 **Acceptance:**
 
-- [ ] In both modes, changing an option and pressing Save keeps it, and it is still there after a reload.
-- [ ] Changing an option and pressing Close, clicking outside, or pressing Escape leaves the earlier settings, and reopening the window shows them.
-- [ ] The level picker, the "Custom" switch and the one-key-signature shortcut work on the draft the same way as they do today.
-- [ ] Tests cover Save, Close, clicking outside and Escape for both modes.
+- [x] In both modes, changing an option and pressing Save keeps it, and it is still there after a reload.
+- [x] Changing an option and pressing Close, clicking outside, or pressing Escape leaves the earlier settings, and reopening the window shows them.
+- [x] The level picker, the "Custom" switch and the one-key-signature shortcut work on the draft the same way as they do today.
+- [x] Tests cover Save, Close, clicking outside and Escape for both modes.
 
 ---
 
@@ -181,10 +181,10 @@ Put a small, space-efficient strip on the Sight-Read and Key Signatures screens 
 
 The on-screen piano on a mode screen only reacts once a session is running (it is only clickable while a target is on screen, and it lights up held keys only inside a session). Make it respond all the time, even before Start and between sessions: when a MIDI piano is connected, the keys you press light up at once, so the player can see the connection works without starting anything.
 
-**To settle with the owner:** "responsive" could also mean the on-screen keys can be **clicked** (and sound as input) at any time. The two are separate: lighting up keys from MIDI is clearly wanted; clicking keys outside a target may change how the keyboard feels, so it is worth confirming.
+**Decided:** "responsive" means the keys light up from a MIDI piano at any time. Clicking the on-screen keys outside a target is not part of this ticket; the keys are clickable only while a target is on screen, as today.
 
 **Acceptance:**
 
 - [ ] With a MIDI piano connected, the on-screen piano lights the keys held, before Start, while getting ready, and between sessions, in both modes.
 - [ ] Those lit keys never count as answers outside a running target (a session is only affected by notes while a target is on screen, as today).
-- [ ] The decision on clicking the on-screen keys outside a session is written here, and a test covers it.
+- [ ] A test covers that clicking the on-screen keys outside a running target does nothing, as today.

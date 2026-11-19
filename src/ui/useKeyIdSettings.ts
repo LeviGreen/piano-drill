@@ -20,23 +20,28 @@ function loadSettings(): Loaded {
 /** The Key Signatures settings and level, remembered between visits (changing an option makes the level "Custom"). */
 export function useKeyIdSettings() {
   const [initial] = useState(loadSettings)
-  const [settings, setSettings] = useState<KeyIdSettings>(initial.settings)
-  const [levelId, setLevelId] = useState<number | 'custom'>(initial.levelId)
+  /** What the screen plays with. The window edits `draft`; Save copies it here, anything else throws it away. */
+  const [saved, setSaved] = useState<Loaded>(initial)
+  const [draft, setDraft] = useState<Loaded>(initial)
 
-  const change = (next: KeyIdSettings, level: number | 'custom') => {
-    setSettings(next)
-    setLevelId(level)
-    saveJsonPref(PREF_KEYS.keyIdSettings, next)
-  }
+  const change = (next: KeyIdSettings, level: number | 'custom') =>
+    setDraft({ settings: next, levelId: level })
   const edit = (patch: Record<string, unknown>) => {
-    const r = mergeKeyIdSettings(settings, patch)
+    const r = mergeKeyIdSettings(draft.settings, patch)
     if (r.ok) change({ ...r.settings, name: 'Custom' }, 'custom')
   }
   const pickLevel = (value: string) => {
-    if (value === 'custom') return setLevelId('custom')
+    if (value === 'custom') return setDraft({ ...draft, levelId: 'custom' })
     const picked = KEY_ID_LEVELS.find((l) => l.id === Number(value))
     if (picked) change(picked.settings, picked.id)
   }
+  /** Keep the draft, and remember it for next time. */
+  const save = () => {
+    setSaved(draft)
+    saveJsonPref(PREF_KEYS.keyIdSettings, draft.settings)
+  }
+  /** Drop the draft: the window opens again on what was saved. */
+  const discard = () => setDraft(saved)
 
-  return { settings, levelId, edit, pickLevel }
+  return { settings: saved.settings, levelId: saved.levelId, draft, edit, pickLevel, save, discard }
 }

@@ -24,6 +24,8 @@ export function usePianoInput(opts: {
   onLost: () => void
 }) {
   const [choice, setChoiceState] = useState<InputChoice>(loadInputChoice)
+  /** What the settings window shows: only Save makes it the choice in use. */
+  const [draftChoice, setDraftChoice] = useState<InputChoice>(choice)
   const [problem, setProblem] = useState<string | null>(null)
   const [lost, setLost] = useState(false)
   const [back, setBack] = useState(false)
@@ -41,11 +43,12 @@ export function usePianoInput(opts: {
   }, [])
   useEffect(() => release, [release])
 
-  const setChoice = (c: InputChoice) => {
-    setChoiceState(c)
-    saveInputChoice(c)
+  const saveChoice = () => {
+    setChoiceState(draftChoice)
+    saveInputChoice(draftChoice)
     setProblem(null)
   }
+  const discardChoice = () => setDraftChoice(choice)
 
   /** Open the chosen input. Null if it could not be opened; `problem` then says why. */
   const open = async (): Promise<DrillInput | null> => {
@@ -85,5 +88,17 @@ export function usePianoInput(opts: {
   const acknowledge = () => setBack(false)
 
   const notice = problem ?? (lost ? PIANO_LOST_MESSAGE : back ? PIANO_BACK_MESSAGE : null)
-  return { choice, setChoice, notice, lost, starting, open, release, acknowledge }
+  return {
+    choice,
+    draftChoice,
+    setDraftChoice,
+    saveChoice,
+    discardChoice,
+    notice,
+    lost,
+    starting,
+    open,
+    release,
+    acknowledge,
+  }
 }

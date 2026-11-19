@@ -63,3 +63,59 @@ describe('the clef sides', () => {
     expect(scaleToShow(ask(6, 'major', 'treble'))).toEqual(scaleToShow(ask(-6, 'major', 'treble')))
   })
 })
+
+describe('the turning notes of the scales', () => {
+  const upNotes = (q: KeyIdQuestion) => scaleToShow(q)
+  const downNotes = (q: KeyIdQuestion) => [...scaleToShow(q)].reverse()
+  const done = (c: Checklist, id: string) => c.rows().find((r) => r.id === id)?.done
+  /** Plays notes one at a time; `legato` keeps the previous key held while the next goes down. */
+  const play = (c: Checklist, notes: number[], legato: boolean) =>
+    notes.forEach((m, i) => c.strike(m, legato && i > 0 ? [notes[i - 1]] : []))
+
+  for (const clef of ['treble', 'bass'] as const)
+    for (const mode of ['major', 'minor'] as const)
+      for (const legato of [false, true]) {
+        const name = `${clef}, ${mode}, ${legato ? 'smooth' : 'detached'}`
+
+        it(`up then down: the top note struck once ticks both rows (${name})`, () => {
+          const q = ask(mode === 'major' ? 2 : -1, mode, clef)
+          const c = new Checklist(q)
+          play(c, upNotes(q), legato)
+          expect(done(c, 'up')).toBe(true)
+          play(c, downNotes(q).slice(1), legato)
+          expect(done(c, 'down')).toBe(true)
+        })
+
+        it(`up then down: the top note struck twice also ticks both rows (${name})`, () => {
+          const q = ask(mode === 'major' ? 2 : -1, mode, clef)
+          const c = new Checklist(q)
+          play(c, upNotes(q), legato)
+          play(c, downNotes(q), legato)
+          expect(done(c, 'up')).toBe(true)
+          expect(done(c, 'down')).toBe(true)
+        })
+
+        it(`down then up: the bottom note struck once, or twice, ticks both rows (${name})`, () => {
+          const q = ask(mode === 'major' ? 2 : -1, mode, clef)
+          const once = new Checklist(q)
+          play(once, downNotes(q), legato)
+          play(once, upNotes(q).slice(1), legato)
+          expect(done(once, 'down')).toBe(true)
+          expect(done(once, 'up')).toBe(true)
+          const twice = new Checklist(q)
+          play(twice, downNotes(q), legato)
+          play(twice, upNotes(q), legato)
+          expect(done(twice, 'down')).toBe(true)
+          expect(done(twice, 'up')).toBe(true)
+        })
+      }
+
+  it('a wrong note still resets only the row in progress', () => {
+    const q = ask(0, 'major', 'treble')
+    const c = new Checklist(q)
+    play(c, upNotes(q), false) // up done, down started by the top note
+    c.strike(midis('D4')[0], []) // not the next note down (B4)
+    expect(c.rows().find((r) => r.id === 'up')?.done).toBe(true)
+    expect(c.rows().find((r) => r.id === 'down')?.progress).toBe(0)
+  })
+})

@@ -43,15 +43,14 @@ function loadLastSignature(settings: DifficultySettings): number {
  */
 export function usePlaySettings() {
   const [initial] = useState(loadSettings)
-  const [settings, setSettings] = useState<DifficultySettings>(initial.settings)
-  const [levelId, setLevelId] = useState<number | 'custom'>(initial.levelId)
+  /** What the screen plays with. The window edits `draft`; Save copies it here, anything else throws it away. */
+  const [saved, setSaved] = useState<Loaded>(initial)
+  const [draft, setDraft] = useState<Loaded>(initial)
   const [lastSignature, setLastSignature] = useState(() => loadLastSignature(initial.settings))
+  const { settings, levelId } = draft
 
-  const change = (next: DifficultySettings, id: number | 'custom') => {
-    setSettings(next)
-    setLevelId(id)
-    saveJsonPref(PREF_KEYS.playSettings, { levelId: id, settings: next })
-  }
+  const change = (next: DifficultySettings, id: number | 'custom') =>
+    setDraft({ settings: next, levelId: id })
   /** Change some options by hand: the settings stay valid and the level picker goes to "Custom". */
   const edit = (patch: Record<string, unknown>) => {
     const r = mergeSettings(settings, patch)
@@ -60,7 +59,6 @@ export function usePlaySettings() {
   /** One key signature: the major key and its relative minor, so notes, intervals and chords come from both. */
   const pickSignature = (n: number) => {
     setLastSignature(n)
-    savePref(PREF_KEYS.playOneKey, String(n))
     edit({
       keys: { explicit: [keyName(keySignature(n, 'major')), keyName(keySignature(n, 'minor'))] },
     })
@@ -72,21 +70,40 @@ export function usePlaySettings() {
     if (r.ok) change(r.settings, 'custom')
   }
   const pickLevel = (value: string) => {
-    if (value === 'custom') return setLevelId('custom')
+    if (value === 'custom') return setDraft({ settings, levelId: 'custom' })
     const picked = PRESET_LEVELS.find((l) => l.id === Number(value))
     if (picked) change(picked.settings, picked.id)
   }
+  /** Keep the draft, and remember it for next time. */
+  const save = () => {
+    setSaved(draft)
+    saveJsonPref(PREF_KEYS.playSettings, { levelId: draft.levelId, settings: draft.settings })
+    savePref(PREF_KEYS.playOneKey, String(lastSignature))
+  }
+  /** Drop the draft: the window opens again on what was saved. */
+  const discard = () => {
+    setDraft(saved)
+    setLastSignature(loadLastSignature(saved.settings))
+  }
 
   return {
-    settings,
-    levelId,
-    level: PRESET_LEVELS.find((l) => l.id === levelId),
-    /** Sharps/flats of the one key signature in use, or null for several keys. */
-    signature: oneKeySignature(settings),
-    lastSignature,
+    /** The saved settings and level: what a session uses. */
+    settings: saved.settings,
+    levelId: saved.levelId,
+    /** What the settings window shows and edits. */
+    draft: {
+      settings,
+      levelId,
+      level: PRESET_LEVELS.find((l) => l.id === levelId),
+      /** Sharps/flats of the one key signature in use, or null for several keys. */
+      signature: oneKeySignature(settings),
+      lastSignature,
+    },
     edit,
     pickLevel,
     pickSignature,
     pickKeyChoice,
+    save,
+    discard,
   }
 }

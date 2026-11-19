@@ -47,7 +47,7 @@ export function KeyIdScreen({
   midiAccess,
   questions: QUESTIONS = DEFAULT_QUESTIONS,
 }: KeyIdScreenProps) {
-  const { settings, levelId, edit, pickLevel } = useKeyIdSettings()
+  const { settings, levelId, draft, edit, pickLevel, save, discard } = useKeyIdSettings()
   const [method, setMethod] = useState<KeyIdAnswerMethod>('wheel')
   const phone = useMediaQuery(PHONE_QUERY)
 
@@ -140,12 +140,14 @@ export function KeyIdScreen({
       }}
       settingsTitle="Key Signatures settings"
       settingsNarrow
+      onSaveSettings={save}
+      onDiscardSettings={discard}
       settings={
         <>
           <label>
             Level
             <select
-              value={levelId}
+              value={draft.levelId}
               onChange={(e) => pickLevel(e.target.value)}
               disabled={run.running}
             >
@@ -157,15 +159,15 @@ export function KeyIdScreen({
               ))}
             </select>
           </label>
-          {typeof levelId === 'number' && (
+          {typeof draft.levelId === 'number' && (
             <small className="placeholder">
-              {KEY_ID_LEVELS.find((l) => l.id === levelId)?.description}
+              {KEY_ID_LEVELS.find((l) => l.id === draft.levelId)?.description}
             </small>
           )}
           <label>
             Up to this many sharps or flats
             <select
-              value={settings.maxAccidentals}
+              value={draft.settings.maxAccidentals}
               onChange={(e) => edit({ maxAccidentals: Number(e.target.value) })}
               disabled={run.running}
             >
@@ -177,7 +179,7 @@ export function KeyIdScreen({
           <label>
             Keys
             <select
-              value={settings.modes}
+              value={draft.settings.modes}
               onChange={(e) => edit({ modes: e.target.value })}
               disabled={run.running}
             >
@@ -189,7 +191,7 @@ export function KeyIdScreen({
           <label>
             Time limit per question
             <select
-              value={settings.timeoutSeconds ?? 'none'}
+              value={draft.settings.timeoutSeconds ?? 'none'}
               onChange={(e) =>
                 edit({ timeoutSeconds: e.target.value === 'none' ? null : Number(e.target.value) })
               }

@@ -109,6 +109,8 @@ describe('Play with a MIDI piano', () => {
     const choice = within(screen.getByRole('dialog')).getByLabelText('Input') as HTMLSelectElement
     expect(choice.value).toBe('screen') // the on-screen piano until you choose
     await userEvent.selectOptions(choice, 'midi')
+    expect(localStorage.getItem('piano-drill.input')).not.toBe('midi') // not until Save
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Save' }))
     expect(localStorage.getItem('piano-drill.input')).toBe('midi')
     cleanup()
     showKeyId({ midiAccess: withAccess(new FakeMidiAccess()) })
@@ -174,8 +176,8 @@ describe('Play when MIDI cannot be used', () => {
       within(screen.getByRole('dialog')).getByLabelText('Input'),
       'screen',
     )
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Save' }))
     expect(notice()).toBe('') // the old message is gone
-    await userEvent.keyboard('{Escape}')
     await userEvent.click(button('Start'))
     await waitForTarget()
   })

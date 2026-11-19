@@ -109,8 +109,20 @@ export class Checklist {
    */
   strike(midi: number, held: readonly number[]): void {
     const chorded = held.some((m) => m !== midi && onClefSide(this.q, m))
+    const upBefore = this.up.n
+    const downBefore = this.down.n
     this.strikeUp(midi, chorded)
     this.strikeDown(midi, chorded)
+    // A turning note counts for both rows: the top note that finishes "Scale up" also starts "Scale down", and the bottom
+    // note that finishes "Scale down" also starts "Scale up". It need not be struck twice, though striking it again is fine.
+    // (When played smoothly the last key is still held, which would otherwise read as a chord.)
+    if (upBefore < 8 && this.up.n === 8 && this.down.n !== 8) {
+      this.down.base = midi - 12
+      this.down.n = 1
+    } else if (downBefore < 8 && this.down.n === 8 && this.up.n !== 8) {
+      this.up.tonic = midi
+      this.up.n = 1
+    }
   }
 
   private startsScale(midi: number, lowest = midi): boolean {
