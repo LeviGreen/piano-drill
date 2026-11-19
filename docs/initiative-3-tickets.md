@@ -24,13 +24,15 @@ This file tracks small improvements and bug fixes found while using the app, aft
 | 4 MIDI on the mode screens | IM-401     | Reusable MIDI connection components                           |
 | 4 MIDI on the mode screens | IM-402     | A compact piano connection strip on each mode screen          |
 | 4 MIDI on the mode screens | IM-403     | The on-screen piano always responds                           |
+| 4 MIDI on the mode screens | IM-404     | Spike: why the MIDI connection is not reliable                |
 
 ## Suggested Build Order
 
 1. **IM-102, IM-201** (small, independent bug fixes).
 2. **IM-301** (touches both modes' settings windows).
 3. **IM-401 → IM-403** (one feature, in three steps; IM-402 and IM-403 can share a branch).
-4. **IM-101** once the screenshot is in.
+4. **IM-404** (a spike) can run at any time, and is best done before IM-402: what it finds may change how the connection strip should work.
+5. **IM-101** once the screenshot is in.
 
 ## Ticket Index
 
@@ -39,7 +41,7 @@ This file tracks small improvements and bug fixes found while using the app, aft
 | 1 Navigation & scores      | IM-101 – IM-102 |
 | 2 Key Signatures           | IM-201          |
 | 3 Settings                 | IM-301          |
-| 4 MIDI on the mode screens | IM-401 – IM-403 |
+| 4 MIDI on the mode screens | IM-401 – IM-404 |
 
 ---
 
@@ -140,7 +142,7 @@ The windows work on a draft copy of the settings while they are open, and the sc
 
 ## Epic 4 — MIDI on the mode screens
 
-Progress: 0/3 tickets done
+Progress: 0/4 tickets done
 
 Today the piano has to be connected on the Settings page (MIDI Test), and if it disconnects the player has to go back there. The connection controls should be right on each mode's screen, in a space-efficient way, built from the same components as the Settings page (which stays).
 
@@ -188,3 +190,44 @@ The on-screen piano on a mode screen only reacts once a session is running (it i
 - [ ] With a MIDI piano connected, the on-screen piano lights the keys held, before Start, while getting ready, and between sessions, in both modes.
 - [ ] Those lit keys never count as answers outside a running target (a session is only affected by notes while a target is on screen, as today).
 - [ ] A test covers that clicking the on-screen keys outside a running target does nothing, as today.
+
+### IM-404: Spike: why the MIDI connection is not reliable
+
+**Size:** M  
+**Deps:** None  
+**Status:** In progress (code read and logging added; waiting for a log from the owner's piano; notes in [midi-connection-spike.md](midi-connection-spike.md))
+
+**The problem:** connecting the piano is not smooth. It always ends up working, but not consistently. Some of the time it takes one or more of these before the app sees the piano:
+
+- turning the piano off and on;
+- disconnecting and reconnecting in the app (the MIDI Test page's controls);
+- unplugging and replugging the USB cable.
+
+This is an investigation, not a fix. The result is a written answer to two questions: **why does it happen**, and **can we make it better**.
+
+**Where to look** (written from the code, not yet checked): `src/audio/inputs/MidiInput.ts` (how the browser's MIDI access is requested and the ports are opened), `src/audio/inputs/drillInput.ts` (`connectMidi`, `pianoConnected`) and `src/ui/usePianoInput.ts` (opening before a session, and watching for unplugging); `src/ui/MidiTestScreen.tsx` (the Connect button and the port list).
+
+**Ideas to test, none of them confirmed:**
+
+- Whether the app keeps one MIDI access for the whole visit, or asks again on each screen and each Start, and whether ports opened by an earlier request are left half-open.
+- Whether input ports are opened explicitly (`port.open()`) and their `state` / `connection` values are checked (`connected`, `disconnected`, `open`, `closed`, `pending`) before the app decides there is no piano.
+- Whether a `statechange` event from the browser is missed or arrives while no listener is attached (for example between screens, or between the access request and the first port list).
+- Whether the piano is chosen by an id that changes when it is replugged, or by a name that matches the wrong port (a piano can show up as more than one port).
+- Whether another program or browser tab holds the piano (it may only allow one user at a time), and what the app shows in that case.
+- Whether the problem is only in one place: the piano, its USB cable or hub, the OS, or the browser (Chrome is the one that supports MIDI). Compare with a known working MIDI tool (for example a web MIDI tester) to see whether the piano behaves the same there.
+
+**Work:**
+
+1. Reproduce it, and write down exactly what was done and what the app showed each time: which piano, which browser, whether the piano was on before the page loaded, and whether it was plugged in before or after. The owner has the hardware, so this needs their help.
+2. Add temporary logging of the browser's MIDI events (access granted, each port's state changes, ports opened and closed) and of what the app decided at each point, to see where a working connection is lost or never seen.
+3. Find the cause (or the most likely causes) and rank them.
+4. Propose fixes with their size, and say what can be done in IM-401 and IM-402 (for example a "Reconnect" that does the full reset in one press) and what cannot (a problem in the piano or the OS).
+
+**Output:** a short write-up under this ticket (or a new file in `docs/`) with the findings and the proposed fixes, and new tickets in this epic for the fixes worth doing. No change to how the connection works is part of this ticket, and temporary logging is removed before it is finished.
+
+**Acceptance:**
+
+- [ ] The problem is reproduced and the steps and the setups tried are written down.
+- [ ] The cause (or the likely causes, ranked) is written down, with the evidence for each.
+- [ ] The write-up says what can be made better and what cannot, and how much work each fix is.
+- [ ] Follow-up tickets are added for the fixes worth doing, and IM-401 and IM-402 are updated if the findings change them.

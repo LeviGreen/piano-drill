@@ -10,6 +10,7 @@ import {
   type DrillInput,
   type InputChoice,
 } from '../audio/inputs/drillInput'
+import { midiLog } from '../audio/inputs/midiLog' // TEMP (IM-404)
 import type { MidiInput, RequestMidiAccess } from '../audio/inputs/MidiInput'
 
 /**
@@ -56,6 +57,7 @@ export function usePianoInput(opts: {
     setProblem(null)
     setLost(false)
     setBack(false)
+    midiLog('open(): new drill input', { choice })
     const drill = createDrillInput(choice, { requestAccess: opts.requestAccess })
     if (drill.midi) {
       setStarting(true)
@@ -78,6 +80,7 @@ export function usePianoInput(opts: {
       const now = pianoConnected(midi)
       if (now === ok) return
       ok = now
+      midiLog('watch: piano is now', { connected: now })
       setLost(!now)
       if (!now) onLost.current()
       else setBack(true)

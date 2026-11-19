@@ -1,3 +1,4 @@
+import { midiLog } from './midiLog' // TEMP (IM-404)
 import type { NoteInput, NoteInputListener, NoteInputState, Onset } from './NoteInput'
 
 /*
@@ -174,7 +175,22 @@ export class MidiInput implements NoteInput {
     return () => this.changeListeners.delete(cb)
   }
 
+  /** TEMP (IM-404): what the browser says about every port right now. */
+  private ports() {
+    const out: {
+      id: string
+      name: string | null | undefined
+      state: string
+      connection?: string
+    }[] = []
+    this.access?.inputs.forEach((p) =>
+      out.push({ id: p.id, name: p.name, state: p.state, connection: p.connection }),
+    )
+    return out
+  }
+
   start(): Promise<void> {
+    midiLog('start()', { status: this._status, selected: this.selected })
     if (this._status === 'ready') return Promise.resolve()
     this.starting ??= this.connect().finally(() => (this.starting = null))
     return this.starting
@@ -189,8 +205,11 @@ export class MidiInput implements NoteInput {
     }
     this.setStatus('connecting')
     try {
+      midiLog('requestMIDIAccess…')
       this.access = await this.requestAccess!()
+      midiLog('access granted; ports at that moment', this.ports())
     } catch (e) {
+      midiLog('requestMIDIAccess failed', String(e))
       const name = e instanceof Error ? e.name : ''
       if (name === 'NotAllowedError' || name === 'SecurityError') {
         this.fail(
@@ -200,7 +219,14 @@ export class MidiInput implements NoteInput {
       }
       this.fail('error', `Could not start MIDI: ${e instanceof Error ? e.message : String(e)}`)
     }
-    this.access!.onstatechange = () => this.rescan()
+    this.access!.onstatechange = (ev) => {
+      const p = (ev as { port?: MidiPortLike & { type?: string } } | undefined)?.port
+      midiLog(
+        'statechange',
+        p && { id: p.id, name: p.name, type: p.type, state: p.state, connection: p.connection },
+      )
+      this.rescan()
+    }
     this.setStatus('ready')
     this.rescan()
   }
@@ -212,6 +238,7 @@ export class MidiInput implements NoteInput {
   }
 
   stop(): void {
+    midiLog('stop()', { ports: this.ports() })
     if (this.access) {
       this.access.onstatechange = null
       this.access.inputs.forEach((port) => (port.onmidimessage = null))
@@ -228,6 +255,7 @@ export class MidiInput implements NoteInput {
 
   /** Listen to one device (by id), or to all of them with null. */
   select(id: string | null): void {
+    midiLog('select()', { id })
     this.selected = id
     this.rescan()
   }
@@ -253,6 +281,7 @@ export class MidiInput implements NoteInput {
         port.onmidimessage = null
       }
     })
+    midiLog('rescan', { selected: this.selected, listening: [...live], ports: this.ports() })
     // A piano that is gone, or that we stopped listening to, can have no keys held.
     let released = false
     for (const [id, notes] of this.held) {
