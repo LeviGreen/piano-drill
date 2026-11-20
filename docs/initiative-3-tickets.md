@@ -15,23 +15,23 @@ This file tracks small improvements and bug fixes found while using the app, aft
 
 ## Status at a glance
 
-| Epic                       | Ticket     | Short description                                             |
-| -------------------------- | ---------- | ------------------------------------------------------------- |
-| ~~1 Navigation & scores~~  | ~~IM-101~~ | ~~Phone: make every tab the same size~~                       |
-| ~~1 Navigation & scores~~  | ~~IM-102~~ | ~~High-scores link opens the mode and level just played~~     |
-| ~~2 Key Signatures~~       | ~~IM-201~~ | ~~Scale up/down: the turning notes need not be struck twice~~ |
-| ~~3 Settings~~             | ~~IM-301~~ | ~~Settings windows get Save and Close~~                       |
-| 4 MIDI on the mode screens | IM-401     | Reusable MIDI connection components                           |
-| 4 MIDI on the mode screens | IM-402     | A compact piano connection strip on each mode screen          |
-| 4 MIDI on the mode screens | IM-403     | The on-screen piano always responds                           |
-| 4 MIDI on the mode screens | IM-404     | Spike: why the MIDI connection is not reliable                |
+| Epic                           | Ticket     | Short description                                             |
+| ------------------------------ | ---------- | ------------------------------------------------------------- |
+| ~~1 Navigation & scores~~      | ~~IM-101~~ | ~~Phone: make every tab the same size~~                       |
+| ~~1 Navigation & scores~~      | ~~IM-102~~ | ~~High-scores link opens the mode and level just played~~     |
+| ~~2 Key Signatures~~           | ~~IM-201~~ | ~~Scale up/down: the turning notes need not be struck twice~~ |
+| ~~3 Settings~~                 | ~~IM-301~~ | ~~Settings windows get Save and Close~~                       |
+| 4 MIDI on the mode screens     | IM-401     | Reusable MIDI connection components                           |
+| 4 MIDI on the mode screens     | IM-402     | A compact piano connection strip on each mode screen          |
+| 4 MIDI on the mode screens     | IM-403     | The on-screen piano always responds                           |
+| ~~4 MIDI on the mode screens~~ | ~~IM-404~~ | ~~Spike: why the MIDI connection is not reliable~~            |
 
 ## Suggested Build Order
 
 1. **IM-102, IM-201** (small, independent bug fixes).
 2. **IM-301** (touches both modes' settings windows).
 3. **IM-401 → IM-403** (one feature, in three steps; IM-402 and IM-403 can share a branch).
-4. **IM-404** (a spike) can run at any time, and is best done before IM-402: what it finds may change how the connection strip should work.
+4. **IM-404** (a spike, done) found that the cause is below the app; what the app can say about it can go into IM-402.
 5. **IM-101** once the screenshot is in.
 
 ## Ticket Index
@@ -142,7 +142,7 @@ The windows work on a draft copy of the settings while they are open, and the sc
 
 ## Epic 4 — MIDI on the mode screens
 
-Progress: 0/4 tickets done
+Progress: 1/4 tickets done
 
 Today the piano has to be connected on the Settings page (MIDI Test), and if it disconnects the player has to go back there. The connection controls should be right on each mode's screen, in a space-efficient way, built from the same components as the Settings page (which stays).
 
@@ -195,7 +195,7 @@ The on-screen piano on a mode screen only reacts once a session is running (it i
 
 **Size:** M  
 **Deps:** None  
-**Status:** In progress (code read and logging added; waiting for a log from the owner's piano; notes in [midi-connection-spike.md](midi-connection-spike.md))
+**Status:** Done (conclusion in [midi-connection-spike.md](midi-connection-spike.md): the cause is below the app)
 
 **The problem:** connecting the piano is not smooth. It always ends up working, but not consistently. Some of the time it takes one or more of these before the app sees the piano:
 
@@ -227,7 +227,7 @@ This is an investigation, not a fix. The result is a written answer to two quest
 
 **Acceptance:**
 
-- [ ] The problem is reproduced and the steps and the setups tried are written down.
-- [ ] The cause (or the likely causes, ranked) is written down, with the evidence for each.
-- [ ] The write-up says what can be made better and what cannot, and how much work each fix is.
-- [ ] Follow-up tickets are added for the fixes worth doing, and IM-401 and IM-402 are updated if the findings change them.
+- [x] The problem is reproduced and the steps and the setups tried are written down (runs A and B; the other runs in [midi-logs.md](midi-logs.md) were not done).
+- [x] The cause (or the likely causes, ranked) is written down, with the evidence for each.
+- [x] The write-up says what can be made better and what cannot, and how much work each fix is.
+- [x] No follow-up ticket was added; the owner chose not to. The findings are in the write-up.

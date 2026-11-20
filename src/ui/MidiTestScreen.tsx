@@ -68,8 +68,6 @@ export function MidiTestScreen({ requestAccess }: { requestAccess?: RequestMidiA
     input.stop()
     setHeld([])
   }
-  // TEMP (IM-404): an experiment, removed when the spike is done.
-  const resetPorts = () => void input.resetPorts()
   const pick = (value: string) => {
     const id = value === '' ? null : value
     setChosen(id)
@@ -119,14 +117,6 @@ export function MidiTestScreen({ requestAccess }: { requestAccess?: RequestMidiA
       <p role="status" className={status === 'ready' ? undefined : 'midi-problem'}>
         {message}
       </p>
-
-      {status === 'ready' && (
-        <p>
-          <button type="button" onClick={resetPorts}>
-            Reset port (experiment: close and reopen)
-          </button>
-        </p>
-      )}
 
       {status === 'ready' && (
         <p>

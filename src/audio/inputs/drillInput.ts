@@ -1,5 +1,4 @@
 import { loadPref, PREF_KEYS, savePref } from '../../storage/prefs'
-import { midiLog } from './midiLog' // TEMP (IM-404)
 import { MergedInput } from './MergedInput'
 import { MidiInput, MidiUnavailableError, type RequestMidiAccess } from './MidiInput'
 import type { NoteInput } from './NoteInput'
@@ -66,11 +65,6 @@ export function pianoConnected(midi: MidiInput): boolean {
  */
 export async function connectMidi(midi: MidiInput): Promise<void> {
   await midi.start()
-  midiLog('connectMidi: piano connected?', {
-    yes: pianoConnected(midi),
-    devices: midi.devices,
-    chosen: midi.selectedDeviceId,
-  })
   if (!pianoConnected(midi)) {
     midi.stop()
     throw new MidiUnavailableError('error', NO_PIANO_MESSAGE)

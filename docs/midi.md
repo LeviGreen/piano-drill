@@ -45,6 +45,7 @@ once for permission to use MIDI devices; if you say no, you can allow it in the 
 - _"No MIDI device was found"_: check the cable and that the piano is switched on. Some pianos need "USB MIDI" turned
   on in their settings. Another program that has the piano open (some music software) can stop the browser from using it.
 - _Notes show on the MIDI test page but not in a drill_: open the Play or Key ID settings and set **Input** to "MIDI piano" (the on-screen piano is the default). The piano is connected when you press Start; if it says no piano was found, plug it in and press Start again.
+- _The piano is listed but nothing happens when you play (it works after a while, or after replugging)_: seen with the Yamaha MM8 on a Mac, mostly right after plugging in, switching the piano on, or quitting Chrome. Unplug the USB at the **piano** end and plug it back in (it can take a few tries), connect without a hub, use a data-capable cable, and check that the maker's USB-MIDI driver is installed. Once it works it stays working through page reloads. The cause is in the piano, its driver or the OS, not in the app (see [midi-connection-spike.md](midi-connection-spike.md)).
 - _The drill paused by itself_: the piano was disconnected (a loose cable, or it went to sleep). Plug it back in and press Resume.
 
 ## A piano that needs a driver
