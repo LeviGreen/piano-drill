@@ -150,3 +150,27 @@
   color: var(--text-muted);
   font-size: 0.9rem;
 }
+
+/* The MIDI piano's connection, in one line on a drill screen. */
+.midi-strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-width: 0;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.midi-strip-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.midi-strip button,
+.midi-strip select {
+  padding: 0.2rem 0.6rem;
+  font-size: 0.85rem;
+}

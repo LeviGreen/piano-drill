@@ -10,7 +10,8 @@ import {
   type DrillInput,
   type InputChoice,
 } from '../audio/inputs/drillInput'
-import type { MidiInput, RequestMidiAccess } from '../audio/inputs/MidiInput'
+import type { MidiInput } from '../audio/inputs/MidiInput'
+import type { MidiConnection } from './midi/useMidi'
 
 /**
  * What a drill screen needs to take notes from the chosen input (PD-314): the remembered choice, opening the input
@@ -18,8 +19,8 @@ import type { MidiInput, RequestMidiAccess } from '../audio/inputs/MidiInput'
  * unplugging it pauses the drill instead of leaving it waiting for notes that cannot come.
  */
 export function usePianoInput(opts: {
-  /** For tests: stands in for the browser's MIDI request. */
-  requestAccess?: RequestMidiAccess | null
+  /** The app's MIDI connection: opened when a session starts, and left open when it ends. */
+  connection: MidiConnection
   /** Called when the piano goes away during a session (so the screen can pause). */
   onLost: () => void
 }) {
@@ -56,7 +57,7 @@ export function usePianoInput(opts: {
     setProblem(null)
     setLost(false)
     setBack(false)
-    const drill = createDrillInput(choice, { requestAccess: opts.requestAccess })
+    const drill = createDrillInput(choice, opts.connection.input)
     if (drill.midi) {
       setStarting(true)
       try {
@@ -89,6 +90,7 @@ export function usePianoInput(opts: {
 
   const notice = problem ?? (lost ? PIANO_LOST_MESSAGE : back ? PIANO_BACK_MESSAGE : null)
   return {
+    connection: opts.connection,
     choice,
     draftChoice,
     setDraftChoice,

@@ -1,4 +1,5 @@
 import { loadPref, PREF_KEYS, savePref } from '../../storage/prefs'
+import { BorrowedInput } from './BorrowedInput'
 import { MergedInput } from './MergedInput'
 import { MidiInput, MidiUnavailableError, type RequestMidiAccess } from './MidiInput'
 import type { NoteInput } from './NoteInput'
@@ -36,21 +37,29 @@ export type DrillInput = {
   input: NoteInput
   /** The on-screen piano: its keys still play, whichever input is chosen. */
   screen: OnScreenKeyboardInput
-  /** The MIDI piano, when chosen. */
+  /** The MIDI piano's connection, when chosen. It belongs to the app, not to the session. */
   midi: MidiInput | null
+  /** The MIDI piano's notes, lent to the session: stopping the session leaves the connection open. */
+  midiNotes: NoteInput | null
+}
+
+/** The app's MIDI connection: remembers the piano chosen last time, and is made once and shared. */
+export function createMidiInput(requestAccess?: RequestMidiAccess | null): MidiInput {
+  return new MidiInput({
+    deviceId: loadMidiDevice(),
+    ...(requestAccess === undefined ? {} : { requestAccess }),
+  })
 }
 
 export function createDrillInput(
   choice: InputChoice,
-  opts: { requestAccess?: RequestMidiAccess | null } = {},
+  /** The MIDI connection to use when the piano is chosen. */
+  midi: MidiInput,
 ): DrillInput {
   const screen = new OnScreenKeyboardInput()
-  if (choice === 'screen') return { input: screen, screen, midi: null }
-  const midi = new MidiInput({
-    deviceId: loadMidiDevice(),
-    ...(opts.requestAccess === undefined ? {} : { requestAccess: opts.requestAccess }),
-  })
-  return { input: new MergedInput([midi, screen]), screen, midi }
+  if (choice === 'screen') return { input: screen, screen, midi: null, midiNotes: null }
+  const midiNotes = new BorrowedInput(midi)
+  return { input: new MergedInput([midiNotes, screen]), screen, midi, midiNotes }
 }
 
 /** Is a piano we are listening to plugged in? */
@@ -66,7 +75,7 @@ export function pianoConnected(midi: MidiInput): boolean {
 export async function connectMidi(midi: MidiInput): Promise<void> {
   await midi.start()
   if (!pianoConnected(midi)) {
-    midi.stop()
+    // The connection stays up and keeps listening, so a piano switched on a moment later is noticed.
     throw new MidiUnavailableError('error', NO_PIANO_MESSAGE)
   }
 }

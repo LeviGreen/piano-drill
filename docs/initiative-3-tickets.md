@@ -150,30 +150,34 @@ Today the piano has to be connected on the Settings page (MIDI Test), and if it 
 
 **Size:** M  
 **Deps:** None  
-**Status:** Todo
+**Status:** In progress (built and tested; waiting for the owner to check it)
 
 `src/ui/MidiTestScreen.tsx` holds everything for connecting a piano: the Connect button, the status message, the piano list, the table of device state and the keyboard that lights up held keys. Pull those into separate components (and a hook for the connection itself) that the Settings page and the mode screens both use. The Settings page looks and works exactly as it does now.
 
 **Acceptance:**
 
-- [ ] The MIDI Test page is built from the new components, with no visible change, and its tests pass unchanged.
-- [ ] The components can be used on their own, without the test page around them (they take the connection as input, or use one hook).
-- [ ] One place holds the connection state, so the mode screens and the Settings page agree on whether a piano is connected and which one is chosen.
+- [x] The MIDI Test page is built from the new components, with no visible change, and its tests pass unchanged.
+- [x] The components can be used on their own, without the test page around them (they take the connection as input, or use one hook).
+- [x] One place holds the connection state, so the mode screens and the Settings page agree on whether a piano is connected and which one is chosen.
+
+**What was built:** `src/ui/midi/` holds the parts (`MidiControls.tsx`: connect button, status line, piano picker, devices table; `MidiKeyboard.tsx` with `useHeldNotes`; `MidiStrip.tsx`), the `useMidi` hook, and `MidiProvider`, which holds the app's one `MidiInput` for the whole visit. A drill session is lent that connection (`BorrowedInput`), so ending a session leaves it open, and a failed Start no longer shuts it down.
 
 ### IM-402: A compact piano connection strip on each mode screen
 
 **Size:** M  
 **Deps:** IM-401  
-**Status:** Todo
+**Status:** In progress (built and tested; waiting for the owner to check it, and a phone check)
 
 Put a small, space-efficient strip on the Sight-Read and Key Signatures screens (a single line or a collapsible bar) showing the piano's status, with the controls to connect, reconnect and, if more than one piano is found, choose one. If the piano disconnects mid-session, the player can reconnect right there, instead of going back to Settings. The strip uses the components from IM-401. On a phone it takes as little room as possible, and the on-screen piano users do not need it.
 
 **Acceptance:**
 
-- [ ] A player can connect a piano from the Sight-Read and Key Signatures screens without visiting Settings.
-- [ ] After an unplug, pressing Reconnect on the strip brings the piano back, and the existing "Piano disconnected, press Resume" flow still works.
+- [x] A player can connect a piano from the Sight-Read and Key Signatures screens without visiting Settings.
+- [x] After an unplug, pressing Reconnect on the strip brings the piano back, and the existing "Piano disconnected, press Resume" flow still works.
 - [ ] The strip is compact (one line when connected, more only when there is a problem or a choice to make) and works on a phone.
-- [ ] Tests (with the fake piano) cover connecting, reconnecting after an unplug and choosing between pianos from a mode screen.
+- [x] Tests (with the fake piano) cover connecting, reconnecting after an unplug and choosing between pianos from a mode screen.
+
+**What was built:** `MidiStrip` (one line: the piano's name or what is wrong, a Connect / Reconnect button, and a picker only when more than one piano is connected), shown by `DrillScreenFrame` when the MIDI piano is the chosen input. Reconnect lets go, asks the browser again and looks for the piano, so after an unplug it works together with the existing Resume flow.
 
 ### IM-403: The on-screen piano always responds
 

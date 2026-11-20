@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react'
 import type { Storage } from '../storage'
 import { levelLabel } from './levelLabel'
 import { ScoreSummary } from './ScoreSummary'
+import { MidiStrip } from './midi/MidiStrip'
 import { SettingsDrawer } from './SettingsDrawer'
 import type { RepRun } from './useRepSession'
 
@@ -104,6 +105,8 @@ export function DrillScreenFrame({
           Settings
         </button>
       </div>
+
+      {piano.choice === 'midi' && <MidiStrip midi={piano.connection} />}
 
       <p className="keyid-status" role="status">
         <strong>{status}</strong>
