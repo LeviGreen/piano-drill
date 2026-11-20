@@ -4,7 +4,6 @@ import type { RequestMidiAccess } from '../audio/inputs/MidiInput'
 import { FlashController } from '../notation/flash'
 import type { RepSession } from '../session/RepSession'
 import type { BaseSnapshot, Presenter, RepResult, SessionState } from '../session/types'
-import { useMidi } from './midi/useMidi'
 import { useCountdown } from './useCountdown'
 import { usePianoInput } from './usePianoInput'
 import { useRemainingSeconds } from './useRemainingSeconds'
@@ -83,9 +82,8 @@ export function useRepSession<
   const [snap, setSnap] = useState<Snap | null>(null)
   const [results, setResults] = useState<RepResult[]>([])
   const [dismissed, setDismissed] = useState(false)
-  const connection = useMidi(opts.midiAccess)
   const piano = usePianoInput({
-    connection,
+    requestAccess: opts.midiAccess,
     onLost: () => session.current?.pause(), // the piano went away: stop, and say so
   })
   const count = useCountdown(snap?.ready ?? null)

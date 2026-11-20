@@ -3,7 +3,6 @@ import { FakeMidiAccess, FakePort } from '../../test-utils/fakeMidi'
 import {
   connectMidi,
   createDrillInput,
-  createMidiInput,
   loadInputChoice,
   loadMidiDevice,
   NO_PIANO_MESSAGE,
@@ -37,7 +36,7 @@ describe('the remembered input choice', () => {
 
 describe('building the input for a drill', () => {
   it('the on-screen piano alone has no MIDI', () => {
-    const d = createDrillInput('screen', createMidiInput(null))
+    const d = createDrillInput('screen')
     expect(d.midi).toBeNull()
     expect(d.input).toBe(d.screen)
   })
@@ -46,10 +45,7 @@ describe('building the input for a drill', () => {
     localStorage.setItem('piano-drill.midi-device', 'b')
     const a = new FakePort('a')
     const b = new FakePort('b')
-    const d = createDrillInput(
-      'midi',
-      createMidiInput(async () => new FakeMidiAccess(a, b)),
-    )
+    const d = createDrillInput('midi', { requestAccess: async () => new FakeMidiAccess(a, b) })
     expect(d.midi).toBeInstanceOf(MidiInput)
     await d.input.start()
     expect(d.midi!.selectedDeviceId).toBe('b')
@@ -70,14 +66,10 @@ describe('connecting MIDI before a session', () => {
     expect(pianoConnected(midi)).toBe(true)
   })
 
-  it('says so when there is no piano, but keeps listening, so a piano switched on later is noticed', async () => {
-    const access = new FakeMidiAccess()
-    const midi = new MidiInput({ requestAccess: async () => access })
+  it('says so when there is no piano, and does not stay connected', async () => {
+    const midi = new MidiInput({ requestAccess: async () => new FakeMidiAccess() })
     await expect(connectMidi(midi)).rejects.toThrow(NO_PIANO_MESSAGE)
-    expect(midi.status).toBe('ready')
-    access.plugIn(new FakePort('late'))
-    expect(pianoConnected(midi)).toBe(true)
-    await expect(connectMidi(midi)).resolves.toBeUndefined()
+    expect(midi.status).toBe('idle')
   })
 
   it('passes on a blocked permission or a browser without MIDI', async () => {

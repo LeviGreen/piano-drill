@@ -65,7 +65,7 @@ export function KeyIdScreen({
           reveal: () => {}, // the answer input marks the right answer and the message says what it was
           clear: () => drawEmptyStaff(stage),
         }),
-        input: drill.midiNotes ?? undefined, // the on-screen piano only mirrors the keys; it is not an input here
+        input: drill.midi ?? undefined, // the on-screen piano only mirrors the keys; it is not an input here
         // Playing needs a MIDI piano (`drill.midi` is there only when it is chosen) and a desktop screen.
         method: method === 'play' && !(drill.midi && !phone) ? 'wheel' : method,
         totalReps: QUESTIONS,

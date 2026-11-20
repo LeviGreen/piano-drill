@@ -1,7 +1,6 @@
 import { lazy, Suspense } from 'react'
 import { Route, Routes } from 'react-router'
 import { AppShell } from './ui/AppShell'
-import { MidiProvider } from './ui/midi/MidiProvider'
 import { MidiTestScreen } from './ui/MidiTestScreen'
 import { ScoresScreen } from './ui/ScoresScreen'
 import { HomeScreen, NotFoundScreen, SettingsScreen } from './ui/screens'
@@ -12,33 +11,31 @@ const KeyIdScreen = lazy(() => import('./ui/KeyIdScreen').then((m) => ({ default
 
 export default function App() {
   return (
-    <MidiProvider>
-      <Routes>
-        <Route element={<AppShell />}>
-          <Route index element={<HomeScreen />} />
-          <Route
-            path="sight-read"
-            element={
-              <Suspense fallback={<p className="placeholder">Loading…</p>}>
-                <PlayScreen />
-              </Suspense>
-            }
-          />
-          <Route
-            path="key-signatures"
-            element={
-              <Suspense fallback={<p className="placeholder">Loading…</p>}>
-                <KeyIdScreen />
-              </Suspense>
-            }
-          />
-          <Route path="scores" element={<ScoresScreen />} />
-          <Route path="settings" element={<SettingsScreen />} />
-          <Route path="settings/midi-test" element={<MidiTestScreen />} />
+    <Routes>
+      <Route element={<AppShell />}>
+        <Route index element={<HomeScreen />} />
+        <Route
+          path="sight-read"
+          element={
+            <Suspense fallback={<p className="placeholder">Loading…</p>}>
+              <PlayScreen />
+            </Suspense>
+          }
+        />
+        <Route
+          path="key-signatures"
+          element={
+            <Suspense fallback={<p className="placeholder">Loading…</p>}>
+              <KeyIdScreen />
+            </Suspense>
+          }
+        />
+        <Route path="scores" element={<ScoresScreen />} />
+        <Route path="settings" element={<SettingsScreen />} />
+        <Route path="settings/midi-test" element={<MidiTestScreen />} />
 
-          <Route path="*" element={<NotFoundScreen />} />
-        </Route>
-      </Routes>
-    </MidiProvider>
+        <Route path="*" element={<NotFoundScreen />} />
+      </Route>
+    </Routes>
   )
 }
