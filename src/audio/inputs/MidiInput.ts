@@ -15,6 +15,9 @@ export interface MidiPortLike {
   /** 'open', 'closed' or 'pending': whether the browser has the port open (a port another program holds stays closed). */
   connection?: string
   onmidimessage: ((event: { data: Uint8Array | null; timeStamp: number }) => void) | null
+  /** The browser's own close and open of a port (TEMP, IM-404: used by the reset experiment). */
+  close?: () => Promise<unknown>
+  open?: () => Promise<unknown>
 }
 export interface MidiAccessLike {
   inputs: { forEach(callback: (port: MidiPortLike) => void): void }
@@ -137,6 +140,11 @@ export class MidiInput implements NoteInput {
   private starting: Promise<void> | null = null
   private stats = { messages: 0, background: 0, last: null as MidiDiagnostics['last'] }
   private lastChangeAt = 0
+  /** TEMP (IM-404): true while resetPorts is closing and reopening, so rescans do not reopen a port too early. */
+  private resetting = false
+  /** TEMP (IM-404): messages heard per port since we last started listening to it, and the timers that report them. */
+  private heard = new Map<string, number>()
+  private heardTimers = new Map<string, ReturnType<typeof setTimeout>>()
 
   constructor(opts: MidiInputOptions = {}) {
     this.requestAccess =
@@ -238,7 +246,9 @@ export class MidiInput implements NoteInput {
   }
 
   stop(): void {
-    midiLog('stop()', { ports: this.ports() })
+    midiLog('stop()', { ports: this.ports(), stats: this.stats })
+    for (const t of this.heardTimers.values()) clearTimeout(t)
+    this.heardTimers.clear()
     if (this.access) {
       this.access.onstatechange = null
       this.access.inputs.forEach((port) => (port.onmidimessage = null))
@@ -260,9 +270,44 @@ export class MidiInput implements NoteInput {
     this.rescan()
   }
 
+  /**
+   * TEMP (IM-404, an experiment): really close every input port and open it again, which the app never does otherwise
+   * (stop() only removes the message handler and leaves the port open). Does this do what unplugging the USB does?
+   */
+  async resetPorts(): Promise<void> {
+    if (!this.access) return
+    const ports: MidiPortLike[] = []
+    this.access.inputs.forEach((p) => ports.push(p))
+    midiLog('resetPorts: before', this.ports())
+    this.resetting = true
+    try {
+      for (const p of ports) p.onmidimessage = null
+      for (const p of ports) {
+        try {
+          await p.close?.()
+        } catch (e) {
+          midiLog('resetPorts: close failed', { port: p.id, error: String(e) })
+        }
+      }
+      midiLog('resetPorts: closed', this.ports())
+      for (const p of ports) {
+        try {
+          await p.open?.()
+        } catch (e) {
+          midiLog('resetPorts: open failed', { port: p.id, error: String(e) })
+        }
+      }
+      midiLog('resetPorts: reopened', this.ports())
+    } finally {
+      this.resetting = false
+      this.rescan()
+    }
+  }
+
   /** Re-read the device list, listen to the right ports, and let go of notes on ports that are gone or no longer wanted. */
   private rescan(): void {
     if (!this.access) return
+    if (this.resetting) return
     const devices: MidiDevice[] = []
     const live = new Set<string>()
     this.access.inputs.forEach((port) => {
@@ -276,6 +321,21 @@ export class MidiInput implements NoteInput {
       const wanted = connected && (this.selected === null || this.selected === port.id)
       if (wanted) {
         live.add(port.id)
+        // TEMP (IM-404): does anything arrive after we start listening? (Most pianos send a heartbeat every ~300 ms.)
+        this.heard.set(port.id, 0)
+        clearTimeout(this.heardTimers.get(port.id))
+        this.heardTimers.set(
+          port.id,
+          setTimeout(
+            () =>
+              midiLog('3 s after listening', {
+                port: port.id,
+                messages: this.heard.get(port.id),
+                connection: port.connection,
+              }),
+            3000,
+          ),
+        )
         port.onmidimessage = (e) => this.onMessage(port, e)
       } else {
         port.onmidimessage = null
@@ -297,6 +357,14 @@ export class MidiInput implements NoteInput {
 
   private onMessage(port: MidiPortLike, e: { data: Uint8Array | null; timeStamp: number }): void {
     const portId = port.id
+    const before = this.heard.get(portId) ?? 0
+    this.heard.set(portId, before + 1)
+    if (before === 0)
+      midiLog('first message since listening', {
+        port: portId,
+        bytes: e.data ? Array.from(e.data) : [],
+        meaning: describeMidiMessage(e.data),
+      })
     this.record(port, e.data)
     const msg = parseMidiMessage(e.data)
     if (!msg) return

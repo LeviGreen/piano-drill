@@ -52,6 +52,31 @@ These are ideas, not decisions; their size depends on what the log shows.
 
 Also write down: the piano model, the computer and OS, the Chrome version, and whether it is connected through a hub.
 
-## Findings
+## Findings so far
 
-_To be filled in once there is a log._
+From runs A and B (Yamaha MM8, in [midi-logs.md](midi-logs.md)). Both were only on the MIDI Test page; no Sight-Read Start was logged yet.
+
+**Established**
+
+- **The port id does not change.** The MM8's input is `-1144519317` before and after every replug and power-cycle (its output port is `-1418849052`). So hypothesis 2 (a saved id that no longer matches) is ruled out for this piano.
+- **No loops.** Each `statechange` led to exactly one `rescan`, and settled. Hypothesis 4 is ruled out.
+- **The app handled late arrival correctly on the test page.** In run B the piano was off at `access granted` (no ports) and appeared 2 s later; the test page picked it up from the `statechange`. (The drill's Start would not have: it checks once. This is still hypothesis 1 for Sight-Read, not yet logged.)
+- **The first MIDI request after starting Chrome is slow:** 3.8 s in both runs (`requestMIDIAccess…` to `access granted`), against 15 to 20 ms for every later request in the same page.
+- **In the failing cases the app believed everything was fine.** In run A's "not working" case and in run B's many failed connects, the log shows the piano `connected`, the port `open`, and the app `listening` to it. Nothing in the app's own view looked wrong.
+- **What fixed it was a physical reset:** unplugging and replugging the USB **at the keyboard end**. Unplugging at the computer end and switching the piano off and on did nothing in run A. Each unplug shows the port going `disconnected`/`pending` and coming back `connected`/`open`.
+
+**Reported by the owner**
+
+- In the failing cases the MIDI Test keyboard **never lights up**, so no notes reach the app's handler.
+- In run B it started working (the on-screen keyboard responded) **after the third replug** of the USB. Run A also logged three disconnect/reconnect pairs before it worked. The run B log shows only two pairs, so either the log was copied before the third, or one replug never reached Chrome. Worth checking in the next run: does it take a particular **number** of re-enumerations (three each time), or a particular **time** since Chrome started?
+
+**Not known yet**
+
+- Whether any messages were arriving while it "did not work". The logging did not record that. If the port is open but silent, the problem is below the app: the browser or macOS says the piano is open, and it is not sending. That would also explain why the app cannot see it. I added logging for this (see below).
+- Whether the older, still-open ports from earlier connects (the app never closes a port; `stop()` only clears the handler) make things worse. Run B made five connects in a row. This is hypothesis 5, and it does not explain run A (the first connect after starting Chrome failed too).
+
+**Next**
+
+- The temporary logging now also records, for each port the app starts listening to: the first message that arrives, and a count of messages 3 s after listening starts. Redo run A and run B with it. A silent open port (0 messages with a piano that normally sends a heartbeat) would confirm the problem is below the app.
+- Ask whether the MIDI Test keyboard lit up in the failing cases (it should if messages arrive).
+- If the port is silent, try closing the port explicitly (`port.close()`) when we stop, then opening it again, to see whether that does what the replug does. If it does, that is the "Reconnect" fix.
