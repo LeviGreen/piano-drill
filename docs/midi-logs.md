@@ -35,7 +35,61 @@ Paste the log of each run into its empty block, and answer the questions under i
 - If not, what fixed it (piano off/on, Disconnect then Connect, USB out/in, other)?
 
 ```
+// not working
+40012 ms  stop()  {"ports":[]}
+41045 ms  start()  {"status":"idle","selected":null}
+41046 ms  requestMIDIAccess…
+44852 ms  access granted; ports at that moment  [{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"closed"}]
+44852 ms  rescan  {"selected":null,"listening":["-1144519317"],"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"closed"}]}
+44853 ms  select()  {"id":"-1144519317"}
+44853 ms  rescan  {"selected":"-1144519317","listening":["-1144519317"],"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"closed"}]}
+44853 ms  statechange  {"id":"-1144519317","name":"MM8 Port1","type":"input","state":"connected","connection":"open"}
+44853 ms  rescan  {"selected":"-1144519317","listening":["-1144519317"],"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"open"}]}
 
+//worked after un/replugging USB from computer (nothing), then turning off/on (nothing) then un/replugging USB from keyboard, THEN it worked
+
+40012 ms  stop()  {"ports":[]}
+41045 ms  start()  {"status":"idle","selected":null}
+41046 ms  requestMIDIAccess…
+44852 ms  access granted; ports at that moment  [{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"closed"}]
+44852 ms  rescan  {"selected":null,"listening":["-1144519317"],"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"closed"}]}
+44853 ms  select()  {"id":"-1144519317"}
+44853 ms  rescan  {"selected":"-1144519317","listening":["-1144519317"],"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"closed"}]}
+44853 ms  statechange  {"id":"-1144519317","name":"MM8 Port1","type":"input","state":"connected","connection":"open"}
+44853 ms  rescan  {"selected":"-1144519317","listening":["-1144519317"],"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"open"}]}
+171342 ms  stop()  {"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"open"}]}
+171863 ms  start()  {"status":"idle","selected":"-1144519317"}
+171863 ms  requestMIDIAccess…
+171880 ms  access granted; ports at that moment  [{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"closed"}]
+171881 ms  rescan  {"selected":"-1144519317","listening":["-1144519317"],"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"closed"}]}
+171881 ms  select()  {"id":"-1144519317"}
+171881 ms  rescan  {"selected":"-1144519317","listening":["-1144519317"],"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"closed"}]}
+171881 ms  statechange  {"id":"-1144519317","name":"MM8 Port1","type":"input","state":"connected","connection":"open"}
+171881 ms  rescan  {"selected":"-1144519317","listening":["-1144519317"],"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"open"}]}
+179254 ms  statechange  {"id":"-1144519317","name":"MM8 Port1","type":"input","state":"disconnected","connection":"pending"}
+179254 ms  rescan  {"selected":"-1144519317","listening":[],"ports":[]}
+179270 ms  statechange  {"id":"-1418849052","name":"MM8 Port1","type":"output","state":"disconnected","connection":"closed"}
+179270 ms  rescan  {"selected":"-1144519317","listening":[],"ports":[]}
+180805 ms  statechange  {"id":"-1144519317","name":"MM8 Port1","type":"input","state":"connected","connection":"open"}
+180805 ms  rescan  {"selected":"-1144519317","listening":["-1144519317"],"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"open"}]}
+180806 ms  statechange  {"id":"-1418849052","name":"MM8 Port1","type":"output","state":"connected","connection":"closed"}
+180806 ms  rescan  {"selected":"-1144519317","listening":["-1144519317"],"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"open"}]}
+191287 ms  statechange  {"id":"-1144519317","name":"MM8 Port1","type":"input","state":"disconnected","connection":"pending"}
+191287 ms  rescan  {"selected":"-1144519317","listening":[],"ports":[]}
+191304 ms  statechange  {"id":"-1418849052","name":"MM8 Port1","type":"output","state":"disconnected","connection":"closed"}
+191304 ms  rescan  {"selected":"-1144519317","listening":[],"ports":[]}
+198214 ms  statechange  {"id":"-1144519317","name":"MM8 Port1","type":"input","state":"connected","connection":"open"}
+198214 ms  rescan  {"selected":"-1144519317","listening":["-1144519317"],"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"open"}]}
+198214 ms  statechange  {"id":"-1418849052","name":"MM8 Port1","type":"output","state":"connected","connection":"closed"}
+198215 ms  rescan  {"selected":"-1144519317","listening":["-1144519317"],"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"open"}]}
+205111 ms  statechange  {"id":"-1144519317","name":"MM8 Port1","type":"input","state":"disconnected","connection":"pending"}
+205112 ms  rescan  {"selected":"-1144519317","listening":[],"ports":[]}
+205129 ms  statechange  {"id":"-1418849052","name":"MM8 Port1","type":"output","state":"disconnected","connection":"closed"}
+205129 ms  rescan  {"selected":"-1144519317","listening":[],"ports":[]}
+206663 ms  statechange  {"id":"-1144519317","name":"MM8 Port1","type":"input","state":"connected","connection":"open"}
+206664 ms  rescan  {"selected":"-1144519317","listening":["-1144519317"],"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"open"}]}
+206664 ms  statechange  {"id":"-1418849052","name":"MM8 Port1","type":"output","state":"connected","connection":"closed"}
+206664 ms  rescan  {"selected":"-1144519317","listening":["-1144519317"],"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"open"}]}
 ```
 
 ## B: Piano switched on after the page loads
@@ -51,7 +105,123 @@ Paste the log of each run into its empty block, and answer the questions under i
 - If not, what fixed it (piano off/on, Disconnect then Connect, USB out/in, other)?
 
 ```
+// It did not work after hitting connect/disconnect/connect many times
+2645 ms  stop()  {"ports":[]}
+36767 ms  start()  {"status":"idle","selected":null}
+36767 ms  requestMIDIAccess…
+40550 ms  access granted; ports at that moment  []
+40550 ms  rescan  {"selected":null,"listening":[],"ports":[]}
+40550 ms  select()  {"id":"-1144519317"}
+40550 ms  rescan  {"selected":"-1144519317","listening":[],"ports":[]}
+42546 ms  statechange  {"id":"-1144519317","name":"MM8 Port1","type":"input","state":"connected","connection":"closed"}
+42546 ms  rescan  {"selected":"-1144519317","listening":["-1144519317"],"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"closed"}]}
+42546 ms  statechange  {"id":"-1144519317","name":"MM8 Port1","type":"input","state":"connected","connection":"open"}
+42546 ms  rescan  {"selected":"-1144519317","listening":["-1144519317"],"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"open"}]}
+42564 ms  statechange  {"id":"-1418849052","name":"MM8 Port1","type":"output","state":"connected","connection":"closed"}
+42564 ms  rescan  {"selected":"-1144519317","listening":["-1144519317"],"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"open"}]}
+67112 ms  stop()  {"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"open"}]}
+67651 ms  start()  {"status":"idle","selected":"-1144519317"}
+67652 ms  requestMIDIAccess…
+67670 ms  access granted; ports at that moment  [{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"closed"}]
+67670 ms  rescan  {"selected":"-1144519317","listening":["-1144519317"],"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"closed"}]}
+67670 ms  select()  {"id":"-1144519317"}
+67670 ms  rescan  {"selected":"-1144519317","listening":["-1144519317"],"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"closed"}]}
+67670 ms  statechange  {"id":"-1144519317","name":"MM8 Port1","type":"input","state":"connected","connection":"open"}
+67670 ms  rescan  {"selected":"-1144519317","listening":["-1144519317"],"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"open"}]}
+70507 ms  stop()  {"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"open"}]}
+71082 ms  start()  {"status":"idle","selected":"-1144519317"}
+71082 ms  requestMIDIAccess…
+71097 ms  access granted; ports at that moment  [{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"closed"}]
+71097 ms  rescan  {"selected":"-1144519317","listening":["-1144519317"],"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"closed"}]}
+71097 ms  select()  {"id":"-1144519317"}
+71097 ms  rescan  {"selected":"-1144519317","listening":["-1144519317"],"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"closed"}]}
+71097 ms  statechange  {"id":"-1144519317","name":"MM8 Port1","type":"input","state":"connected","connection":"open"}
+71098 ms  rescan  {"selected":"-1144519317","listening":["-1144519317"],"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"open"}]}
+75143 ms  stop()  {"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"open"}]}
+76153 ms  start()  {"status":"idle","selected":"-1144519317"}
+76153 ms  requestMIDIAccess…
+76170 ms  access granted; ports at that moment  [{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"closed"}]
+76170 ms  rescan  {"selected":"-1144519317","listening":["-1144519317"],"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"closed"}]}
+76170 ms  select()  {"id":"-1144519317"}
+76170 ms  rescan  {"selected":"-1144519317","listening":["-1144519317"],"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"closed"}]}
+76170 ms  statechange  {"id":"-1144519317","name":"MM8 Port1","type":"input","state":"connected","connection":"open"}
+76170 ms  rescan  {"selected":"-1144519317","listening":["-1144519317"],"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"open"}]}
+80862 ms  stop()  {"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"open"}]}
+81486 ms  start()  {"status":"idle","selected":"-1144519317"}
+81487 ms  requestMIDIAccess…
+81501 ms  access granted; ports at that moment  [{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"closed"}]
+81501 ms  rescan  {"selected":"-1144519317","listening":["-1144519317"],"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"closed"}]}
+81501 ms  select()  {"id":"-1144519317"}
+81501 ms  rescan  {"selected":"-1144519317","listening":["-1144519317"],"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"closed"}]}
+81501 ms  statechange  {"id":"-1144519317","name":"MM8 Port1","type":"input","state":"connected","connection":"open"}
+81502 ms  rescan  {"selected":"-1144519317","listening":["-1144519317"],"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"open"}]}
 
+//un/replugged the USB three times
+2645 ms  stop()  {"ports":[]}
+36767 ms  start()  {"status":"idle","selected":null}
+36767 ms  requestMIDIAccess…
+40550 ms  access granted; ports at that moment  []
+40550 ms  rescan  {"selected":null,"listening":[],"ports":[]}
+40550 ms  select()  {"id":"-1144519317"}
+40550 ms  rescan  {"selected":"-1144519317","listening":[],"ports":[]}
+42546 ms  statechange  {"id":"-1144519317","name":"MM8 Port1","type":"input","state":"connected","connection":"closed"}
+42546 ms  rescan  {"selected":"-1144519317","listening":["-1144519317"],"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"closed"}]}
+42546 ms  statechange  {"id":"-1144519317","name":"MM8 Port1","type":"input","state":"connected","connection":"open"}
+42546 ms  rescan  {"selected":"-1144519317","listening":["-1144519317"],"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"open"}]}
+42564 ms  statechange  {"id":"-1418849052","name":"MM8 Port1","type":"output","state":"connected","connection":"closed"}
+42564 ms  rescan  {"selected":"-1144519317","listening":["-1144519317"],"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"open"}]}
+67112 ms  stop()  {"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"open"}]}
+67651 ms  start()  {"status":"idle","selected":"-1144519317"}
+67652 ms  requestMIDIAccess…
+67670 ms  access granted; ports at that moment  [{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"closed"}]
+67670 ms  rescan  {"selected":"-1144519317","listening":["-1144519317"],"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"closed"}]}
+67670 ms  select()  {"id":"-1144519317"}
+67670 ms  rescan  {"selected":"-1144519317","listening":["-1144519317"],"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"closed"}]}
+67670 ms  statechange  {"id":"-1144519317","name":"MM8 Port1","type":"input","state":"connected","connection":"open"}
+67670 ms  rescan  {"selected":"-1144519317","listening":["-1144519317"],"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"open"}]}
+70507 ms  stop()  {"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"open"}]}
+71082 ms  start()  {"status":"idle","selected":"-1144519317"}
+71082 ms  requestMIDIAccess…
+71097 ms  access granted; ports at that moment  [{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"closed"}]
+71097 ms  rescan  {"selected":"-1144519317","listening":["-1144519317"],"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"closed"}]}
+71097 ms  select()  {"id":"-1144519317"}
+71097 ms  rescan  {"selected":"-1144519317","listening":["-1144519317"],"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"closed"}]}
+71097 ms  statechange  {"id":"-1144519317","name":"MM8 Port1","type":"input","state":"connected","connection":"open"}
+71098 ms  rescan  {"selected":"-1144519317","listening":["-1144519317"],"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"open"}]}
+75143 ms  stop()  {"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"open"}]}
+76153 ms  start()  {"status":"idle","selected":"-1144519317"}
+76153 ms  requestMIDIAccess…
+76170 ms  access granted; ports at that moment  [{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"closed"}]
+76170 ms  rescan  {"selected":"-1144519317","listening":["-1144519317"],"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"closed"}]}
+76170 ms  select()  {"id":"-1144519317"}
+76170 ms  rescan  {"selected":"-1144519317","listening":["-1144519317"],"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"closed"}]}
+76170 ms  statechange  {"id":"-1144519317","name":"MM8 Port1","type":"input","state":"connected","connection":"open"}
+76170 ms  rescan  {"selected":"-1144519317","listening":["-1144519317"],"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"open"}]}
+80862 ms  stop()  {"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"open"}]}
+81486 ms  start()  {"status":"idle","selected":"-1144519317"}
+81487 ms  requestMIDIAccess…
+81501 ms  access granted; ports at that moment  [{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"closed"}]
+81501 ms  rescan  {"selected":"-1144519317","listening":["-1144519317"],"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"closed"}]}
+81501 ms  select()  {"id":"-1144519317"}
+81501 ms  rescan  {"selected":"-1144519317","listening":["-1144519317"],"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"closed"}]}
+81501 ms  statechange  {"id":"-1144519317","name":"MM8 Port1","type":"input","state":"connected","connection":"open"}
+81502 ms  rescan  {"selected":"-1144519317","listening":["-1144519317"],"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"open"}]}
+132131 ms  statechange  {"id":"-1144519317","name":"MM8 Port1","type":"input","state":"disconnected","connection":"pending"}
+132131 ms  rescan  {"selected":"-1144519317","listening":[],"ports":[]}
+132147 ms  statechange  {"id":"-1418849052","name":"MM8 Port1","type":"output","state":"disconnected","connection":"closed"}
+132147 ms  rescan  {"selected":"-1144519317","listening":[],"ports":[]}
+133425 ms  statechange  {"id":"-1144519317","name":"MM8 Port1","type":"input","state":"connected","connection":"open"}
+133426 ms  rescan  {"selected":"-1144519317","listening":["-1144519317"],"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"open"}]}
+133426 ms  statechange  {"id":"-1418849052","name":"MM8 Port1","type":"output","state":"connected","connection":"closed"}
+133426 ms  rescan  {"selected":"-1144519317","listening":["-1144519317"],"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"open"}]}
+138788 ms  statechange  {"id":"-1144519317","name":"MM8 Port1","type":"input","state":"disconnected","connection":"pending"}
+138788 ms  rescan  {"selected":"-1144519317","listening":[],"ports":[]}
+138803 ms  statechange  {"id":"-1418849052","name":"MM8 Port1","type":"output","state":"disconnected","connection":"closed"}
+138803 ms  rescan  {"selected":"-1144519317","listening":[],"ports":[]}
+140087 ms  statechange  {"id":"-1144519317","name":"MM8 Port1","type":"input","state":"connected","connection":"open"}
+140087 ms  rescan  {"selected":"-1144519317","listening":["-1144519317"],"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"open"}]}
+140087 ms  statechange  {"id":"-1418849052","name":"MM8 Port1","type":"output","state":"connected","connection":"closed"}
+140087 ms  rescan  {"selected":"-1144519317","listening":["-1144519317"],"ports":[{"id":"-1144519317","name":"MM8 Port1","state":"connected","connection":"open"}]}
 ```
 
 ## C: USB unplugged and replugged during a session
