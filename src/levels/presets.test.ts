@@ -7,6 +7,16 @@ import { levelById, PRESET_LEVELS } from './presets'
 import { constraintsFor, parseSettings } from './settings'
 
 describe('the 10 preset levels', () => {
+  it('level 9 has only 3 or 4 notes per hand, and its description says so', () => {
+    expect(levelById(9).settings.notesPerHand).toEqual([3, 4])
+    expect(levelById(9).description).toMatch(/three or four notes/)
+  })
+
+  it('level 8 has no single-note targets (2 or 3 notes per hand), and its description says so', () => {
+    expect(levelById(8).settings.notesPerHand).toEqual([2, 3])
+    expect(levelById(8).description).toMatch(/two or three notes/)
+  })
+
   it('there are 10, numbered 1 to 10, each validating with no warnings', () => {
     expect(PRESET_LEVELS.map((l) => l.id)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
     for (const l of PRESET_LEVELS) {
@@ -26,7 +36,7 @@ describe('the 10 preset levels', () => {
 
   it('gets steadily harder: more keys, then more notes, then two hands', () => {
     const acc = PRESET_LEVELS.map((l) => l.settings.keys.maxAccidentals)
-    expect(acc).toEqual([0, 1, 2, 3, 3, 4, 2, 4, 5, 7])
+    expect(acc).toEqual([0, 1, 2, 3, 3, 4, 2, 4, 5, 5])
     const goals = PRESET_LEVELS.map((l) => l.settings.goal!.medianSeconds)
     for (let i = 1; i < goals.length; i++) expect(goals[i]).toBeGreaterThanOrEqual(goals[i - 1])
     expect(PRESET_LEVELS.slice(0, 6).every((l) => !l.settings.hands.includes('both'))).toBe(true)
@@ -49,7 +59,6 @@ describe('the 10 preset levels', () => {
     expect(levelById(4).settings.notesPerHand).toEqual([2])
     expect(levelById(5).settings.inversions).toBe(false) // root position
     expect(levelById(6).settings.inversions).toBe(true)
-    expect(keysFor(levelById(10).settings)).toHaveLength(30) // all keys
   })
 
   it('throws for a level that does not exist', () => {
@@ -84,15 +93,12 @@ describe('any valid settings can drive the generators', () => {
     },
   )
 
-  it('level 10 mixes one-hand and two-hand targets', () => {
-    const g = createLevelGenerator(levelById(10).settings, 3)
-    const counts = { one: 0, two: 0 }
-    for (let i = 0; i < 400; i++) {
-      if (g.next().parts.length === 2) counts.two++
-      else counts.one++
-    }
-    expect(counts.one).toBeGreaterThan(100)
-    expect(counts.two).toBeGreaterThan(100)
+  it('level 10 is level 9 with only 5 seconds for each target', () => {
+    const { name: _n, timeoutSeconds, ...ten } = levelById(10).settings
+    const { name: _n9, timeoutSeconds: nine, ...nineRest } = levelById(9).settings
+    expect(ten).toEqual(nineRest)
+    expect(timeoutSeconds).toBe(5)
+    expect(nine).not.toBe(5)
   })
 
   it('levels 1 and 2 stay within one ledger line of each staff, and use it', () => {

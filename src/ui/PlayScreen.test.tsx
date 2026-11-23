@@ -200,6 +200,15 @@ describe('before starting', () => {
     })
   })
 
+  it('the settings window has Close, then Save', async () => {
+    show()
+    await userEvent.click(button('Settings'))
+    const dialog = screen.getByRole('dialog', { name: 'Sight-Read settings' })
+    const close = within(dialog).getByRole('button', { name: 'Close' })
+    const save = within(dialog).getByRole('button', { name: 'Save' })
+    expect(close.compareDocumentPosition(save) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
   it('picking a level fills the options in; changing one makes it Custom and keeps it next time', async () => {
     show()
     await userEvent.click(button('Settings'))

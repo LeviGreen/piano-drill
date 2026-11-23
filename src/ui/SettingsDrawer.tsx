@@ -65,14 +65,14 @@ export function SettingsDrawer({
         <div className="drawer-head">
           <h2>{title}</h2>
           <div className="drawer-buttons">
+            <button type="button" className="seg" onClick={onClose}>
+              Close
+            </button>
             {onSave && (
               <button type="button" onClick={onSave} disabled={saveDisabled}>
                 Save
               </button>
             )}
-            <button type="button" className="seg" onClick={onClose}>
-              Close
-            </button>
           </div>
         </div>
         <div className="drawer-body">{children}</div>

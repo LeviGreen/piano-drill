@@ -369,6 +369,13 @@ describe('high-score boards', () => {
     expect(await storage.topScores('play', '3')).toHaveLength(1)
   })
 
+  it("changing a level's settings (a new levels.json) leaves its boards as they are: boards are kept by level number", async () => {
+    await storage.addScore(scoreRec('old', 'play', '8', 2500, 'OLD'))
+    await storage.addScore({ ...scoreRec('oldkey', 'play', '8', 1800, 'KEY'), keySignature: -2 })
+    expect((await storage.topScores('play', '8')).map((s) => s.id)).toEqual(['old'])
+    expect((await storage.topScores('play', '8', -2)).map((s) => s.id)).toEqual(['oldkey'])
+  })
+
   it('keeps only the top ten, dropping the lowest, and says what place a new score took', async () => {
     for (let i = 1; i <= 10; i++) await storage.addScore(scoreRec(`s${i}`, 'play', '1', i * 100))
     expect((await storage.topScores('play', '1')).length).toBe(10)

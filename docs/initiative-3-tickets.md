@@ -20,9 +20,14 @@ This file tracks small improvements and bug fixes found while using the app, aft
 | ~~1 Navigation & scores~~      | ~~IM-101~~ | ~~Phone: make every tab the same size~~                       |
 | ~~1 Navigation & scores~~      | ~~IM-102~~ | ~~High-scores link opens the mode and level just played~~     |
 | ~~2 Key Signatures~~           | ~~IM-201~~ | ~~Scale up/down: the turning notes need not be struck twice~~ |
+| 2 Key Signatures               | IM-202     | Show "Major" or "Minor" under the staff instead of the tonic  |
 | ~~3 Settings~~                 | ~~IM-301~~ | ~~Settings windows get Save and Close~~                       |
 | ~~3 Settings~~                 | ~~IM-302~~ | ~~Sight-Read settings: "Single key", and a new picker order~~ |
 | ~~3 Settings~~                 | ~~IM-303~~ | ~~High scores for each single key~~                           |
+| ~~3 Settings~~                 | ~~IM-304~~ | ~~Modals: Close and Save swap places~~                        |
+| ~~3 Settings~~                 | ~~IM-305~~ | ~~Sight-Read Level 8: no single-note targets~~                |
+| ~~3 Settings~~                 | ~~IM-306~~ | ~~Sight-Read Level 9: only 3 and 4 notes per hand~~           |
+| ~~3 Settings~~                 | ~~IM-307~~ | ~~Sight-Read Level 10: level 9 with 5 seconds per target~~    |
 | 4 MIDI on the mode screens     | IM-401     | Reusable MIDI connection components                           |
 | 4 MIDI on the mode screens     | IM-402     | A compact piano connection strip on each mode screen          |
 | 4 MIDI on the mode screens     | IM-403     | The on-screen piano always responds                           |
@@ -41,8 +46,8 @@ This file tracks small improvements and bug fixes found while using the app, aft
 | Epic                       | Tickets         |
 | -------------------------- | --------------- |
 | 1 Navigation & scores      | IM-101 – IM-102 |
-| 2 Key Signatures           | IM-201          |
-| 3 Settings                 | IM-301 – IM-303 |
+| 2 Key Signatures           | IM-201 – IM-202 |
+| 3 Settings                 | IM-301 – IM-307 |
 | 4 MIDI on the mode screens | IM-401 – IM-404 |
 
 ---
@@ -86,7 +91,7 @@ The screenshots show the phone's bottom bar: Key Signatures wraps to two lines, 
 
 ## Epic 2 — Key Signatures
 
-Progress: 1/1 tickets done
+Progress: 1/2 tickets done
 
 ### IM-201: Scale up/down: the turning notes need not be struck twice
 
@@ -110,9 +115,33 @@ In the MIDI view's checklist, "Scale up" ends on the top note (the octave) and "
 
 ---
 
+### IM-202: Show "Major" or "Minor" under the staff instead of the tonic
+
+**Size:** S  
+**Deps:** None  
+**Status:** Todo
+
+Today, with "Major and minor" chosen, the Key Signatures question draws the key signature and also a note on the staff: the key's tonic (`hint`, see `src/keyid/questions.ts`). With "Major only" or "Minor only" the signature is drawn alone. Change this so the tonic is **never** shown. Instead a label under the staff says what is wanted: "Major" or "Minor". The label shows in every setting, including "Major only" and "Minor only".
+
+**Details to settle while working:**
+
+- The label is part of the question and shows while the question is up, like the staff does. It sits in space the screen already keeps, so nothing moves when it appears or goes (as with the other lines on the screen).
+- With the tonic gone, "Major and minor" questions are no easier to tell apart than the signature itself: the player must name the right key of the two that share it, so the label is the only clue. The answer wheel, the typing box and the MIDI checklist keep working as they do (the checklist plays the key the label names).
+- The question's `hint` (the tonic note) and the code that picks where to draw it are no longer used, so remove them.
+- Scoring does not change.
+
+**Acceptance:**
+
+- [ ] No tonic note is drawn on the staff in any setting.
+- [ ] "Major" or "Minor" is shown under the staff for every question, in all three "Keys" settings, and is right for the question.
+- [ ] Showing it moves nothing on the screen, on a phone too.
+- [ ] Tests cover the label in the three settings, and the old tonic hint is gone from the question and its tests.
+
+---
+
 ## Epic 3 — Settings
 
-Progress: 3/3 tickets done
+Progress: 7/7 tickets done
 
 ### IM-301: Settings windows get Save and Close
 
@@ -192,6 +221,81 @@ Decided:
 - [x] The High scores screen has the Key and Level pickers stacked for Sight-Read, and the board does not shift when switching to Key Signatures and back.
 - [x] The results link opens the board just played.
 - [x] Tests cover storage, the results window and the High scores screen.
+
+---
+
+### IM-304: Modals: Close and Save swap places
+
+**Size:** S  
+**Deps:** IM-301  
+**Status:** Done
+
+In the settings windows (Sight-Read and Key Signatures, both built from `SettingsDrawer`) swap the order of the Save and Close buttons. If other modals show both buttons, such as the results window, check them too and keep the order the same everywhere.
+
+**Acceptance:**
+
+- [x] In both settings windows the buttons appear in the swapped order, on desktop and on a phone.
+- [x] Tab order follows the new visual order, and what each button does is unchanged.
+- [x] Tests that rely on the old order are updated.
+
+---
+
+### IM-305: Sight-Read Level 8: no single-note targets
+
+**Size:** S  
+**Deps:** None  
+**Status:** Done
+
+Level 8 ("Two hands, more notes") has "Notes per hand" set to 1, 2 and 3. Remove 1, so it is 2 and 3, and update the level's description to match ("one to three notes" is no longer true). The level's id stays 8, so its high-score boards, and the single-key boards under it (IM-303), are **not** touched or cleared: old scores stay where they are.
+
+**Details to settle while working:**
+
+- The change is in `src/levels/levels.json`, and the level table in the design doc (`docs/design.MD`, §3.1) if it lists the notes per hand. Don't run Prettier on the design doc.
+- Scores earned before the change were made with single-note targets and stay on the board as they are. Only the future targets differ.
+- Decided (the smaller change): saved settings are kept as they were saved, so someone already on Level 8 keeps the old notes per hand until they pick Level 8 again. Nothing refreshes a saved level.
+
+**Acceptance:**
+
+- [x] Level 8 offers targets of 2 and 3 notes per hand only, and its description says so.
+- [x] Its high-score boards (several keys and each single key) are unchanged, shown by a test that saves a score at level 8 and reads it back after the level is changed.
+- [x] The level tests and the design doc agree with the new level.
+
+---
+
+### IM-306: Sight-Read Level 9: only 3 and 4 notes per hand
+
+**Size:** S  
+**Deps:** IM-305  
+**Status:** Done
+
+Level 9 ("Two hands, sevenths") had notes per hand 1, 2, 3 and 4. It is now 3 and 4 only, and its description says "three or four notes". As with IM-305, the level's id stays 9, so its high-score boards (several keys and each single key) are untouched, and saved settings are kept as saved (someone already on Level 9 keeps the old ones until they pick the level again).
+
+**Acceptance:**
+
+- [x] Level 9 offers targets of 3 and 4 notes per hand only, and its description says so.
+- [x] Its high-score boards are unchanged (boards are kept by level number).
+- [x] A level test covers it.
+
+---
+
+### IM-307: Sight-Read Level 10: level 9 with 5 seconds per target
+
+**Size:** S  
+**Deps:** IM-306  
+**Status:** Done
+
+Level 10 was "Everything": all keys, one hand or both, one to four notes, so it included easier targets than level 9. It is now level 9 (both hands, 3 or 4 notes, up to 5 sharps or flats, inversions, no chromatic notes) with a time limit of **5 seconds** per target. Renamed "Level 10: Against the clock".
+
+Decided:
+
+- The goal time stays level 9's 6 seconds (goal times never go down from one level to the next). It is past the 5-second limit, so any correct answer inside the limit earns the full speed bonus.
+- As before, the level's id stays 10, so its high-score boards are untouched. Scores earned on the old "Everything" level stay on the board as they are, even though they were made on different targets. Saved settings are kept as saved.
+
+**Acceptance:**
+
+- [x] Level 10 matches level 9 in everything but its name and its 5-second limit.
+- [x] A level test covers it, and the old level 10 tests are replaced.
+- [x] Its high-score boards are unchanged.
 
 ---
 

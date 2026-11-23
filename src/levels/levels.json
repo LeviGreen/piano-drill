@@ -186,10 +186,10 @@
   {
     "id": 8,
     "name": "Level 8: Two hands, more notes",
-    "description": "Both hands, one to three notes in each, chords in any inversion, up to 4 sharps or flats.",
+    "description": "Both hands, two or three notes in each, chords in any inversion, up to 4 sharps or flats.",
     "settings": {
       "hands": ["both"],
-      "notesPerHand": [1, 2, 3],
+      "notesPerHand": [2, 3],
       "keys": {
         "maxAccidentals": 4,
         "modes": "both"
@@ -212,10 +212,10 @@
   {
     "id": 9,
     "name": "Level 9: Two hands, sevenths",
-    "description": "Both hands, up to four notes in each, including seventh chords, up to 5 sharps or flats.",
+    "description": "Both hands, three or four notes in each, including seventh chords, up to 5 sharps or flats.",
     "settings": {
       "hands": ["both"],
-      "notesPerHand": [1, 2, 3, 4],
+      "notesPerHand": [3, 4],
       "keys": {
         "maxAccidentals": 5,
         "modes": "both"
@@ -237,21 +237,22 @@
   },
   {
     "id": 10,
-    "name": "Level 10: Everything",
-    "description": "All keys, one hand or both, one to four notes in each hand.",
+    "name": "Level 10: Against the clock",
+    "description": "The same as level 9, with only 5 seconds for each target.",
     "settings": {
-      "hands": ["LH", "RH", "both"],
-      "notesPerHand": [1, 2, 3, 4],
+      "hands": ["both"],
+      "notesPerHand": [3, 4],
       "keys": {
-        "maxAccidentals": 7,
+        "maxAccidentals": 5,
         "modes": "both"
       },
       "ledgerLines": 2,
       "inversions": true,
-      "chromaticNotes": "occasional",
-      "name": "Level 10: Everything",
+      "chromaticNotes": "off",
+      "timeoutSeconds": 5,
+      "name": "Level 10: Against the clock",
       "goal": {
-        "medianSeconds": 7.0,
+        "medianSeconds": 6.0,
         "accuracy": 0.9,
         "reps": 20
       },
