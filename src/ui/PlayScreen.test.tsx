@@ -128,7 +128,7 @@ describe('before starting', () => {
     expect(within(dialog).queryByRole('option', { name: 'Major only' })).toBeNull() // a level keeps the keys it was made with
   })
 
-  it('"One key signature" hides the level and sharps/flats, and plays the major key and its relative minor', async () => {
+  it('"Single key" hides the sharps/flats, keeps the level, and plays the major key and its relative minor', async () => {
     show()
     await userEvent.click(button('Settings'))
     const dialog = screen.getByRole('dialog', { name: 'Sight-Read settings' })
@@ -138,9 +138,9 @@ describe('before starting', () => {
     expect(
       within(dialog).getByRole('radio', { name: 'Several keys' }).getAttribute('aria-checked'),
     ).toBe('true')
-    await userEvent.click(within(dialog).getByRole('radio', { name: 'One key signature' }))
+    await userEvent.click(within(dialog).getByRole('radio', { name: 'Single key' }))
     // Hidden but still taking room, so the modal does not change size
-    expect(within(dialog).getByLabelText('Level').closest('.unused')).not.toBeNull()
+    expect(within(dialog).getByLabelText('Level').closest('.unused')).toBeNull()
     expect(
       within(dialog)
         .getByLabelText(/Up to this many sharps/)
@@ -151,16 +151,16 @@ describe('before starting', () => {
     await userEvent.selectOptions(within(dialog).getByLabelText('Key signature'), '-3')
     await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Save' }))
     expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!)).toMatchObject({
-      levelId: 'custom',
+      levelId: 1,
       settings: { keys: { explicit: ['E♭ major', 'C minor'] } },
     })
   })
 
-  it('switching back to several keys brings the level picker back, and the key signature is remembered', async () => {
+  it('switching back to several keys brings the sharps/flats picker back, and the key signature is remembered', async () => {
     show()
     await userEvent.click(button('Settings'))
     const dialog = screen.getByRole('dialog', { name: 'Sight-Read settings' })
-    await userEvent.click(within(dialog).getByRole('radio', { name: 'One key signature' }))
+    await userEvent.click(within(dialog).getByRole('radio', { name: 'Single key' }))
     await userEvent.selectOptions(within(dialog).getByLabelText('Key signature'), '2')
     await userEvent.click(within(dialog).getByRole('radio', { name: 'Several keys' }))
     expect(within(dialog).getByLabelText('Level')).toBeTruthy()
@@ -169,8 +169,35 @@ describe('before starting', () => {
     expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).settings.keys.explicit).toBeUndefined()
     await userEvent.click(button('Settings'))
     const reopened = screen.getByRole('dialog')
-    await userEvent.click(within(reopened).getByRole('radio', { name: 'One key signature' }))
+    await userEvent.click(within(reopened).getByRole('radio', { name: 'Single key' }))
     expect((within(reopened).getByLabelText('Key signature') as HTMLSelectElement).value).toBe('2')
+  })
+
+  it('in Single key, picking a level fills in the other options and keeps the key; the pickers are in order', async () => {
+    show()
+    await userEvent.click(button('Settings'))
+    const dialog = screen.getByRole('dialog', { name: 'Sight-Read settings' })
+    await userEvent.click(within(dialog).getByRole('radio', { name: 'Single key' }))
+    await userEvent.selectOptions(within(dialog).getByLabelText('Key signature'), '-3')
+    await userEvent.selectOptions(within(dialog).getByLabelText('Level'), '3')
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Save' }))
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!)).toMatchObject({
+      levelId: 3,
+      settings: { keys: { explicit: ['E♭ major', 'C minor'] } },
+    })
+    await userEvent.click(button('Settings'))
+    const reopened = screen.getByRole('dialog')
+    const nodes = [
+      within(reopened).getByLabelText('Level'),
+      within(reopened).getByLabelText('Key signature'),
+      within(reopened).getByRole('group', { name: 'Hands' }),
+      within(reopened).getByRole('group', { name: 'Notes per hand' }),
+      within(reopened).getByLabelText('Input'),
+      within(reopened).getByLabelText('Time limit per target'),
+    ]
+    nodes.slice(1).forEach((node, i) => {
+      expect(nodes[i].compareDocumentPosition(node) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    })
   })
 
   it('picking a level fills the options in; changing one makes it Custom and keeps it next time', async () => {

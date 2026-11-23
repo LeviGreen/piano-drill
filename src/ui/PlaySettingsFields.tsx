@@ -1,7 +1,7 @@
 import { PRESET_LEVELS } from '../levels/presets'
 import type { DifficultySettings } from '../levels/settings'
 import { keyName, keySignature } from '../theory/keys'
-import { DifficultyFields } from './DifficultyFields'
+import { AccidentalsField, HandsField, NotesPerHandField, TimeLimitField } from './DifficultyFields'
 import { InputChoiceField } from './InputChoiceField'
 import type { RepRun } from './useRepSession'
 import type { usePlaySettings } from './usePlaySettings'
@@ -35,7 +35,7 @@ export function PlaySettingsFields({
           {(
             [
               ['several', 'Several keys'],
-              ['one', 'One key signature'],
+              ['one', 'Single key'],
             ] as const
           ).map(([value, label]) => {
             const checked = (signature === null ? 'several' : 'one') === value
@@ -54,25 +54,26 @@ export function PlaySettingsFields({
           })}
         </div>
       </fieldset>
-      {/* Both stay in the layout (one over the other, the unused one invisible), so the modal never changes size. */}
+      <label>
+        Level
+        <select value={levelId} onChange={(e) => s.pickLevel(e.target.value)} disabled={running}>
+          <option value="custom">Custom</option>
+          {PRESET_LEVELS.map((l) => (
+            <option key={l.id} value={l.id}>
+              {l.name}
+            </option>
+          ))}
+        </select>
+      </label>
+      {level && <small className="placeholder">{level.description}</small>}
+      {/* The two stay in the layout (one over the other, the unused one invisible), so the modal never changes size. */}
       <div className="overlay">
         <div className={signature === null ? '' : 'unused'} aria-hidden={signature !== null}>
-          <label>
-            Level
-            <select
-              value={levelId}
-              onChange={(e) => s.pickLevel(e.target.value)}
-              disabled={running || signature !== null}
-            >
-              <option value="custom">Custom</option>
-              {PRESET_LEVELS.map((l) => (
-                <option key={l.id} value={l.id}>
-                  {l.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          {level && <small className="placeholder">{level.description}</small>}
+          <AccidentalsField
+            settings={settings as DifficultySettings}
+            onEdit={s.edit}
+            disabled={running || signature !== null}
+          />
         </div>
         <div className={signature === null ? 'unused' : ''} aria-hidden={signature === null}>
           <label>
@@ -91,18 +92,21 @@ export function PlaySettingsFields({
           </label>
         </div>
       </div>
+      <HandsField settings={settings as DifficultySettings} onEdit={s.edit} disabled={running} />
+      <NotesPerHandField
+        settings={settings as DifficultySettings}
+        onEdit={s.edit}
+        disabled={running}
+      />
       <InputChoiceField
         value={piano.draftChoice}
         onChange={piano.setDraftChoice}
         disabled={running}
       />
-      <DifficultyFields
+      <TimeLimitField
         settings={settings as DifficultySettings}
         onEdit={s.edit}
         disabled={running}
-        showKeys={false}
-        showAccidentals={signature === null}
-        showTimeLimit
       />
     </>
   )

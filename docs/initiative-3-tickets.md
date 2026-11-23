@@ -21,6 +21,7 @@ This file tracks small improvements and bug fixes found while using the app, aft
 | ~~1 Navigation & scores~~      | ~~IM-102~~ | ~~High-scores link opens the mode and level just played~~     |
 | ~~2 Key Signatures~~           | ~~IM-201~~ | ~~Scale up/down: the turning notes need not be struck twice~~ |
 | ~~3 Settings~~                 | ~~IM-301~~ | ~~Settings windows get Save and Close~~                       |
+| ~~3 Settings~~                 | ~~IM-302~~ | ~~Sight-Read settings: "Single key", and a new picker order~~ |
 | 4 MIDI on the mode screens     | IM-401     | Reusable MIDI connection components                           |
 | 4 MIDI on the mode screens     | IM-402     | A compact piano connection strip on each mode screen          |
 | 4 MIDI on the mode screens     | IM-403     | The on-screen piano always responds                           |
@@ -40,7 +41,7 @@ This file tracks small improvements and bug fixes found while using the app, aft
 | -------------------------- | --------------- |
 | 1 Navigation & scores      | IM-101 – IM-102 |
 | 2 Key Signatures           | IM-201          |
-| 3 Settings                 | IM-301          |
+| 3 Settings                 | IM-301 – IM-302 |
 | 4 MIDI on the mode screens | IM-401 – IM-404 |
 
 ---
@@ -110,7 +111,7 @@ In the MIDI view's checklist, "Scale up" ends on the top note (the octave) and "
 
 ## Epic 3 — Settings
 
-Progress: 1/1 tickets done
+Progress: 2/2 tickets done
 
 ### IM-301: Settings windows get Save and Close
 
@@ -137,6 +138,32 @@ The windows work on a draft copy of the settings while they are open, and the sc
 - [x] Changing an option and pressing Close, clicking outside, or pressing Escape leaves the earlier settings, and reopening the window shows them.
 - [x] The level picker, the "Custom" switch and the one-key-signature shortcut work on the draft the same way as they do today.
 - [x] Tests cover Save, Close, clicking outside and Escape for both modes.
+
+---
+
+### IM-302: Sight-Read settings: "Single key", and a new picker order
+
+**Size:** S  
+**Deps:** IM-301  
+**Status:** Done
+
+The "One key signature" button is now "Single key". The pickers in the Sight-Read settings window have a fixed order:
+
+- Several keys: Level, Up to this many sharps/flats, Hands, Notes per hand, Input, Time limit per target.
+- Single key: Level, Key signature, Hands, Notes per hand, Input, Time limit per target.
+
+Decided:
+
+- Single key now has the Level picker, with the same presets as Several keys. Picking a level fills in the other options (hands, notes per hand, time limit) and keeps the chosen key signature.
+- Choosing a key signature, or switching between Single key and Several keys, leaves the level as it was. Changing hands, notes or time limit still makes it Custom.
+- The level's description shows under the Level picker in both layouts, for consistency (there is room for it in Single key without the modal changing size).
+
+**Acceptance:**
+
+- [x] The button reads "Single key".
+- [x] Both layouts show the pickers in the order above.
+- [x] In Single key, picking a level fills in the other options and keeps the key signature; the level stays when the key signature is changed.
+- [x] Tests cover the order and the level in Single key.
 
 ---
 

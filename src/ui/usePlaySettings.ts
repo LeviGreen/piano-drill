@@ -29,7 +29,7 @@ export const oneKeySignature = (s: DifficultySettings): number | null => {
   return name === undefined ? null : (parseKeyName(name)?.accidentals ?? null)
 }
 
-/** The key signature last picked for "One key signature", so switching away and back remembers it. */
+/** The key signature last picked for "Single key", so switching away and back remembers it. */
 function loadLastSignature(settings: DifficultySettings): number {
   const now = oneKeySignature(settings)
   if (now !== null) return now
@@ -39,7 +39,7 @@ function loadLastSignature(settings: DifficultySettings): number {
 
 /**
  * The Sight-Read settings and the level picked, remembered between visits: changing an option makes the level "Custom",
- * picking a level fills the options in, and "one key signature" is a shortcut for a key and its relative minor.
+ * picking a level fills the options in, and "Single key" is a shortcut for a key and its relative minor.
  */
 export function usePlaySettings() {
   const [initial] = useState(loadSettings)
@@ -57,22 +57,32 @@ export function usePlaySettings() {
     if (r.ok) change({ ...r.settings, name: 'Custom' }, 'custom')
   }
   /** One key signature: the major key and its relative minor, so notes, intervals and chords come from both. */
+  const explicitKeys = (n: number) => [
+    keyName(keySignature(n, 'major')),
+    keyName(keySignature(n, 'minor')),
+  ]
+  /** Picking the key (or switching to Single key) leaves the level as it is: the level is about the other options. */
   const pickSignature = (n: number) => {
     setLastSignature(n)
-    edit({
-      keys: { explicit: [keyName(keySignature(n, 'major')), keyName(keySignature(n, 'minor'))] },
-    })
+    const r = mergeSettings(settings, { keys: { explicit: explicitKeys(n) } })
+    if (r.ok) change(r.settings, levelId)
   }
   const pickKeyChoice = (value: string) => {
     if (value === 'one') return pickSignature(lastSignature)
     const { explicit: _gone, ...keys } = settings.keys
-    const r = parseSettings({ ...settings, name: 'Custom', keys })
-    if (r.ok) change(r.settings, 'custom')
+    const r = parseSettings({ ...settings, keys })
+    if (r.ok) change(r.settings, levelId)
   }
   const pickLevel = (value: string) => {
     if (value === 'custom') return setDraft({ settings, levelId: 'custom' })
     const picked = PRESET_LEVELS.find((l) => l.id === Number(value))
-    if (picked) change(picked.settings, picked.id)
+    if (!picked) return
+    // In Single key the level fills in the other options and the chosen key stays.
+    const explicit = settings.keys.explicit
+    const next = explicit
+      ? { ...picked.settings, keys: { ...picked.settings.keys, explicit } }
+      : picked.settings
+    change(next, picked.id)
   }
   /** Keep the draft, and remember it for next time. */
   const save = () => {
