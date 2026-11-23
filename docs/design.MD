@@ -57,7 +57,7 @@ Timeout (configurable, default 10 s): the target is revealed with note names + a
 
 ### 2.2 Key Identification Mode
 
-1. A staff with a **key signature only** is flashed (clef varies; optionally a tonic hint, see §7).
+1. A staff with a **key signature only** is flashed (clef varies; a label under it says "Major" or "Minor", see §7).
 2. User answers by tapping a key button (the circle-of-fifths wheel), or (with a MIDI piano) by playing a checklist on it (§7).
 3. Timed; correct/incorrect recorded; same summary/stat treatment as Play Mode.
 
@@ -236,8 +236,10 @@ MIDI reports pitches, not which hand played them. The app verifies *pitches* and
 
 **Presentation:** a staff with a key signature, in the treble or the bass clef (chosen at random for each question, one at a time; it is not a setting). The question is always "name the key". Which keys are asked decides what is drawn:
 
-- **Major keys only** or **minor keys only** — the signature alone; the answer is the key it names in that mode. No note is shown (it would give the answer away).
-- **Major and minor mixed** — a major key and its relative minor share a signature, so a whole note on the **tonic** is shown with it and the answer is unique.
+- **Major keys only** or **minor keys only** — the signature alone; the answer is the key it names in that mode.
+- **Major and minor mixed** — a major key and its relative minor share a signature, so the answer is a major or a minor key.
+
+In every case a label under the staff says which mode is wanted ("Major" or "Minor"), so the signature and the label name exactly one key. No tonic is shown (IM-202).
 
 F♯ major and G♭ major sound the same but have different signatures; they are always different answers.
 

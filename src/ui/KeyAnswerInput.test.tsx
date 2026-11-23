@@ -93,6 +93,22 @@ describe('typing an answer', () => {
     expect(screen.getByText(/D♯ major: no such key/)).toBeTruthy()
   })
 
+  it('when the question names the mode, no "m" is needed: "e b" is E♭ minor for a minor question', async () => {
+    const onAnswer = setup('key', { asked: 'minor' })
+    await userEvent.keyboard('eb')
+    expect(screen.getByText('E♭ minor')).toBeTruthy()
+    await userEvent.keyboard('{Enter}')
+    expect(onAnswer).toHaveBeenLastCalledWith({ accidentals: -6, mode: 'minor' })
+    await userEvent.keyboard('f#{Enter}')
+    expect(onAnswer).toHaveBeenLastCalledWith({ accidentals: 3, mode: 'minor' })
+  })
+
+  it('for a major question "e b" is E♭ major, and "m" changes nothing', async () => {
+    const onAnswer = setup('key', { asked: 'major' })
+    await userEvent.keyboard('ebm{Enter}')
+    expect(onAnswer).toHaveBeenLastCalledWith({ accidentals: -3, mode: 'major' })
+  })
+
   it('does not submit something that is not a valid answer', async () => {
     const onAnswer = setup('key')
     await userEvent.keyboard('d#{Enter}') // D♯ major does not exist

@@ -1,8 +1,7 @@
 import { keysUpTo } from '../theory/generator'
-import { keySignature, type KeySignature, type Mode } from '../theory/keys'
-import { pitch, type Pitch } from '../theory/pitch'
-import { mulberry32, pick, randInt, type Rng } from '../theory/random'
-import { ledgerLines, type Clef } from '../theory/staff'
+import { type KeySignature, type Mode } from '../theory/keys'
+import { mulberry32, pick, type Rng } from '../theory/random'
+import type { Clef } from '../theory/staff'
 
 /**
  * Key identification questions (design §7): a key signature is flashed on a staff, treble or bass (one at a time, chosen
@@ -11,8 +10,9 @@ import { ledgerLines, type Clef } from '../theory/staff'
  * right answer:
  *  - 'major': only major keys are asked, so the signature alone names the key ("which major key?")
  *  - 'minor': only minor keys are asked, so the signature alone names the key ("which minor key?")
- *  - 'key': major and minor are mixed, so a whole note on the tonic is shown with the signature (and only then: a note
- *    on the staff would give the answer away when the signature already settles it)
+ *  - 'key': major and minor are mixed, so the answer is a major or a minor key
+ * Whatever the format, the screen says under the staff which mode is wanted ("Major" or "Minor"), so the signature and
+ * that label always name exactly one key. The tonic is never shown.
  * Which one applies follows from the keys in the level; it is never a choice. F♯ major and G♭ major sound the same but
  * have different signatures, so they are always different answers.
  */
@@ -33,7 +33,7 @@ export type KeyIdConfig = {
 
 export const DEFAULT_KEY_ID_CONFIG: KeyIdConfig = { maxAccidentals: 2, modes: 'major' }
 
-/** One mode asked: the signature alone names the key. Both: the tonic is shown too. */
+/** One mode asked, or both mixed (the question then says which mode it wants). */
 export const formatFor = (modes: KeyIdConfig['modes']): KeyIdFormat =>
   modes === 'both' ? 'key' : modes
 
@@ -45,19 +45,11 @@ export type KeyIdQuestion = {
   clef: Clef
   accidentals: number
   format: KeyIdFormat
-  /** For format 'key': a whole note on the tonic, drawn on the staff. */
-  hint: Pitch | null
   prompt: string
   answer: KeyIdAnswer
 }
 
 const CLEFS: Clef[] = ['treble', 'bass']
-
-const PROMPTS: Record<KeyIdFormat, string> = {
-  major: 'Which major key?',
-  minor: 'Which minor key?',
-  key: 'Which key? The note shown is the tonic.',
-}
 
 /** The right answer: the key named by the signature, in the mode asked (for 'key', the mode of the key itself). */
 export function correctAnswer(format: KeyIdFormat, key: KeySignature): KeyIdAnswer {
@@ -76,32 +68,11 @@ export const checkAnswer = (q: KeyIdQuestion, given: KeyIdAnswer): boolean =>
   given.accidentals === q.accidentals && given.mode === q.answer.mode
 
 /**
- * Every answer in the format's answer space that fits what is actually drawn (the signature, and for 'key' the tonic
- * note), worked out from the picture alone. A well-formed question has exactly one.
+ * Every answer in the format's answer space that fits what is asked (the signature drawn, and the mode named under the
+ * staff), worked out from the question alone. A well-formed question has exactly one.
  */
-export function consistentAnswers(q: KeyIdQuestion): KeyIdAnswer[] {
-  return answerSpace(q.format).filter((a) => {
-    if (a.accidentals !== q.accidentals) return false
-    if (q.format !== 'key') return true
-    const tonic = keySignature(a.accidentals, a.mode).tonic
-    return (
-      !!q.hint &&
-      q.hint.spelling.letter === tonic.letter &&
-      q.hint.spelling.accidental === tonic.accidental
-    )
-  })
-}
-
-/** A tonic note on the staff (treble or bass) with no ledger lines, in a random octave that fits. */
-function tonicOnStaff(key: KeySignature, clef: Clef, rng: Rng): Pitch {
-  const options: Pitch[] = []
-  for (let octave = 1; octave <= 6; octave++) {
-    const p = pitch(key.tonic.letter, key.tonic.accidental, octave)
-    if (ledgerLines(p, clef) === 0) options.push(p)
-  }
-  // The staff holds a full octave and more, so there is always at least one place for a tonic.
-  return options[randInt(rng, options.length)]
-}
+export const consistentAnswers = (q: KeyIdQuestion): KeyIdAnswer[] =>
+  answerSpace(q.format).filter((a) => a.accidentals === q.accidentals && a.mode === q.answer.mode)
 
 /**
  * Makes key-ID questions: keys drawn evenly, and never the same signature twice in a row (a major key and its
@@ -130,15 +101,15 @@ export class KeyIdGenerator {
     const format = formatFor(this.config.modes)
     const clef = pick(this.rng, CLEFS)
     this.lastSignature = key.accidentals
+    const answer = correctAnswer(format, key)
     return {
       id: `k${++this.count}`,
       key,
       clef,
       accidentals: key.accidentals,
       format,
-      hint: format === 'key' ? tonicOnStaff(key, clef, this.rng) : null,
-      prompt: PROMPTS[format],
-      answer: correctAnswer(format, key),
+      prompt: `Which ${answer.mode} key?`,
+      answer,
     }
   }
 }

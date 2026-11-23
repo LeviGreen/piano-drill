@@ -12,7 +12,6 @@ function ask(accidentals: number, mode: 'major' | 'minor', clef: 'treble' | 'bas
     clef,
     accidentals,
     format: 'key',
-    hint: null,
     prompt: '',
     answer: correctAnswer('key', key),
   }

@@ -94,6 +94,14 @@
   margin-bottom: 0.5rem;
 }
 
+.keyid-mode {
+  min-height: 1.75rem; /* reserved: the label comes and goes without moving anything */
+  margin: 0.25rem 0 0;
+  text-align: center;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
 .keyid-status {
   min-height: 1.5rem; /* reserved: the status never changes the height of the page */
   margin: 0.25rem 0 0;

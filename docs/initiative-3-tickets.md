@@ -15,23 +15,23 @@ This file tracks small improvements and bug fixes found while using the app, aft
 
 ## Status at a glance
 
-| Epic                           | Ticket     | Short description                                             |
-| ------------------------------ | ---------- | ------------------------------------------------------------- |
-| ~~1 Navigation & scores~~      | ~~IM-101~~ | ~~Phone: make every tab the same size~~                       |
-| ~~1 Navigation & scores~~      | ~~IM-102~~ | ~~High-scores link opens the mode and level just played~~     |
-| ~~2 Key Signatures~~           | ~~IM-201~~ | ~~Scale up/down: the turning notes need not be struck twice~~ |
-| 2 Key Signatures               | IM-202     | Show "Major" or "Minor" under the staff instead of the tonic  |
-| ~~3 Settings~~                 | ~~IM-301~~ | ~~Settings windows get Save and Close~~                       |
-| ~~3 Settings~~                 | ~~IM-302~~ | ~~Sight-Read settings: "Single key", and a new picker order~~ |
-| ~~3 Settings~~                 | ~~IM-303~~ | ~~High scores for each single key~~                           |
-| ~~3 Settings~~                 | ~~IM-304~~ | ~~Modals: Close and Save swap places~~                        |
-| ~~3 Settings~~                 | ~~IM-305~~ | ~~Sight-Read Level 8: no single-note targets~~                |
-| ~~3 Settings~~                 | ~~IM-306~~ | ~~Sight-Read Level 9: only 3 and 4 notes per hand~~           |
-| ~~3 Settings~~                 | ~~IM-307~~ | ~~Sight-Read Level 10: level 9 with 5 seconds per target~~    |
-| 4 MIDI on the mode screens     | IM-401     | Reusable MIDI connection components                           |
-| 4 MIDI on the mode screens     | IM-402     | A compact piano connection strip on each mode screen          |
-| 4 MIDI on the mode screens     | IM-403     | The on-screen piano always responds                           |
-| ~~4 MIDI on the mode screens~~ | ~~IM-404~~ | ~~Spike: why the MIDI connection is not reliable~~            |
+| Epic                           | Ticket     | Short description                                                |
+| ------------------------------ | ---------- | ---------------------------------------------------------------- |
+| ~~1 Navigation & scores~~      | ~~IM-101~~ | ~~Phone: make every tab the same size~~                          |
+| ~~1 Navigation & scores~~      | ~~IM-102~~ | ~~High-scores link opens the mode and level just played~~        |
+| ~~2 Key Signatures~~           | ~~IM-201~~ | ~~Scale up/down: the turning notes need not be struck twice~~    |
+| ~~2 Key Signatures~~           | ~~IM-202~~ | ~~Show "Major" or "Minor" under the staff instead of the tonic~~ |
+| ~~3 Settings~~                 | ~~IM-301~~ | ~~Settings windows get Save and Close~~                          |
+| ~~3 Settings~~                 | ~~IM-302~~ | ~~Sight-Read settings: "Single key", and a new picker order~~    |
+| ~~3 Settings~~                 | ~~IM-303~~ | ~~High scores for each single key~~                              |
+| ~~3 Settings~~                 | ~~IM-304~~ | ~~Modals: Close and Save swap places~~                           |
+| ~~3 Settings~~                 | ~~IM-305~~ | ~~Sight-Read Level 8: no single-note targets~~                   |
+| ~~3 Settings~~                 | ~~IM-306~~ | ~~Sight-Read Level 9: only 3 and 4 notes per hand~~              |
+| ~~3 Settings~~                 | ~~IM-307~~ | ~~Sight-Read Level 10: level 9 with 5 seconds per target~~       |
+| 4 MIDI on the mode screens     | IM-401     | Reusable MIDI connection components                              |
+| 4 MIDI on the mode screens     | IM-402     | A compact piano connection strip on each mode screen             |
+| 4 MIDI on the mode screens     | IM-403     | The on-screen piano always responds                              |
+| ~~4 MIDI on the mode screens~~ | ~~IM-404~~ | ~~Spike: why the MIDI connection is not reliable~~               |
 
 ## Suggested Build Order
 
@@ -91,7 +91,7 @@ The screenshots show the phone's bottom bar: Key Signatures wraps to two lines, 
 
 ## Epic 2 — Key Signatures
 
-Progress: 1/2 tickets done
+Progress: 2/2 tickets done
 
 ### IM-201: Scale up/down: the turning notes need not be struck twice
 
@@ -119,7 +119,7 @@ In the MIDI view's checklist, "Scale up" ends on the top note (the octave) and "
 
 **Size:** S  
 **Deps:** None  
-**Status:** Todo
+**Status:** Done
 
 Today, with "Major and minor" chosen, the Key Signatures question draws the key signature and also a note on the staff: the key's tonic (`hint`, see `src/keyid/questions.ts`). With "Major only" or "Minor only" the signature is drawn alone. Change this so the tonic is **never** shown. Instead a label under the staff says what is wanted: "Major" or "Minor". The label shows in every setting, including "Major only" and "Minor only".
 
@@ -127,15 +127,17 @@ Today, with "Major and minor" chosen, the Key Signatures question draws the key 
 
 - The label is part of the question and shows while the question is up, like the staff does. It sits in space the screen already keeps, so nothing moves when it appears or goes (as with the other lines on the screen).
 - With the tonic gone, "Major and minor" questions are no easier to tell apart than the signature itself: the player must name the right key of the two that share it, so the label is the only clue. The answer wheel, the typing box and the MIDI checklist keep working as they do (the checklist plays the key the label names).
-- The question's `hint` (the tonic note) and the code that picks where to draw it are no longer used, so remove them.
+- The question's `hint` (the tonic note) and the code that picks where to draw it are no longer used, so they are removed. The question's prompt now names the mode too ("Which minor key?").
 - Scoring does not change.
+- Typing: since the mode is given, the player does not type "m" for a minor question: "e b" is E♭ minor when the label says Minor, and E♭ major when it says Major (an "m" then does nothing). The type box's hint text drops the m's too. The wheel is unchanged and still offers both modes.
 
 **Acceptance:**
 
-- [ ] No tonic note is drawn on the staff in any setting.
-- [ ] "Major" or "Minor" is shown under the staff for every question, in all three "Keys" settings, and is right for the question.
-- [ ] Showing it moves nothing on the screen, on a phone too.
-- [ ] Tests cover the label in the three settings, and the old tonic hint is gone from the question and its tests.
+- [x] No tonic note is drawn on the staff in any setting.
+- [x] "Major" or "Minor" is shown under the staff for every question, in all three "Keys" settings, and is right for the question.
+- [x] Showing it moves nothing on the screen, on a phone too.
+- [x] Typing a key reads it in the mode the label names, with no "m" needed.
+- [x] Tests cover the label in the three settings, and the old tonic hint is gone from the question and its tests.
 
 ---
 

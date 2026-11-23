@@ -345,14 +345,17 @@ describe('the settings drawer', () => {
 })
 
 describe('the screen shows one staff at a time, centred, with the answer input under it', () => {
-  it('has one clef and a minor-key question shows the tonic note', async () => {
+  it('has one clef and no note on the staff, with the mode asked under it', async () => {
     const s = store({ modes: 'both', maxAccidentals: 3 })
     const [q] = upcoming(s, 1)
     show({ timing: FAST })
     await userEvent.click(button('Start'))
     await screen.findByText(q.prompt)
     expect(document.querySelectorAll('.staff .vf-clef')).toHaveLength(1)
-    expect(document.querySelectorAll('.staff .vf-notehead')).toHaveLength(1) // the tonic
+    expect(document.querySelectorAll('.staff .vf-notehead')).toHaveLength(0) // no tonic
+    expect(document.querySelector('.keyid-mode')!.textContent).toBe(
+      q.answer.mode === 'major' ? 'Major' : 'Minor',
+    )
     expect(document.querySelector('.keyid-screen .answer-input')).toBeTruthy()
   })
 })
@@ -473,19 +476,22 @@ describe('the question clock', () => {
   })
 })
 
-describe('the tonic note is a clue, so it only shows when major and minor are mixed', () => {
-  it.each([
-    ['major', 0],
-    ['minor', 0],
-    ['both', 1],
-  ])('keys: %s shows %i note(s)', async (modes, notes) => {
-    const s = store({ modes, maxAccidentals: 3 })
-    const [q] = upcoming(s, 1)
-    show({ timing: FAST })
-    await userEvent.click(button('Start'))
-    await screen.findByText(q.prompt)
-    expect(document.querySelectorAll('.staff .vf-notehead')).toHaveLength(notes)
-  })
+describe('the tonic is never shown; the mode asked is named under the staff', () => {
+  it.each(['major', 'minor', 'both'])(
+    'keys: %s shows no note, and the label says what the question wants',
+    async (modes) => {
+      const s = store({ modes, maxAccidentals: 3 })
+      const [q] = upcoming(s, 1)
+      show({ timing: FAST })
+      const label = document.querySelector('.keyid-mode')!
+      expect(label.textContent?.trim()).toBe('') // the line is there before the first question, empty
+      await userEvent.click(button('Start'))
+      await screen.findByText(q.prompt)
+      expect(document.querySelectorAll('.staff .vf-notehead')).toHaveLength(0)
+      expect(label.textContent).toBe(q.answer.mode === 'major' ? 'Major' : 'Minor')
+      if (modes !== 'both') expect(label.textContent).toBe(modes === 'major' ? 'Major' : 'Minor')
+    },
+  )
 })
 
 describe('the MIDI view needs a MIDI piano and a desktop screen', () => {

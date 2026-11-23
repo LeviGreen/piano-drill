@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import { keyName, keySignature } from '../theory/keys'
-import { formatPitch } from '../theory/pitch'
-import { ledgerLines } from '../theory/staff'
 import { answerLabel, shortLabel } from './labels'
 import {
   answerSpace,
@@ -18,7 +16,7 @@ const config = (c: Partial<KeyIdConfig>): KeyIdConfig => ({ ...DEFAULT_KEY_ID_CO
 const take = (g: KeyIdGenerator, n: number) => Array.from({ length: n }, () => g.next())
 
 describe('the format follows from the keys asked', () => {
-  it('one mode asked: the signature alone names the key. Both modes: the tonic is shown too', () => {
+  it('one mode asked, or both modes mixed', () => {
     expect(formatFor('major')).toBe('major')
     expect(formatFor('minor')).toBe('minor')
     expect(formatFor('both')).toBe('key')
@@ -47,7 +45,6 @@ describe('major-only questions', () => {
     const qs = take(new KeyIdGenerator(config({ maxAccidentals: 7, modes: 'major' }), 3), 200)
     for (const q of qs) {
       expect(q.format).toBe('major')
-      expect(q.hint).toBeNull()
       expect(q.key.mode).toBe('major')
       expect(q.answer).toEqual({ accidentals: q.accidentals, mode: 'major' })
       expect(consistentAnswers(q)).toEqual([q.answer])
@@ -63,21 +60,21 @@ describe('major-only questions', () => {
 })
 
 describe('questions that mix major and minor keys', () => {
-  it('show the tonic as a whole note without ledger lines, and have exactly one right answer', () => {
+  it('name the mode wanted, never show a tonic, and have exactly one right answer', () => {
     const qs = take(new KeyIdGenerator(config({ maxAccidentals: 7, modes: 'both' }), 9), 400)
     for (const q of qs) {
       expect(q.format).toBe('key')
-      expect(q.hint).not.toBeNull()
-      expect(ledgerLines(q.hint!, q.clef)).toBe(0)
+      expect(q).not.toHaveProperty('hint')
+      expect(q.prompt).toBe(`Which ${q.key.mode} key?`)
       expect(q.answer).toEqual({ accidentals: q.accidentals, mode: q.key.mode })
       expect(consistentAnswers(q)).toEqual([q.answer])
     }
     expect(new Set(qs.map((q) => q.key.mode))).toEqual(new Set(['major', 'minor']))
   })
 
-  it('minor only asks only minor keys, with no note on the staff (the signature alone names the key)', () => {
+  it('minor only asks only minor keys', () => {
     const qs = take(new KeyIdGenerator(config({ modes: 'minor', maxAccidentals: 3 }), 2), 100)
-    expect(qs.every((q) => q.key.mode === 'minor' && q.hint === null)).toBe(true)
+    expect(qs.every((q) => q.key.mode === 'minor')).toBe(true)
     expect(qs.every((q) => q.format === 'minor' && q.answer.mode === 'minor')).toBe(true)
     for (const q of qs) expect(consistentAnswers(q)).toEqual([q.answer])
   })
@@ -95,11 +92,8 @@ describe('the clef is random, treble or bass, one at a time', () => {
     },
   )
 
-  it('the tonic note shown with a minor/mixed question sits on the staff of its own clef, with no ledger lines', () => {
+  it('both clefs come up in mixed questions too', () => {
     const qs = take(new KeyIdGenerator(config({ modes: 'both', maxAccidentals: 7 }), 5), 600)
-    for (const q of qs) {
-      expect(ledgerLines(q.hint!, q.clef), `${q.clef} ${formatPitch(q.hint!)}`).toBe(0)
-    }
     expect(new Set(qs.map((q) => q.clef))).toEqual(new Set(['treble', 'bass']))
   })
 

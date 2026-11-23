@@ -27,7 +27,6 @@ function question(
     clef: 'treble',
     accidentals,
     format,
-    hint: null,
     prompt: '',
     answer: correctAnswer(format, key),
   }

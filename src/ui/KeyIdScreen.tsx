@@ -60,8 +60,7 @@ export function KeyIdScreen({
         generator: new KeyIdGenerator(toQuestionConfig(settings), Math.floor(Math.random() * 1e6)),
         presenter: flashPresenter<KeyIdQuestion>({
           container: stage,
-          render: (into, q) =>
-            renderStaff(into, { clef: q.clef, key: q.key, notes: q.hint ? [q.hint] : undefined }),
+          render: (into, q) => renderStaff(into, { clef: q.clef, key: q.key }),
           reveal: () => {}, // the answer input marks the right answer and the message says what it was
           clear: () => drawEmptyStaff(stage),
         }),
@@ -208,8 +207,13 @@ export function KeyIdScreen({
         </>
       }
     >
+      {/* Which mode is wanted. Its line is always there, so nothing moves when it fills in. */}
+      <p className="keyid-mode" aria-hidden={!(marking && question)}>
+        {marking && question ? (question.answer.mode === 'major' ? 'Major' : 'Minor') : '\u00a0'}
+      </p>
       <KeyAnswerInput
         format={formatFor(settings.modes)}
+        asked={question?.answer.mode ?? null}
         onAnswer={(a) => run.session.current?.answer(a)}
         disabled={state !== 'FLASHED'}
         feedback={feedback}

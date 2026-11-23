@@ -20,6 +20,8 @@ export type AnswerView = 'wheel' | 'type' | 'play'
 
 type Props = {
   format: KeyIdFormat
+  /** The mode the question asks for (it is named under the staff): typing then needs no "m" for minor. */
+  asked?: Mode | null
   onAnswer: (answer: KeyIdAnswer) => void
   disabled?: boolean
   /** The wrong keys named so far in this question: they stay marked ✕ and cannot be picked again. */
@@ -45,7 +47,7 @@ type Props = {
 const SECTORS = wheelSectors()
 
 const TYPE_HELP: Record<KeyIdFormat, string> = {
-  major: 'A  Bb  C  Dm  Ebm  F#  G#m',
+  major: 'A  Bb  C  D  Eb  F#  G#',
   minor: 'A  Bb  C  D  Eb  F#  G#',
   key: 'A  Bb  C  Dm  Ebm  F#  G#m',
 }
@@ -70,10 +72,11 @@ function typingElsewhere(e: KeyboardEvent): boolean {
 
 /**
  * Where the player names a key: a circle-of-fifths wheel (major keys outside, relative minors inside), a text box with no picture at all (so there is nothing to count around), or by playing the key on a MIDI piano. Every key
- * can also be typed anywhere: a letter, then # or b, then m for minor, then Enter.
+ * can also be typed anywhere: a letter, then # or b, then Enter. When the question does not say which mode it wants, m after the letter means minor.
  */
 export function KeyAnswerInput({
   format,
+  asked = null,
   onAnswer,
   disabled = false,
   wrong = [],
@@ -83,6 +86,8 @@ export function KeyAnswerInput({
   onViewChange,
 }: Props) {
   const [view, setView] = useState<AnswerView>('wheel')
+  /** How typing reads a key: in the mode asked, when it is known, else as the format says. */
+  const reading: KeyIdFormat = asked ?? format
   const [entry, setEntry] = useState<Entry>(EMPTY_ENTRY)
   const typeBox = useRef<HTMLInputElement>(null)
   // The keyboard listener is attached once per format, so it reads the latest entry and callback through refs.
@@ -100,9 +105,9 @@ export function KeyAnswerInput({
   }
 
   // A new question (or a locked/unlocked input) starts with nothing typed.
-  const [seen, setSeen] = useState({ format, disabled })
-  if (seen.format !== format || seen.disabled !== disabled) {
-    setSeen({ format, disabled })
+  const [seen, setSeen] = useState({ reading, disabled })
+  if (seen.reading !== reading || seen.disabled !== disabled) {
+    setSeen({ reading, disabled })
     setEntry(EMPTY_ENTRY)
   }
 
@@ -113,7 +118,7 @@ export function KeyAnswerInput({
       const target = e.target as HTMLElement | null
       // Enter/Space on a focused answer button is that button's own click.
       if ((e.key === 'Enter' || e.key === ' ') && target?.closest('[role="button"], button')) return
-      const result = entryKey(entryRef.current, e.key, format)
+      const result = entryKey(entryRef.current, e.key, reading)
       const handled = result.submit || result.entry !== entryRef.current
       if (!handled) return
       e.preventDefault()
@@ -129,11 +134,11 @@ export function KeyAnswerInput({
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [format, disabled, shownView])
+  }, [reading, disabled, shownView])
 
   /** One key typed into the text box: the same rules as the global shortcuts. */
   const typeKey = (key: string) => {
-    const result = entryKey(entryRef.current, key, format)
+    const result = entryKey(entryRef.current, key, reading)
     if (result.submit) {
       const answer = entryAnswer(entryRef.current)
       if (answer) {
@@ -324,7 +329,7 @@ export function KeyAnswerInput({
           />
           {!disabled && !feedback && entry.letter === null && !showingWrong && (
             <span className="type-hint" aria-hidden="true">
-              {TYPE_HELP[format]}
+              {TYPE_HELP[reading]}
             </span>
           )}
           {(accepted !== null || showingWrong) && (
