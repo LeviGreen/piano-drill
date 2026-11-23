@@ -69,6 +69,18 @@ const scoreRec = (id: string, score: number) => ({
 })
 
 describe('the score and totals', () => {
+  it("a score on a single key goes on that key's board, and the link opens it", async () => {
+    show({ keySignature: -3, levelName: 'Level 3, E♭ major / C minor (3 flats)' })
+    await userEvent.type(await screen.findByLabelText(/Your initials/), 'kay')
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }))
+    await screen.findByText(/Saved!/)
+    expect(await storage.topScores('play', '3', -3)).toHaveLength(1)
+    expect(await storage.topScores('play', '3')).toEqual([])
+    expect(screen.getByRole('link', { name: 'High scores' }).getAttribute('href')).toBe(
+      '/scores?mode=play&level=3&key=-3',
+    )
+  })
+
   it('shows the score out of the most possible, how many were right, and the total time', async () => {
     show()
     const dialog = screen.getByRole('dialog', { name: 'Session summary' })

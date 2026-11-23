@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import type { Storage } from '../storage'
 import { levelLabel } from './levelLabel'
+import { signatureLabel } from './signatureLabel'
 import { ScoreSummary } from './ScoreSummary'
 import { SettingsDrawer } from './SettingsDrawer'
 import type { RepRun } from './useRepSession'
@@ -9,6 +10,8 @@ export type DrillScore = {
   mode: 'play' | 'keyid'
   /** The level played, or 'custom'. */
   levelId: number | 'custom'
+  /** Sight-Read on a single key: its signature, which has its own board. Null or absent: several keys. */
+  keySignature?: number | null
   /** The level's goal time, for the speed bonus. */
   goalSeconds?: number
   timeoutSeconds: number | null
@@ -140,7 +143,12 @@ export function DrillScreenFrame({
         <ScoreSummary
           mode={score.mode}
           levelId={score.levelId}
-          levelName={levelLabel(score.levelId)}
+          levelName={
+            score.keySignature == null
+              ? levelLabel(score.levelId)
+              : `${levelLabel(score.levelId)}, ${signatureLabel(score.keySignature)}`
+          }
+          keySignature={score.keySignature ?? null}
           goalSeconds={score.goalSeconds}
           timeoutSeconds={score.timeoutSeconds}
           plannedReps={total}

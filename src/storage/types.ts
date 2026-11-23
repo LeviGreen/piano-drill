@@ -44,6 +44,11 @@ export type ScoreRecord = {
   mode: StoredMode
   /** The preset level ("1" to "10"): only preset levels have boards. */
   level: string
+  /**
+   * Sight-Read played on a single key: the sharps (+) or flats (-) of its signature, -7 to 7. Each signature has its own
+   * board. Absent for several keys (and for every score saved before this), which share one board per level.
+   */
+  keySignature?: number
   initials: string
   score: number
   correct: number

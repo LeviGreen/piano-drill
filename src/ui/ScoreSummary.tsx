@@ -19,6 +19,8 @@ export type ScoreSummaryProps = {
   /** A preset level's number, or 'custom': only preset levels have a high-score board. */
   levelId: number | 'custom'
   levelName: string
+  /** Sight-Read on a single key: its signature (sharps +, flats -), which has its own board. Null or absent: several keys. */
+  keySignature?: number | null
   /** The level's goal time, which the speed bonus is measured against. */
   goalSeconds: number | undefined
   timeoutSeconds: number | null
@@ -42,6 +44,7 @@ export function ScoreSummary({
   mode,
   levelId,
   levelName,
+  keySignature = null,
   goalSeconds,
   timeoutSeconds,
   plannedReps,
@@ -73,7 +76,9 @@ export function ScoreSummary({
     checked.current = sessionId
     void (async () => {
       try {
-        setProspective(eligible ? await db.prospectiveRank(mode, level, score, totalMs) : null)
+        setProspective(
+          eligible ? await db.prospectiveRank(mode, level, score, totalMs, keySignature) : null,
+        )
       } catch {
         setFailed(true) // no storage (a private window, say): the results still show
         setProspective(null)
@@ -93,6 +98,7 @@ export function ScoreSummary({
           id: `${sessionId}-score`,
           mode,
           level,
+          ...(keySignature === null ? {} : { keySignature }),
           initials: name,
           score,
           correct,
@@ -160,7 +166,13 @@ export function ScoreSummary({
         {failed && <small>Could not save to this browser's storage.</small>}
       </div>
       <p>
-        <Link to={typeof levelId === 'number' ? `/scores?mode=${mode}&level=${level}` : '/scores'}>
+        <Link
+          to={
+            typeof levelId === 'number'
+              ? `/scores?mode=${mode}&level=${level}${keySignature === null ? '' : `&key=${keySignature}`}`
+              : '/scores'
+          }
+        >
           High scores
         </Link>
       </p>

@@ -1,20 +1,10 @@
 import { PRESET_LEVELS } from '../levels/presets'
 import type { DifficultySettings } from '../levels/settings'
-import { keyName, keySignature } from '../theory/keys'
 import { AccidentalsField, HandsField, NotesPerHandField, TimeLimitField } from './DifficultyFields'
 import { InputChoiceField } from './InputChoiceField'
+import { SIGNATURES, signatureLabel } from './signatureLabel'
 import type { RepRun } from './useRepSession'
 import type { usePlaySettings } from './usePlaySettings'
-
-const signatureLabel = (n: number): string => {
-  const names = `${keyName(keySignature(n, 'major'))} / ${keyName(keySignature(n, 'minor'))}`
-  const count =
-    n === 0
-      ? 'no sharps or flats'
-      : `${Math.abs(n)} ${n > 0 ? 'sharp' : 'flat'}${Math.abs(n) > 1 ? 's' : ''}`
-  return `${names} (${count})`
-}
-const SIGNATURES = Array.from({ length: 15 }, (_, i) => i - 7)
 
 /** The fields in the Sight-Read settings window: keys, level or key signature, input, and the difficulty options. */
 export function PlaySettingsFields({

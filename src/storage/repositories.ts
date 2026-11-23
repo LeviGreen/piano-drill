@@ -16,6 +16,9 @@ export const BOARD_SIZE = 10
 const byRank = (a: ScoreRecord, b: ScoreRecord) =>
   b.score - a.score || a.totalMs - b.totalMs || a.achievedAt.localeCompare(b.achievedAt)
 
+/** Which board a score is on: its key signature, or null for several keys. */
+const boardKey = (s: ScoreRecord): number | null => s.keySignature ?? null
+
 export type SessionQuery = { mode?: StoredMode; level?: string; limit?: number }
 
 /**
@@ -131,10 +134,17 @@ export class Storage {
 
   // ---------- high scores ----------
 
-  /** A level's board, best first (at most BOARD_SIZE lines). */
-  async topScores(mode: StoredMode, level: string): Promise<ScoreRecord[]> {
+  /** A board, best first (at most BOARD_SIZE lines): a level's, and for a single key, that key signature's (null: several keys). */
+  async topScores(
+    mode: StoredMode,
+    level: string,
+    keySignature: number | null = null,
+  ): Promise<ScoreRecord[]> {
     const rows = await this.db.scores.where('[mode+level]').equals([mode, level]).toArray()
-    return rows.sort(byRank).slice(0, BOARD_SIZE)
+    return rows
+      .filter((s) => boardKey(s) === keySignature)
+      .sort(byRank)
+      .slice(0, BOARD_SIZE)
   }
 
   /**
@@ -147,8 +157,9 @@ export class Storage {
     level: string,
     score: number,
     totalMs = Infinity,
+    keySignature: number | null = null,
   ): Promise<number | null> {
-    const board = await this.topScores(mode, level)
+    const board = await this.topScores(mode, level, keySignature)
     const ahead = board.filter(
       (s) => s.score > score || (s.score === score && s.totalMs <= totalMs),
     ).length
@@ -161,7 +172,9 @@ export class Storage {
       await this.db.scores.put(score)
       const board = (
         await this.db.scores.where('[mode+level]').equals([score.mode, score.level]).toArray()
-      ).sort(byRank)
+      )
+        .filter((s) => boardKey(s) === boardKey(score))
+        .sort(byRank)
       const dropped = board.slice(BOARD_SIZE)
       if (dropped.length > 0) await this.db.scores.bulkDelete(dropped.map((s) => s.id))
       const place = board.findIndex((s) => s.id === score.id)

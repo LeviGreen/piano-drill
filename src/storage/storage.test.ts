@@ -348,6 +348,27 @@ describe('high-score boards', () => {
     expect(await storage.topScores('keyid', '9')).toEqual([])
   })
 
+  it('each single key has its own board, apart from several keys; each keeps its own top ten', async () => {
+    const on = (id: string, score: number, keySignature?: number): ScoreRecord => ({
+      ...scoreRec(id, 'play', '3', score, 'KEY'),
+      ...(keySignature === undefined ? {} : { keySignature }),
+    })
+    await storage.addScore(on('several', 500))
+    await storage.addScore(on('flat3', 900, -3))
+    await storage.addScore(on('sharp2', 700, 2))
+    await storage.addScore(on('zero', 100, 0))
+    expect((await storage.topScores('play', '3')).map((s) => s.id)).toEqual(['several'])
+    expect((await storage.topScores('play', '3', -3)).map((s) => s.id)).toEqual(['flat3'])
+    expect((await storage.topScores('play', '3', 0)).map((s) => s.id)).toEqual(['zero']) // C major is not "several keys"
+    expect(await storage.topScores('play', '3', 5)).toEqual([])
+    expect(await storage.prospectiveRank('play', '3', 800, 60000, 2)).toBe(1)
+    expect(await storage.prospectiveRank('play', '3', 800, 60000, null)).toBe(1)
+    for (let i = 1; i <= 10; i++) await storage.addScore(on(`f${i}`, 1000 + i, -3))
+    expect(await storage.topScores('play', '3', -3)).toHaveLength(10)
+    expect(await storage.topScores('play', '3', 2)).toHaveLength(1) // not squeezed out by the other board
+    expect(await storage.topScores('play', '3')).toHaveLength(1)
+  })
+
   it('keeps only the top ten, dropping the lowest, and says what place a new score took', async () => {
     for (let i = 1; i <= 10; i++) await storage.addScore(scoreRec(`s${i}`, 'play', '1', i * 100))
     expect((await storage.topScores('play', '1')).length).toBe(10)

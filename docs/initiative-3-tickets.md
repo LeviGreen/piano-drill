@@ -22,6 +22,7 @@ This file tracks small improvements and bug fixes found while using the app, aft
 | ~~2 Key Signatures~~           | ~~IM-201~~ | ~~Scale up/down: the turning notes need not be struck twice~~ |
 | ~~3 Settings~~                 | ~~IM-301~~ | ~~Settings windows get Save and Close~~                       |
 | ~~3 Settings~~                 | ~~IM-302~~ | ~~Sight-Read settings: "Single key", and a new picker order~~ |
+| ~~3 Settings~~                 | ~~IM-303~~ | ~~High scores for each single key~~                           |
 | 4 MIDI on the mode screens     | IM-401     | Reusable MIDI connection components                           |
 | 4 MIDI on the mode screens     | IM-402     | A compact piano connection strip on each mode screen          |
 | 4 MIDI on the mode screens     | IM-403     | The on-screen piano always responds                           |
@@ -41,7 +42,7 @@ This file tracks small improvements and bug fixes found while using the app, aft
 | -------------------------- | --------------- |
 | 1 Navigation & scores      | IM-101 – IM-102 |
 | 2 Key Signatures           | IM-201          |
-| 3 Settings                 | IM-301 – IM-302 |
+| 3 Settings                 | IM-301 – IM-303 |
 | 4 MIDI on the mode screens | IM-401 – IM-404 |
 
 ---
@@ -111,7 +112,7 @@ In the MIDI view's checklist, "Scale up" ends on the top note (the octave) and "
 
 ## Epic 3 — Settings
 
-Progress: 2/2 tickets done
+Progress: 3/3 tickets done
 
 ### IM-301: Settings windows get Save and Close
 
@@ -164,6 +165,33 @@ Decided:
 - [x] Both layouts show the pickers in the order above.
 - [x] In Single key, picking a level fills in the other options and keeps the key signature; the level stays when the key signature is changed.
 - [x] Tests cover the order and the level in Single key.
+
+---
+
+### IM-303: High scores for each single key
+
+**Size:** M  
+**Deps:** IM-302  
+**Status:** Done
+
+Now that Single key has levels, a finished session on a preset level in Single key goes on a board for that key signature and level (top ten, three initials). Several keys keeps its board per level, as before; scores saved before this stay there.
+
+Decided:
+
+- A board is per key signature (15 boards per level), not per major or minor key: Single key plays the major key and its relative minor together.
+- A score has an optional `keySignature` (-7 to 7); absent means several keys. No database change: the existing level index is used and the key is filtered in code.
+- High scores screen, Sight-Read: two stacked pickers under the mode buttons, Key (Several keys first, then each key signature from 7 flats to 7 sharps, labelled as in the settings) above Level. No visible labels.
+- Key Signatures has no key picker, but its place stays (invisible), so the board does not move when switching modes.
+- Switching modes resets the level to 1 and the key to Several keys.
+- The results window names the key ("Level 3, E♭ major / C minor (3 flats)") and its High scores link carries it (`&key=-3`). Backups carry the key; older backups load with their scores under several keys.
+
+**Acceptance:**
+
+- [x] A session in Single key on a preset level is saved on that key's board, and only there.
+- [x] Each key's board keeps its own top ten.
+- [x] The High scores screen has the Key and Level pickers stacked for Sight-Read, and the board does not shift when switching to Key Signatures and back.
+- [x] The results link opens the board just played.
+- [x] Tests cover storage, the results window and the High scores screen.
 
 ---
 

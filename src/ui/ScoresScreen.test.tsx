@@ -45,6 +45,54 @@ const addScore = (
   })
 
 describe('high scores', () => {
+  it('Sight-Read has a key picker above the level picker: several keys, then each key signature, with its own board', async () => {
+    await storage.addScore({
+      id: 'k',
+      mode: 'play',
+      level: '2',
+      keySignature: -3,
+      initials: 'EFL',
+      score: 3000,
+      correct: 18,
+      reps: 20,
+      totalMs: 95000,
+      achievedAt: '2026-03-04T10:00:00Z',
+    })
+    await addScore('s', 'play', '2', 'SEV', 2000)
+    show()
+    const key = (await screen.findByLabelText('Key')) as HTMLSelectElement
+    const level = screen.getByLabelText('Level')
+    expect(key.compareDocumentPosition(level) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect([...key.options].map((o) => o.textContent)).toEqual([
+      'Several keys',
+      ...Array.from({ length: 15 }, () => expect.any(String)),
+    ])
+    expect(key.options[1].textContent).toBe('C♭ major / A♭ minor (7 flats)')
+    await userEvent.selectOptions(level, '2')
+    expect(await screen.findByText('SEV')).toBeTruthy()
+    expect(screen.queryByText('EFL')).toBeNull()
+    await userEvent.selectOptions(key, '-3')
+    expect(await screen.findByText('EFL')).toBeTruthy()
+    expect(screen.queryByText('SEV')).toBeNull()
+  })
+
+  it('Key Signatures has no key picker, but keeps its place so the board does not move; switching resets both pickers', async () => {
+    show()
+    const key = await screen.findByLabelText('Key')
+    await userEvent.selectOptions(key, '2')
+    await userEvent.click(screen.getByRole('button', { name: 'Key Signatures' }))
+    expect(key.closest('.unused')).not.toBeNull() // still in the layout, not seen
+    expect(screen.getByLabelText('Level')).toBeTruthy()
+    await userEvent.click(screen.getByRole('button', { name: 'Sight-Read' }))
+    expect((screen.getByLabelText('Key') as HTMLSelectElement).value).toBe('several')
+    expect(screen.getByLabelText('Key').closest('.unused')).toBeNull()
+  })
+
+  it("a link with a key (?key=-3) opens that key's board", async () => {
+    show('/scores?mode=play&level=1&key=-3')
+    expect(((await screen.findByLabelText('Key')) as HTMLSelectElement).value).toBe('-3')
+  })
+
   it('an empty level still shows a board of ten blank lines, numbered 1 to 10', async () => {
     show()
     const rows = await screen.findAllByRole('row')

@@ -12,7 +12,7 @@ import type { Target } from '../theory/target'
 import { DrillScreenFrame } from './DrillScreenFrame'
 import { PlaySettingsFields } from './PlaySettingsFields'
 import { flashPresenter, useRepSession } from './useRepSession'
-import { usePlaySettings } from './usePlaySettings'
+import { oneKeySignature, usePlaySettings } from './usePlaySettings'
 
 /** A session is always this many targets. */
 const DEFAULT_REPS = 20
@@ -116,6 +116,7 @@ export function PlayScreen({ reps = DEFAULT_REPS, timing, storage, midiAccess }:
       score={{
         mode: 'play',
         levelId: s.levelId,
+        keySignature: oneKeySignature(settings),
         goalSeconds: settings.goal?.medianSeconds,
         timeoutSeconds: settings.timeoutSeconds,
         storage,

@@ -78,7 +78,9 @@ export function parseBackup(input: unknown): BackupParse {
           MODES.includes(s.mode as string) &&
           isStr(s.level) &&
           isStr(s.initials) &&
-          typeof s.score === 'number',
+          typeof s.score === 'number' &&
+          (s.keySignature === undefined ||
+            (Number.isInteger(s.keySignature) && Math.abs(s.keySignature as number) <= 7)),
       )
   }
   if (errors.length > 0) return { ok: false, errors: errors.slice(0, 10) }
@@ -111,13 +113,20 @@ export async function exportBackup(storage: Storage): Promise<Backup> {
 async function trimBoards(storage: Storage): Promise<void> {
   const { db } = storage
   const all = await db.scores.toArray()
-  const keys = new Set(all.map((s) => `${s.mode}|${s.level}`))
-  for (const key of keys) {
-    const [mode, level] = key.split('|')
-    const board = await storage.topScores(mode as ScoreRecord['mode'], level)
-    const keep = new Set(board.map((s) => s.id))
-    const drop = all.filter((s) => s.mode === mode && s.level === level && !keep.has(s.id))
-    if (drop.length > 0) await db.scores.bulkDelete(drop.map((s) => s.id))
+  const boards = new Map<string, ScoreRecord>()
+  for (const s of all) boards.set(`${s.mode}|${s.level}|${s.keySignature ?? ''}`, s)
+  for (const s of boards.values()) {
+    const key = s.keySignature ?? null
+    const board = await storage.topScores(s.mode, s.level, key)
+    const keep = new Set(board.map((b) => b.id))
+    const drop = all.filter(
+      (x) =>
+        x.mode === s.mode &&
+        x.level === s.level &&
+        (x.keySignature ?? null) === key &&
+        !keep.has(x.id),
+    )
+    if (drop.length > 0) await db.scores.bulkDelete(drop.map((x) => x.id))
   }
 }
 

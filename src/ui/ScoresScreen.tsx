@@ -5,6 +5,7 @@ import { PRESET_LEVELS } from '../levels/presets'
 import { getStorage, type ScoreRecord, type Storage, type StoredMode } from '../storage'
 import { formatTotal } from './formatTotal'
 import { SettingsDrawer } from './SettingsDrawer'
+import { SIGNATURES, signatureLabel } from './signatureLabel'
 import { PHONE_QUERY, useMediaQuery } from './useMediaQuery'
 
 const MODES: { value: StoredMode; label: string }[] = [
@@ -70,16 +71,19 @@ function Board({
   storage,
   mode,
   level,
+  keySignature,
   compact,
 }: {
   storage: Storage
   mode: StoredMode
   level: string
+  /** Sight-Read: a single key's signature, or null for the several-keys board. */
+  keySignature: number | null
   compact: boolean
 }) {
   const loaded: ScoreRecord[] | null = useLoaded(
-    () => storage.topScores(mode, level),
-    [mode, level],
+    () => storage.topScores(mode, level, keySignature),
+    [mode, level, keySignature],
   )
   const scores = loaded ?? [] // while loading the board is simply empty, so nothing jumps when it fills in
   const [open, setOpen] = useState<number | null>(null)
@@ -174,6 +178,12 @@ export function ScoresScreen({ storage }: { storage?: Storage }) {
     const n = Number(params.get('level'))
     return levelsFor(linked).some((l) => l.id === n) ? n : 1
   })
+  // Sight-Read has a board for each single key as well as one for several keys.
+  const [keySignature, setKeySignature] = useState<number | null>(() => {
+    const raw = params.get('key')
+    const n = Number(raw)
+    return linked === 'play' && raw !== null && SIGNATURES.includes(n) ? n : null
+  })
   const levels = levelsFor(mode)
 
   return (
@@ -189,12 +199,32 @@ export function ScoresScreen({ storage }: { storage?: Storage }) {
             onClick={() => {
               setMode(m.value)
               setLevelId(1)
+              setKeySignature(null)
             }}
           >
             {m.label}
           </button>
         ))}
       </div>
+      {/* Stacked. Key Signatures has no key picker, but its place stays (invisible), so the board does not move
+          when switching modes. */}
+      <p className={mode === 'play' ? '' : 'unused'} aria-hidden={mode !== 'play'}>
+        <select
+          aria-label="Key"
+          value={keySignature ?? 'several'}
+          disabled={mode !== 'play'}
+          onChange={(e) =>
+            setKeySignature(e.target.value === 'several' ? null : Number(e.target.value))
+          }
+        >
+          <option value="several">Several keys</option>
+          {SIGNATURES.map((n) => (
+            <option key={n} value={n}>
+              {signatureLabel(n)}
+            </option>
+          ))}
+        </select>
+      </p>
       <p>
         <select
           aria-label="Level"
@@ -208,7 +238,13 @@ export function ScoresScreen({ storage }: { storage?: Storage }) {
           ))}
         </select>
       </p>
-      <Board storage={db} mode={mode} level={String(levelId)} compact={compact} />
+      <Board
+        storage={db}
+        mode={mode}
+        level={String(levelId)}
+        keySignature={mode === 'play' ? keySignature : null}
+        compact={compact}
+      />
     </div>
   )
 }
