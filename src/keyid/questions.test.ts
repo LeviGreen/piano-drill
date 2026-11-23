@@ -112,7 +112,7 @@ describe('generator', () => {
   it('is deterministic per seed', () => {
     const run = (seed: number) =>
       take(new KeyIdGenerator(config({ modes: 'both', maxAccidentals: 7 }), seed), 20).map(
-        (q) => q.id + keyName(q.key) + (q.hint ? q.hint.midi : ''),
+        (q) => q.id + keyName(q.key) + q.clef,
       )
     expect(run(8)).toEqual(run(8))
     expect(run(8)).not.toEqual(run(9))
